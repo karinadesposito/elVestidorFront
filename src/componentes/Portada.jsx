@@ -12,7 +12,7 @@ const slides = [
 const campanias = [
   {
     etiqueta: 'Especial temporada',
-    titulo: 'Amigos.',
+    titulo: 'Compartir.',
     texto: 'Calzado, ropa y accesorios. ',
   },
   {
@@ -22,7 +22,7 @@ const campanias = [
   },
   {
     etiqueta: 'Nuevos ingresos',
-    titulo: 'Sé vos mismo.',
+    titulo: 'Sé vos.',
     texto: 'Selección todos los dias.',
   },
 ]
