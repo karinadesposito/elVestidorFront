@@ -1,0 +1,17 @@
+.carrusel-promociones {
+  padding-block: var(--espacio-3);
+}
+
+.carrusel-promociones__item {
+  color: var(--color-texto-fuerte);
+  font-size: calc(var(--espacio-3) - var(--espacio-1));
+  font-weight: var(--peso-medium);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+@media (min-width: 48rem) {
+  .carrusel-promociones__contenedor {
+    justify-content: space-between;
+  }
+}

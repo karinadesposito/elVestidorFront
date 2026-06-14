@@ -1,0 +1,18 @@
+.contenedor {
+  width: 100%;
+  max-width: var(--ancho-maximo-principal);
+  margin-inline: auto;
+  padding-inline: var(--padding-lateral-mobile);
+}
+
+@media (min-width: 48rem) {
+  .contenedor {
+    padding-inline: var(--padding-lateral-tablet);
+  }
+}
+
+@media (min-width: 64rem) {
+  .contenedor {
+    padding-inline: var(--padding-lateral-desktop);
+  }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo descripcion">
+  <title id="titulo">Logo símbolo El Vestidor</title>
+  <desc id="descripcion">Símbolo minimalista de percha para la marca El Vestidor.</desc>
+  <path
+    d="M228 244 L88 326 C58 344 65 379 104 379 H401 C440 379 452 345 419 324 L257 217 C232 200 215 181 214 156 C213 116 254 94 286 113 C306 125 317 146 313 169"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

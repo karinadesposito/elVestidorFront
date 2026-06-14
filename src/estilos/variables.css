@@ -1,0 +1,70 @@
+:root {
+  /* Colores */
+  --color-fondo-principal: #faf9f6;
+  --color-fondo-alternativo: #ffffff;
+  --color-fondo-suave: #f3ecdf;
+  --color-fondo-editorial: #e8dccb;
+  --color-texto-principal: #2b2926;
+  --color-texto-fuerte: #0d0d0d;
+  --color-texto-secundario: #7c7165;
+  --color-borde-suave: #d8d1c7;
+  --color-accion: #0d0d0d;
+  --color-acento-hover: #b89162;
+
+  /* Tipografías */
+  --fuente-interfaz: 'EV Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --fuente-logo: 'Logo EV', serif;
+  --peso-regular: 400;
+  --peso-medium: 500;
+  --peso-semibold: 600;
+  --peso-bold: 700;
+  --linea-base: 1.5;
+  --linea-titulos: 1.1;
+
+  /* Espaciado */
+  --espacio-0: 0;
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 1rem;
+  --espacio-4: 1.5rem;
+  --espacio-5: 2rem;
+  --espacio-6: 3rem;
+  --espacio-7: 4rem;
+  --espacio-8: 6rem;
+
+  /* Border Radius */
+  --radio-sm: 0.375rem;
+  --radio-md: 0.625rem;
+  --radio-lg: 1rem;
+  --radio-xl: 1.5rem;
+
+  /* Sombras */
+  --sombra-suave: 0 0.5rem 1.5rem rgb(13 13 13 / 0.06);
+  --sombra-media: 0 1rem 2.5rem rgb(13 13 13 / 0.08);
+  --sombra-editorial: 0 1.5rem 4rem rgb(43 41 38 / 0.1);
+
+  /* Transiciones */
+  --transicion-rapida: 160ms ease;
+  --transicion-base: 220ms ease;
+  --transicion-lenta: 320ms ease;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-header: 10;
+  --z-overlay: 20;
+  --z-modal: 30;
+
+  /* Breakpoints */
+  --bp-tablet: 48rem;
+  --bp-desktop: 64rem;
+  --bp-desktop-grande: 90rem;
+
+  /* Anchos maximos */
+  --ancho-maximo-principal: 100%;
+  --ancho-lectura: 65ch;
+  --padding-lateral-mobile: var(--espacio-3);
+  --padding-lateral-tablet: var(--espacio-4);
+  --padding-lateral-desktop: var(--espacio-5);
+  --alto-barra: 5rem;
+}
