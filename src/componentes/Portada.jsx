@@ -5,9 +5,9 @@ import brooklin from '../recursos/imagenes/brooklin.jpg'
 import vestidor from '../recursos/imagenes/el_vestidor_4.webp'
 
 const slides = [
-  { nombre: 'Salida', imagen: montania },
-  { nombre: 'Ruta', imagen: brooklin },
-  { nombre: 'Ciudad', imagen: vestidor },
+  { nombre: 'Salida', imagen: montania, ancho: 1200, alto: 1600 },
+  { nombre: 'Ruta', imagen: brooklin, ancho: 308, alto: 403 },
+  { nombre: 'Ciudad', imagen: vestidor, ancho: 363, alto: 453 },
 ]
 const campanias = [
   {
@@ -51,7 +51,7 @@ function Portada() {
                 key={slide.nombre}
                 role="img"
               >
-                <img src={slide.imagen} alt="" />
+                <img src={slide.imagen} alt="" width={slide.ancho} height={slide.alto} />
               </div>
             ))}
           </div>

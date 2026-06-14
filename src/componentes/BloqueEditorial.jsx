@@ -10,18 +10,24 @@ const promociones = [
     titulo: '3 cuotas sin interes',
     texto: 'Arma tu look completo y pagalo comodo desde la tienda.',
     imagen: ventana,
+    ancho: 721,
+    alto: 1600,
   },
   {
     etiqueta: 'Todo el pais',
     titulo: 'Envios para salir sin esperar',
     texto: 'Recibi calzado, ropa y accesorios donde estes.',
     imagen: pasillo,
+    ancho: 721,
+    alto: 1600,
   },
   {
     etiqueta: 'Temporada',
     titulo: 'Sale de favoritos',
     texto: 'Seleccionamos piezas clave para renovar el vestidor.',
     imagen: magic,
+    ancho: 1536,
+    alto: 1024,
   },
 ]
 
@@ -50,7 +56,7 @@ function BloqueEditorial() {
           >
             {promociones.map((promocion) => (
               <article className="portada__slide" key={promocion.titulo}>
-                <img src={promocion.imagen} alt="" />
+                <img src={promocion.imagen} alt="" width={promocion.ancho} height={promocion.alto} />
                 <div className="portada__contenido">
                   <p className="texto-etiqueta portada__etiqueta">
                     {promocion.etiqueta}

@@ -7,13 +7,38 @@
 }
 
 .barra__beneficio {
+  overflow: hidden;
   border-block-end: thin solid var(--color-borde-suave);
-  padding-block: var(--espacio-1);
+}
+
+.barra__cinta {
+  display: flex;
+  align-items: center;
+  padding-block: var(--espacio-3);
+  animation: barra-desplazar 5s linear infinite;
+}
+
+@keyframes barra-desplazar {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.barra__promo {
+  background-color: var(--color-acento);
+  margin-inline-end: var(--espacio-5);
   color: var(--color-texto-secundario);
-  font-size: calc(var(--espacio-3) - var(--espacio-2));
-  font-weight: var(--peso-medium);
-  text-align: center;
+  font-size: calc(var(--espacio-3) - var(--espacio-1));
+  font-weight: var(--peso-semibold);
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.barra__divisor {
+  margin-inline-end: var(--espacio-5);
+  height: 1rem;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .barra__contenedor {
@@ -43,7 +68,7 @@
 .barra__logo {
   width: calc(var(--espacio-8) + var(--espacio-6));
   height: auto;
-  aspect-ratio: 272 / 33;
+  aspect-ratio: 1571 / 177;
 }
 
 .barra__nav {
@@ -51,13 +76,9 @@
   max-width: 100%;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  scrollbar-width: none;
 }
 
-.barra__nav::-webkit-scrollbar {
-  display: none;
-}
+
 
 .barra__lista {
   display: flex;
@@ -75,6 +96,21 @@
   line-height: var(--linea-base);
   text-transform: uppercase;
   white-space: nowrap;
+  transition: color var(--transicion-base), transform var(--transicion-base);
+}
+
+.barra__item:hover {
+  color: var(--color-acento-hover);
+  transform: scale(1.1);
+}
+
+.barra__item--sale {
+  color: #e53935;
+}
+
+.barra__item--sale:hover {
+  color: #b89162;
+  transform: scale(1.1);
 }
 
 .barra__acciones {
@@ -85,61 +121,27 @@
 }
 
 .barra__accion {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: var(--espacio-3);
   height: var(--espacio-3);
+  font-size: 1.25rem;
+  color: var(--color-acento-hover);
+  transition: color var(--transicion-base), transform var(--transicion-base);
+}
+
+.barra__accion:hover {
   color: var(--color-texto-fuerte);
+  transform: scale(1.1);
 }
 
-.barra__accion-texto {
-  position: absolute;
-  width: var(--espacio-1);
-  height: var(--espacio-1);
-  overflow: hidden;
+.barra--compacta {
+  min-height: calc(var(--alto-barra) + var(--espacio-3));
 }
 
-.barra__accion--buscar::before {
-  content: '';
-  position: absolute;
-  inset-block-start: var(--espacio-1);
-  inset-inline-start: var(--espacio-1);
-  width: var(--espacio-2);
-  height: var(--espacio-2);
-  border: thin solid currentColor;
-  border-radius: var(--radio-xl);
-}
-
-.barra__accion--buscar::after {
-  content: '';
-  position: absolute;
-  inset-block-end: var(--espacio-1);
-  inset-inline-end: var(--espacio-1);
-  width: var(--espacio-1);
-  border-block-start: thin solid currentColor;
-  transform: rotate(45deg);
-  transform-origin: center;
-}
-
-.barra__accion--carrito::before {
-  content: '';
-  position: absolute;
-  inset-block-start: var(--espacio-1);
-  inset-inline: var(--espacio-1);
-  height: var(--espacio-2);
-  border: thin solid currentColor;
-}
-
-.barra__accion--carrito::after {
-  content: '';
-  position: absolute;
-  inset-block-start: var(--espacio-1);
-  inset-inline-start: var(--espacio-1);
-  width: var(--espacio-2);
-  height: var(--espacio-2);
-  border-block-start: thin solid currentColor;
-  border-inline: thin solid currentColor;
-  border-start-start-radius: var(--radio-sm);
-  border-start-end-radius: var(--radio-sm);
+.barra--compacta .barra__beneficio {
+  display: none;
 }
 
 @media (min-width: 48rem) {
@@ -167,7 +169,19 @@
   }
 
   .barra__logo {
-    width: calc((var(--espacio-8) * 4) + var(--espacio-8));
+    width: calc(var(--espacio-8) * 3);
+  }
+
+  .barra__cinta {
+    padding-block: var(--espacio-2);
+  }
+
+  .barra__promo {
+    font-size: 0.75rem;
+  }
+
+  .barra__divisor {
+    height: var(--espacio-3);
   }
 
   .barra__lista {
@@ -176,7 +190,7 @@
   }
 
   .barra__item {
-    font-size: var(--espacio-3);
+    font-size: 0.875rem;
   }
 
   .barra__acciones {
@@ -188,28 +202,49 @@
   .barra__accion {
     width: var(--espacio-4);
     height: var(--espacio-4);
+    font-size: 2.25rem;
   }
 
-  .barra__accion--buscar::before {
-    width: var(--espacio-3);
-    height: var(--espacio-3);
+  .barra--compacta {
+    min-height: calc(var(--alto-barra) + var(--espacio-5));
   }
 
-  .barra__accion--buscar::after {
-    width: var(--espacio-2);
+  .barra--compacta .barra__contenedor {
+    min-height: calc(var(--alto-barra) + var(--espacio-3));
+    padding-block: var(--espacio-2);
+    gap: var(--espacio-3);
   }
 
-  .barra__accion--carrito::before {
-    inset-block-start: var(--espacio-2);
-    height: var(--espacio-3);
+  .barra--compacta .barra__simbolo {
+    height: var(--espacio-5);
   }
 
-  .barra__accion--carrito::after {
-    inset-inline-start: var(--espacio-2);
+  .barra--compacta .barra__logo {
+    width: calc(var(--espacio-8) + var(--espacio-6));
   }
 }
 
 @media (min-width: 64rem) {
+  .barra__cinta {
+    padding-block: var(--espacio-2);
+  }
+
+  .barra__promo {
+    font-size: 0.75rem;
+  }
+
+  .barra__divisor {
+    height: var(--espacio-3);
+  }
+
+  .barra__item {
+    font-size: 0.875rem;
+  }
+
+  .barra__accion {
+    font-size: 3rem;
+  }
+
   .barra__acciones {
     inset-inline-end: var(--padding-lateral-desktop);
   }
