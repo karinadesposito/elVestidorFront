@@ -1,32 +1,50 @@
+import { FaInstagram } from 'react-icons/fa'
 import Contenedor from './Contenedor'
+import logoMarca from '../recursos/logos/logo-marca.svg'
+import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
+import logoJuarezdevs from '../recursos/logos/logo.Juarezdevs.png'
 
 function PiePagina() {
   return (
-    <footer className="seccion pie-pagina">
-      <Contenedor className="grilla pie-pagina__contenedor">
-        <div className="pie-pagina__newsletter">
-          <p className="texto-etiqueta">Primera compra</p>
-          <h2>Recibi novedades y beneficios antes que nadie.</h2>
-          <p>Sumate para enterarte de promos, lanzamientos y selecciones.</p>
-        </div>
+    <footer className="pie-pagina">
+      <Contenedor className="pie-pagina__contenedor">
+        <div className="pie-pagina__marca">
+          <div className="pie-pagina__logos">
+            <img className="pie-pagina__simbolo" src={logoSimbolo} alt="" />
+            <img className="pie-pagina__logo" src={logoMarca} alt="El Vestidor" />
+          </div>
 
-        <div>
-          <p className="pie-pagina__marca">El Vestidor</p>
-          <p>Moda, calzado y accesorios con mirada editorial.</p>
+         
         </div>
 
         <div className="pie-pagina__grupo">
           <p>Ayuda</p>
-          <span>Envios</span>
-          <span>Cambios</span>
-          <span>Contacto</span>
+          <a href="/">Envíos</a>
+          <a href="/">Cambios</a>
+          <a href="/">Contacto</a>
         </div>
 
         <div className="pie-pagina__grupo">
-          <p>Informacion</p>
-          <span>Sobre nosotros</span>
-          <span>Locales</span>
-          <span>Terminos</span>
+          <p>Información</p>
+          <a href="/">Nosotros</a>
+          <a href="/">Locales</a>
+          <a href="/">Términos</a>
+        </div>
+
+        <div className="pie-pagina__derecha">
+          <a className="pie-pagina__instagram" href="/" aria-label="Instagram">
+            <FaInstagram />
+          </a>
+
+          <a
+            className="pie-pagina__juarezdevs"
+            href="https://juarezdevs.com.ar"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="JuarezDevs"
+          >
+            <img src={logoJuarezdevs} alt="JuarezDevs" />
+          </a>
         </div>
       </Contenedor>
     </footer>

@@ -1,0 +1,67 @@
+.cinta-marcas {
+  padding-block: var(--espacio-2);
+}
+
+.cinta-marcas__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  text-align: center;
+}
+
+.cinta-marcas__titulo::before,
+.cinta-marcas__titulo::after {
+  content: '';
+  flex: 1;
+  border-block-start: thin solid var(--color-borde-suave);
+}
+
+.cinta-marcas__lista {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--espacio-4);
+  padding-block-start: var(--espacio-6);
+}
+
+.cinta-marcas__cinta {
+  overflow: hidden;
+  padding-block-start: var(--espacio-6);
+}
+
+.cinta-marcas__pista {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-4);
+  animation: cinta-desplazar 30s linear infinite;
+}
+
+@keyframes cinta-desplazar {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.cinta-marcas__item {
+  width: 5rem;
+  height: 5rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cinta-marcas__logo {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (min-width: 64rem) {
+  .cinta-marcas__item {
+    width: 6rem;
+    height: 6rem;
+  }
+}

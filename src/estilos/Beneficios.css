@@ -1,0 +1,137 @@
+.beneficios {
+  padding-block: var(--espacio-4);
+  background: linear-gradient(135deg, #f8f4ec, #f3ecdf 55%, #f6c7a1);
+}
+
+.beneficios__tarjeta {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4);
+  border-radius: 1.3rem;
+  background: rgb(255 255 255 / 0.62);
+  text-align: center;
+  box-shadow: 0 18px 44px rgb(43 41 38 / 9%);
+}
+
+.beneficios__etiqueta,
+.beneficios__titulo,
+.beneficios__texto,
+.beneficios__boton {
+  animation: aparecer-beneficios 700ms ease both;
+}
+
+.beneficios__etiqueta {
+  margin: 0;
+}
+
+.beneficios__titulo {
+  max-width: 14rem;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: clamp(1.35rem, 5vw, 2.2rem);
+  font-weight: var(--peso-regular);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  animation-delay: 80ms;
+}
+
+.beneficios__texto {
+  max-width: 16rem;
+  margin: 0;
+  color: var(--color-texto-secundario);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  animation-delay: 160ms;
+}
+
+.beneficios__boton {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1.35rem;
+  background: var(--color-texto-fuerte);
+  color: var(--color-fondo-principal);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: var(--peso-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation-delay: 240ms;
+}
+
+.beneficios__boton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 35%),
+    transparent
+  );
+  transform: translateX(-120%);
+  animation: brillo-beneficios 3.2s ease-in-out infinite;
+}
+
+@keyframes aparecer-beneficios {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes brillo-beneficios {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (min-width: 48rem) {
+  .beneficios {
+    padding-block: var(--espacio-5);
+  }
+
+  .beneficios__tarjeta {
+    max-width: 42rem;
+    margin-inline: auto;
+    gap: var(--espacio-3);
+    padding: 2.5rem 3rem;
+    border-radius: 1.6rem;
+  }
+
+  .beneficios__titulo {
+    max-width: 18rem;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+  }
+
+  .beneficios__texto {
+    max-width: 18rem;
+    font-size: 0.9rem;
+  }
+
+  .beneficios__boton {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .beneficios__tarjeta {
+    max-width: 44rem;
+    padding: 2.7rem 3.2rem;
+  }
+}

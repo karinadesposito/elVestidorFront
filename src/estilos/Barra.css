@@ -9,12 +9,14 @@
 .barra__beneficio {
   overflow: hidden;
   border-block-end: thin solid var(--color-borde-suave);
+  background: #fcdab0;
+  height: 50px;
 }
 
 .barra__cinta {
   display: flex;
   align-items: center;
-  padding-block: var(--espacio-3);
+  height: 100%;
   animation: barra-desplazar 5s linear infinite;
 }
 
@@ -36,7 +38,7 @@
 
 .barra__divisor {
   margin-inline-end: var(--espacio-5);
-  height: 1rem;
+  height: var(--espacio-4);
   width: auto;
   flex-shrink: 0;
 }
@@ -62,7 +64,7 @@
 
 .barra__simbolo {
   width: auto;
-  height: var(--espacio-4);
+  height: var(--espacio-5);
 }
 
 .barra__logo {
@@ -145,8 +147,17 @@
 }
 
 @media (min-width: 48rem) {
+  .barra__beneficio {
+    height: auto;
+  }
+
+  .barra__cinta {
+    height: auto;
+    padding-block: var(--espacio-3);
+  }
+
   .barra {
-    min-height: calc(var(--alto-barra) + var(--espacio-8));
+    min-height: calc(var(--alto-barra) + var(--espacio-6));
   }
 
   .barra__beneficio {
@@ -165,7 +176,7 @@
   }
 
   .barra__simbolo {
-    height: var(--espacio-7);
+    height: calc(var(--espacio-7) + var(--espacio-3));
   }
 
   .barra__logo {
@@ -181,7 +192,7 @@
   }
 
   .barra__divisor {
-    height: var(--espacio-3);
+    height: var(--espacio-5);
   }
 
   .barra__lista {
@@ -216,7 +227,7 @@
   }
 
   .barra--compacta .barra__simbolo {
-    height: var(--espacio-5);
+    height: var(--espacio-6);
   }
 
   .barra--compacta .barra__logo {
@@ -234,11 +245,7 @@
   }
 
   .barra__divisor {
-    height: var(--espacio-3);
-  }
-
-  .barra__item {
-    font-size: 0.875rem;
+    height: var(--espacio-5);
   }
 
   .barra__accion {

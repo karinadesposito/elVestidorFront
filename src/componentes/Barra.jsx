@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { FiSearch, FiShoppingCart } from 'react-icons/fi'
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../recursos/logos/logo-marca.svg'
-import Boton from './Boton'
+import Boton from '../componentesReuse/Boton'
 import Contenedor from './Contenedor'
 
 const promos = [

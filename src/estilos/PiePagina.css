@@ -1,55 +1,116 @@
 .pie-pagina {
+  margin-top: var(--espacio-4);
+  padding-block: var(--espacio-3);
+  border-top: 1px solid var(--color-borde-suave);
   background: var(--color-fondo-alternativo);
 }
 
 .pie-pagina__contenedor {
-  gap: var(--espacio-5);
-}
-
-.pie-pagina__newsletter {
   display: grid;
-  max-width: var(--ancho-lectura);
-  gap: var(--espacio-2);
-  padding-block-end: var(--espacio-5);
-}
-
-.pie-pagina__newsletter h2 {
-  color: var(--color-texto-fuerte);
-  font-size: clamp(var(--espacio-4), 5vw, var(--espacio-6));
-  font-weight: var(--peso-regular);
-  line-height: var(--linea-titulos);
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--espacio-3);
+  align-items: start;
 }
 
 .pie-pagina__marca {
-  color: var(--color-texto-fuerte);
-  font-family: var(--fuente-interfaz);
-  font-size: var(--espacio-4);
-  font-weight: var(--peso-medium);
-  line-height: var(--linea-titulos);
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--espacio-1);
+}
+
+.pie-pagina__logos {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pie-pagina__simbolo {
+  width: 1.7rem;
+  height: auto;
+}
+
+.pie-pagina__logo {
+  width:8rem;
+  height: auto;
 }
 
 .pie-pagina p,
-.pie-pagina span {
+.pie-pagina a {
+  margin: 0;
   color: var(--color-texto-secundario);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  text-decoration: none;
 }
 
 .pie-pagina__grupo {
   display: grid;
-  gap: var(--espacio-2);
+  gap: 0.35rem;
 }
 
 .pie-pagina__grupo p {
   color: var(--color-texto-fuerte);
+  font-size: 0.6rem;
   font-weight: var(--peso-semibold);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.pie-pagina__grupo a:hover,
+.pie-pagina__instagram:hover {
+  color: var(--color-acento-hover);
+}
+
+.pie-pagina__derecha {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  padding-top: var(--espacio-1);
+}
+.pie-pagina__instagram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-texto-fuerte);
+}
+
+.pie-pagina__instagram svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.pie-pagina__juarezdevs {
+  display: inline-flex;
+}
+
+.pie-pagina__juarezdevs img {
+  width: 4.8rem;
+  height: auto;
+
+}
+
+
+
 @media (min-width: 48rem) {
-  .pie-pagina__contenedor {
-    grid-template-columns: 2fr 1fr 1fr;
+  .pie-pagina {
+    padding-block: var(--espacio-4);
   }
 
-  .pie-pagina__newsletter {
-    grid-column: 1 / -1;
+  .pie-pagina__contenedor {
+    grid-template-columns: 1.8fr 0.8fr 0.9fr auto;
+    gap: var(--espacio-4);
+  }
+
+  .pie-pagina__marca,
+  .pie-pagina__derecha {
+    grid-column: auto;
+  }
+
+  .pie-pagina__derecha {
+    justify-self: end;
+    align-items: flex-end;
+    flex-direction: column;
+    padding-top: 0;
   }
 }

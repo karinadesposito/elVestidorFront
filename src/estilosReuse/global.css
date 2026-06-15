@@ -98,14 +98,29 @@ ol {
     var(--color-fondo-editorial);
 }
 
+h1 {
+  font-family: var(--fuente-interfaz);
+  font-size: var(--espacio-4);
+  font-weight: var(--peso-regular);
+  line-height: var(--linea-titulos);
+}
+
 .texto-etiqueta {
   color: var(--color-texto-fuerte);
-  font-size: calc(var(--espacio-3) - var(--espacio-2));
+  font-size: 0.75rem;
   font-weight: var(--peso-semibold);
   text-transform: uppercase;
 }
 
 @media (min-width: 48rem) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .texto-etiqueta {
+    font-size: 1rem;
+  }
+
   .seccion {
     padding-block: var(--espacio-7);
   }

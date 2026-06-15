@@ -2,8 +2,9 @@ import Barra from './componentes/Barra'
 import Portada from './componentes/Portada'
 import Categorias from './componentes/Categorias'
 import CarruselPromociones from './componentes/CarruselPromociones'
-import CintaMarcas from './componentes/CintaMarcas'
+import Cinta from './componentesReuse/Cinta'
 import BloqueEditorial from './componentes/BloqueEditorial'
+import Beneficios from './componentes/Beneficios'
 import PiePagina from './componentes/PiePagina'
 
 function App() {
@@ -13,9 +14,10 @@ function App() {
       <main>
         <Portada />
         <Categorias />
-        <CarruselPromociones />
-        <CintaMarcas />
+        {/* <CarruselPromociones /> */}
+        <Cinta />
         <BloqueEditorial />
+        <Beneficios />
       </main>
       <PiePagina />
     </>

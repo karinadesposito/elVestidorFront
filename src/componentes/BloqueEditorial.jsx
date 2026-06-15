@@ -1,33 +1,26 @@
 import { useEffect, useState } from 'react'
 import Contenedor from './Contenedor'
-import ventana from '../recursos/imagenes/ventana.jpeg'
-import pasillo from '../recursos/imagenes/pasillo.jpeg'
-import magic from '../recursos/imagenes/magicTandil.png'
+import diaDelPadre from '../recursos/imagenes/diaDelPadre.webp'
+import ventana from '../recursos/imagenes/ventana.webp'
 
-const promociones = [
+const slides = [
+  {
+    etiqueta: 'Día del Padre',
+    titulo: 'El regalo perfecto',
+    texto: 'Calzado, abrigo y accesorios para elegir algo que realmente use.',
+    imagen: diaDelPadre,
+    ancho: 1536,
+    alto: 1024,
+    accion: 'Ver ideas',
+  },
   {
     etiqueta: 'Especial online',
-    titulo: '3 cuotas sin interes',
-    texto: 'Arma tu look completo y pagalo comodo desde la tienda.',
+    titulo: 'Comprá cómodo',
+    texto: '3 cuotas sin interés para armar tu look completo desde casa.',
     imagen: ventana,
     ancho: 721,
     alto: 1600,
-  },
-  {
-    etiqueta: 'Todo el pais',
-    titulo: 'Envios para salir sin esperar',
-    texto: 'Recibi calzado, ropa y accesorios donde estes.',
-    imagen: pasillo,
-    ancho: 721,
-    alto: 1600,
-  },
-  {
-    etiqueta: 'Temporada',
-    titulo: 'Sale de favoritos',
-    texto: 'Seleccionamos piezas clave para renovar el vestidor.',
-    imagen: magic,
-    ancho: 1536,
-    alto: 1024,
+    accion: 'Explorar',
   },
 ]
 
@@ -38,7 +31,7 @@ function BloqueEditorial() {
 
   useEffect(() => {
     const intervalo = window.setInterval(() => {
-      setSlideActivo((slideActual) => (slideActual + 1) % promociones.length)
+      setSlideActivo((slideActual) => (slideActual + 1) % slides.length)
     }, tiempoSlide)
 
     return () => window.clearInterval(intervalo)
@@ -46,62 +39,77 @@ function BloqueEditorial() {
 
   return (
     <section className="bloque-editorial">
-      <Contenedor className="portada__contenedor bloque-editorial__contenedor">
-        <div
-          className="portada__carrusel"
-          aria-label="Promociones destacadas"
-        >
+      <Contenedor className="bloque-editorial__contenedor">
+        <div className="bloque-editorial__carrusel">
           <div
-            className={`portada__pista portada__pista--${slideActivo}`}
+            className={`bloque-editorial__pista bloque-editorial__pista--${slideActivo}`}
           >
-            {promociones.map((promocion) => (
-              <article className="portada__slide" key={promocion.titulo}>
-                <img src={promocion.imagen} alt="" width={promocion.ancho} height={promocion.alto} />
-                <div className="portada__contenido">
-                  <p className="texto-etiqueta portada__etiqueta">
-                    {promocion.etiqueta}
+            {slides.map((slide) => (
+              <article className="bloque-editorial__slide" key={slide.titulo}>
+                <div className="bloque-editorial__imagen">
+                  <img
+                    src={slide.imagen}
+                    alt=""
+                    width={slide.ancho}
+                    height={slide.alto}
+                  />
+                </div>
+
+                <div className="bloque-editorial__texto">
+                  <p className="texto-etiqueta bloque-editorial__etiqueta">
+                    {slide.etiqueta}
                   </p>
-                  <h2>{promocion.titulo}</h2>
-                  <p>{promocion.texto}</p>
+
+                  <h3>{slide.titulo}</h3>
+
+                  <p className="bloque-editorial__descripcion">
+                    {slide.texto}
+                  </p>
+
+                  <button className="bloque-editorial__accion" type="button">
+                    {slide.accion} →
+                  </button>
                 </div>
               </article>
             ))}
           </div>
 
           <button
-            aria-label="Promocion anterior"
-            className="portada__flecha portada__flecha--previa"
+            aria-label="Anterior"
+            className="bloque-editorial__flecha bloque-editorial__flecha--previa"
             onClick={() =>
               setSlideActivo(
-                (slideActivo - 1 + promociones.length) % promociones.length,
+                (slideActivo - 1 + slides.length) % slides.length,
               )
             }
             type="button"
-          ></button>
+          />
+
           <button
-            aria-label="Promocion siguiente"
-            className="portada__flecha portada__flecha--siguiente"
-            onClick={() =>
-              setSlideActivo((slideActivo + 1) % promociones.length)
-            }
+            aria-label="Siguiente"
+            className="bloque-editorial__flecha bloque-editorial__flecha--siguiente"
+            onClick={() => setSlideActivo((slideActivo + 1) % slides.length)}
             type="button"
-          ></button>
+          />
         </div>
 
-        <div className="portada__indicadores" aria-label="Elegir promocion">
-          {promociones.map((promocion, indice) => (
+        <div
+          className="bloque-editorial__indicadores"
+          aria-label="Elegir promoción"
+        >
+          {slides.map((slide, indice) => (
             <button
-              aria-label={`Ver ${promocion.titulo}`}
+              aria-label={`Ver ${slide.titulo}`}
               aria-current={slideActivo === indice}
               className={
                 slideActivo === indice
-                  ? 'portada__indicador portada__indicador--activo'
-                  : 'portada__indicador'
+                  ? 'bloque-editorial__indicador bloque-editorial__indicador--activo'
+                  : 'bloque-editorial__indicador'
               }
-              key={promocion.titulo}
+              key={slide.titulo}
               onClick={() => setSlideActivo(indice)}
               type="button"
-            ></button>
+            />
           ))}
         </div>
       </Contenedor>
