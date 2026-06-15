@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Contenedor from './Contenedor'
 import diaDelPadre from '../recursos/imagenes/diaDelPadre.webp'
-import ventana from '../recursos/imagenes/ventana.webp'
+import ventana from '../recursos/imagenes/el_vestidor_4.webp'
 
 const slides = [
   {

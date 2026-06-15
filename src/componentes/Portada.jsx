@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import Contenedor from './Contenedor'
 import montania from '../recursos/imagenes/3montaña.webp'
-import brooklin from '../recursos/imagenes/brooklin.webp'
-import vestidor from '../recursos/imagenes/el_vestidor_4.webp'
+import videoChicas from '../recursos/imagenes/videoChicas.mp4'
+import vestidor from '../recursos/imagenes/sillonAmarillo.webp'
 
 const slides = [
   { nombre: 'Salida', imagen: montania, ancho: 1200, alto: 1600 },
-  { nombre: 'Ruta', imagen: brooklin, ancho: 308, alto: 403 },
+  { nombre: 'Ruta', video: videoChicas, ancho: 308, alto: 403 },
   { nombre: 'Ciudad', imagen: vestidor, ancho: 363, alto: 453 },
 ]
 
@@ -56,14 +56,24 @@ function Portada() {
                   aria-label={slide.nombre}
                   className="portada__slide"
                   key={slide.nombre}
-                  role="img"
+                  role={slide.video ? undefined : "img"}
                 >
-                  <img
-                    src={slide.imagen}
-                    alt=""
-                    width={slide.ancho}
-                    height={slide.alto}
-                  />
+                  {slide.video ? (
+                    <video
+                      src={slide.video}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={slide.imagen}
+                      alt=""
+                      width={slide.ancho}
+                      height={slide.alto}
+                    />
+                  )}
                 </div>
               ))}
             </div>
