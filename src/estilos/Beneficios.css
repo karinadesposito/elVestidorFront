@@ -17,6 +17,7 @@
 .beneficios__etiqueta,
 .beneficios__titulo,
 .beneficios__texto,
+.boton--promocional,
 .beneficios__boton {
   animation: aparecer-beneficios 700ms ease both;
 }
@@ -44,7 +45,11 @@
   line-height: 1.45;
   animation-delay: 160ms;
 }
+.boton--promocional {
+  animation-delay: 240ms;
+}
 
+/* .boton--promocional,
 .beneficios__boton {
   position: relative;
   overflow: hidden;
@@ -61,9 +66,8 @@
   text-transform: uppercase;
   cursor: pointer;
   animation-delay: 240ms;
-}
-
-.beneficios__boton::after {
+} */
+/* .beneficios__boton::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -75,7 +79,7 @@
   );
   transform: translateX(-120%);
   animation: brillo-beneficios 3.2s ease-in-out infinite;
-}
+} */
 
 @keyframes aparecer-beneficios {
   from {
@@ -88,7 +92,7 @@
     transform: translateY(0);
   }
 }
-
+/* 
 @keyframes brillo-beneficios {
   0%,
   55% {
@@ -98,7 +102,7 @@
   100% {
     transform: translateX(120%);
   }
-}
+} */
 
 @media (min-width: 48rem) {
   .beneficios {
@@ -123,10 +127,6 @@
     font-size: 0.9rem;
   }
 
-  .beneficios__boton {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.72rem;
-  }
 }
 
 @media (min-width: 64rem) {

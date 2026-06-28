@@ -36,7 +36,11 @@
 .boton:hover {
   box-shadow: var(--sombra-suave);
 }
-
+.boton--editorial:hover {
+  background: white;
+  color: var(--color-texto-fuerte);
+  box-shadow: none;
+}
 .boton--icono:hover {
   box-shadow: none;
 }
@@ -50,4 +54,85 @@
   color: var(--color-texto-secundario);
   background: var(--color-fondo-suave);
   cursor: default;
+}
+.boton--promocional {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1.35rem;
+  background: var(--color-texto-fuerte);
+  color: var(--color-fondo-principal);
+  font-size: 0.68rem;
+  font-weight: var(--peso-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.boton--promocional::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 35%),
+    transparent
+  );
+  transform: translateX(-120%);
+  animation: brillo-boton-promocional 3.2s ease-in-out infinite;
+}
+
+.boton--promocional:hover {
+  box-shadow: none;
+}
+
+@media (min-width: 48rem) {
+  .boton--promocional {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.72rem;
+  }
+}
+
+@keyframes brillo-boton-promocional {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+.boton--editorial {
+  width: fit-content;
+  border: 1px solid rgb(255 255 255 / 65%);
+  border-radius: 999px;
+  padding: 0.75rem 1.15rem;
+  background: rgb(255 255 255 / 8%);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: var(--peso-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.boton--enlace {
+  width: fit-content;
+  border: 0;
+  border-bottom: thin solid currentColor;
+  border-radius: 0;
+  padding: 0 0 0.35rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: var(--peso-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.boton--enlace:hover {
+  box-shadow: none;
 }

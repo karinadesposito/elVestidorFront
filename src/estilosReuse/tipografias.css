@@ -32,3 +32,11 @@
   font-weight: 700;
   font-display: swap;
 }
+@font-face {
+  font-family: 'EV Bebas';
+  src: url('../recursos/fuentes/BebasNeue/BebasNeue-Regular.ttf')
+    format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
