@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Contenedor from './Contenedor'
 import diaDelPadre from '../recursos/imagenes/diaDelPadre.webp'
 import ventana from '../recursos/imagenes/el_vestidor_4.webp'
-
+import Boton from '../componentesReuse/Boton'
 const slides = [
   {
     etiqueta: 'Día del Padre',
@@ -66,9 +66,9 @@ function BloqueEditorial() {
                     {slide.texto}
                   </p>
 
-                  <button className="bloque-editorial__accion" type="button">
+                  <Boton className="bloque-editorial__accion" tipo="promocional">
                     {slide.accion} →
-                  </button>
+                  </Boton>
                 </div>
               </article>
             ))}

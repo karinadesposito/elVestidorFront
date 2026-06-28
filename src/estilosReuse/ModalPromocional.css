@@ -1,0 +1,145 @@
+.modal-promocional {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-3);
+  background: rgb(13 13 13 / 0.72);
+}
+
+.modal-promocional__contenedor {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 28rem);
+  height: min(90vh, 43rem);
+  border-radius: var(--radio-lg);
+  background: var(--color-texto-fuerte);
+  box-shadow: var(--sombra-editorial);
+}
+
+.modal-promocional__imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.modal-promocional__capa {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(13 13 13 / 0.04),
+    rgb(13 13 13 / 0.14) 42%,
+    rgb(13 13 13 / 0.46) 100%
+  );
+}
+
+.modal-promocional__contenido {
+  position: absolute;
+  inset: auto var(--espacio-4) 1.5rem var(--espacio-6);
+  z-index: var(--z-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  text-align: center;
+  
+}
+.modal-promocional__temporada {
+  max-width: 100%;
+  color: var(--color-fondo-alternativo);
+  font-family: var(--fuente-promocional);
+  font-size: clamp(3.2rem, 13vw, 5.2rem);
+  font-weight: var(--peso-regular);
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.modal-promocional__frase {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-fondo-alternativo);
+  font-size: 0.75rem;
+  font-weight: var(--peso-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.modal-promocional__descuento {
+  margin-top: 0;
+  margin-bottom: 0.15rem;
+  color: var(--color-fondo-alternativo);
+  font-size: 2rem;
+  font-weight: var(--peso-bold);
+  line-height: var(--linea-titulos);
+}
+
+.modal-promocional__detalle {
+  margin-bottom: 1.2rem;
+  color: var(--color-fondo-principal);
+  font-size: 1rem;
+}
+
+.modal-promocional__cerrar {
+  position: absolute;
+  top: var(--espacio-3);
+  right: var(--espacio-3);
+  z-index: var(--z-base);
+  color: var(--color-fondo-alternativo);
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+@media (min-width: 48rem) {
+  .modal-promocional__contenedor {
+    width: min(78vw, 34rem);
+    height: min(88vh, 48rem);
+  }
+
+  .modal-promocional__contenido {
+    right: var(--espacio-5);
+    bottom: var(--espacio-5);
+    left: var(--espacio-5);
+  }
+
+  .modal-promocional__temporada {
+    font-size: clamp(4rem, 7vw, 5.4rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .modal-promocional__contenedor {
+    width: min(46vw, 34rem);
+    height: min(88vh, 48rem);
+  }
+
+  .modal-promocional__temporada {
+    font-size: clamp(4rem, 5.4vw, 5.2rem);
+  }
+}
+@media (max-width: 30rem) {
+  .modal-promocional__contenido {
+    right: var(--espacio-3);
+    bottom: var(--espacio-4);
+    left: var(--espacio-3);
+    gap: 0.25rem;
+  }
+
+  .modal-promocional__temporada {
+    font-size: clamp(2.85rem, 12vw, 3.4rem);
+    line-height: 0.88;
+    letter-spacing: -0.01em;
+  }
+
+  .modal-promocional__frase {
+    margin-top: var(--espacio-1);
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+  }
+}

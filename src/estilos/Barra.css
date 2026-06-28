@@ -9,7 +9,7 @@
 .barra__beneficio {
   overflow: hidden;
   border-block-end: thin solid var(--color-borde-suave);
-  background: #fcdab0;
+  background: #d3c6b8;
   height: 50px;
 }
 
@@ -64,11 +64,11 @@
 
 .barra__simbolo {
   width: auto;
-  height: var(--espacio-5);
+  height: 36px;
 }
 
 .barra__logo {
-  width: calc(var(--espacio-8) + var(--espacio-6));
+  width: 178px;
   height: auto;
   aspect-ratio: 1571 / 177;
 }
@@ -80,8 +80,6 @@
   justify-content: center;
 }
 
-
-
 .barra__lista {
   display: flex;
   flex-wrap: nowrap;
@@ -91,19 +89,31 @@
 }
 
 .barra__item {
-  color: var(--color-texto-fuerte);
+  color: var(--color-texto-principal);
   font-family: var(--fuente-interfaz);
-  font-size: calc(var(--espacio-3) - var(--espacio-2));
+  font-size: 14px;
   font-weight: var(--peso-medium);
   line-height: var(--linea-base);
   text-transform: uppercase;
   white-space: nowrap;
-  transition: color var(--transicion-base), transform var(--transicion-base);
+  position: relative;
+  transition: none;
 }
 
-.barra__item:hover {
-  color: var(--color-acento-hover);
-  transform: scale(1.1);
+.barra__item::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0;
+  height: 1px;
+  background: var(--color-texto-fuerte);
+  transform: translateX(-50%);
+  transition: width 0.25s ease;
+}
+
+.barra__item:hover::after {
+  width: 100%;
 }
 
 .barra__item--sale {
@@ -111,8 +121,11 @@
 }
 
 .barra__item--sale:hover {
-  color: #b89162;
-  transform: scale(1.1);
+  color: #e53935;
+}
+
+.barra__item--sale::after {
+  background: #e53935;
 }
 
 .barra__acciones {
@@ -146,22 +159,27 @@
   display: none;
 }
 
+.barra--compacta .barra__simbolo {
+  height: 30px;
+}
+
+.barra--compacta .barra__logo {
+  width: 150px;
+}
+
 @media (min-width: 48rem) {
   .barra__beneficio {
     height: auto;
+    font-size: calc(var(--espacio-3) - var(--espacio-1));
   }
 
   .barra__cinta {
     height: auto;
-    padding-block: var(--espacio-3);
+    padding-block: var(--espacio-2);
   }
 
   .barra {
     min-height: calc(var(--alto-barra) + var(--espacio-6));
-  }
-
-  .barra__beneficio {
-    font-size: calc(var(--espacio-3) - var(--espacio-1));
   }
 
   .barra__contenedor {
@@ -176,15 +194,11 @@
   }
 
   .barra__simbolo {
-    height: calc(var(--espacio-7) + var(--espacio-3));
+    height: 56px;
   }
 
   .barra__logo {
-    width: calc(var(--espacio-8) * 3);
-  }
-
-  .barra__cinta {
-    padding-block: var(--espacio-2);
+    width: 260px;
   }
 
   .barra__promo {
@@ -227,11 +241,11 @@
   }
 
   .barra--compacta .barra__simbolo {
-    height: var(--espacio-6);
+    height: 42px;
   }
 
   .barra--compacta .barra__logo {
-    width: calc(var(--espacio-8) + var(--espacio-6));
+    width: 220px;
   }
 }
 
@@ -248,11 +262,46 @@
     height: var(--espacio-5);
   }
 
+  .barra__simbolo {
+    height: 64px;
+  }
+
+  .barra__logo {
+    width: 300px;
+  }
+
   .barra__accion {
     font-size: 3rem;
   }
 
   .barra__acciones {
     inset-inline-end: var(--padding-lateral-desktop);
+  }
+}
+
+/* Celulares muy pequeños */
+@media (max-width: 20rem) {
+  .barra__simbolo {
+    height: 42px;
+  }
+
+  .barra__logo {
+    width: 205px;
+  }
+
+  .barra__item {
+    font-size: 11px;
+  }
+
+  .barra__lista {
+    gap: 6px;
+  }
+
+  .barra--compacta .barra__simbolo {
+    height: 34px;
+  }
+
+  .barra--compacta .barra__logo {
+    width: 175px;
   }
 }

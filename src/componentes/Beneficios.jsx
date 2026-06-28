@@ -1,4 +1,5 @@
-import Contenedor from './Contenedor'
+import Contenedor from "./Contenedor";
+import Boton from "../componentesReuse/Boton";
 
 function Beneficios() {
   return (
@@ -19,13 +20,11 @@ function Beneficios() {
             Sólo avisamos cuando llega algo que realmente vale la pena.
           </p>
 
-          <button className="beneficios__boton" type="button">
-            Unirme ahora →
-          </button>
+          <Boton variante="promocional">Unirme ahora →</Boton>
         </div>
       </Contenedor>
     </section>
-  )
+  );
 }
 
-export default Beneficios
+export default Beneficios;

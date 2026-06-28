@@ -3,7 +3,7 @@ import Contenedor from './Contenedor'
 import montania from '../recursos/imagenes/3montaña.webp'
 import videoChicas from '../recursos/imagenes/videoChicas.mp4'
 import vestidor from '../recursos/imagenes/sillonAmarillo.webp'
-
+import Boton from '../componentesReuse/Boton'
 const slides = [
   { nombre: 'Salida', imagen: montania, ancho: 1200, alto: 1600 },
   { nombre: 'Ruta', video: videoChicas, ancho: 308, alto: 403 },

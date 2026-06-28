@@ -84,21 +84,9 @@
 .portada__contenido p {
   margin: 0;
 }
-
 .portada__accion {
   justify-self: start;
-  width: fit-content;
-  border: 0;
-  border-bottom: thin solid currentColor;
-  padding: 0 0 0.35rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: var(--peso-medium);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
+  
 }
 
 .portada__flecha {
@@ -188,6 +176,7 @@
 }
 
 @media (min-width: 64rem) {
+
   .portada {
     padding-block: var(--espacio-6);
   }
@@ -238,13 +227,7 @@
     color: var(--color-texto-secundario);
   }
 
-  .portada__accion {
-    color: var(--color-texto-fuerte);
-  }
 
-  .portada__accion:hover {
-    color: var(--color-acento-hover);
-  }
 
   .portada__flecha {
     color: var(--color-fondo-alternativo);
@@ -255,4 +238,11 @@
     inset-inline-end: var(--espacio-4);
     inset-block-end: var(--espacio-4);
   }
+  .portada__accion {
+  color: var(--color-texto-fuerte);
+}
+
+.portada__accion:hover {
+  color: var(--color-acento-hover);
+}
 }
