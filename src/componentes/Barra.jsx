@@ -3,8 +3,8 @@ import { FiMenu, FiSearch, FiShoppingCart } from 'react-icons/fi'
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../recursos/logos/logo-marca.svg'
 import Boton from '../componentesReuse/Boton'
-import ItemMenu from '../componentesReuse/itemMenu'
-import MenuMobile from '../componentesReuse/menuMobile'
+import ItemMenu from '../componentesReuse/ItemMenu'
+import MenuMobile from '../componentesReuse/MenuMobile'
 import Contenedor from './Contenedor'
 import {
   categoriasHombre,
