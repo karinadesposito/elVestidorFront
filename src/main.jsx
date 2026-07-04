@@ -18,7 +18,7 @@ import './estilosReuse/Cards.css'
 import App from './App.jsx'
 import './estilosReuse/ModalPromocional.css'
 import './estilosReuse/menuMobile.css'
-import './estilosReuse/ItemMenu.css'
+import './estilosReuse/itemMenu.css'
 
 
 
