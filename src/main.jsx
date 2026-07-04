@@ -16,6 +16,13 @@ import './estilosReuse/Boton.css'
 import './estilosReuse/Contenedor.css'
 import './estilosReuse/Cards.css'
 import App from './App.jsx'
+import './estilosReuse/ModalPromocional.css'
+import './estilosReuse/MenuMobile.css'
+import './estilosReuse/ItemMenu.css'
+
+
+
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

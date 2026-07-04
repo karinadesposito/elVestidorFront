@@ -7,27 +7,22 @@
 }
 
 .categorias__grilla {
-  grid-template-columns: repeat(2, 1fr);
+  display: grid;
+  grid-template-columns: 1fr;
   gap: var(--espacio-2);
 }
 
 @media (min-width: 48rem) {
   .categorias.seccion {
-    padding-block: var(--espacio-4);
+    padding-block: var(--espacio-3);
+  }
+
+  .categorias .contenedor {
+    padding-inline: var(--espacio-3);
   }
 
   .categorias__grilla {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--espacio-4);
-  }
-
-  .categorias .contenedor {
-    padding-inline: var(--espacio-4);
-  }
-}
-
-@media (min-width: 64rem) {
-  .categorias__grilla {
-    grid-template-columns: repeat(4, 1fr);
+    gap: var(--espacio-2);
   }
 }
