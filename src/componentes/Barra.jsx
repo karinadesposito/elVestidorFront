@@ -1,36 +1,92 @@
-import { Fragment, useEffect, useState } from 'react'
-import { FiSearch, FiShoppingCart } from 'react-icons/fi'
-import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
-import logoMarca from '../recursos/logos/logo-marca.svg'
-import Boton from '../componentesReuse/Boton'
-import Contenedor from './Contenedor'
+import { Fragment, useEffect, useState } from "react";
+import { FiSearch, FiShoppingCart } from "react-icons/fi";
+import logoSimbolo from "../recursos/logos/logo-simbolo.svg";
+import logoMarca from "../recursos/logos/logo-marca.svg";
+import Boton from "../componentesReuse/Boton";
+import ItemMenu from "../componentesReuse/ItemMenu";
+import Contenedor from "./Contenedor";
 
 const promos = [
-  '3 cuotas sin interés',
-  'Envíos a todo el país',
-  'Cambios simples',
-]
+  "3 cuotas sin interés",
+  "Envíos a todo el país",
+  "Cambios simples",
+];
+
+const categoriasMujer = [
+  "Jeans",
+  "Camperas",
+  "Sweaters y buzos",
+  "Camisas",
+  "Remeras",
+  "Faldas y vestidos",
+  "Shorts y bermudas",
+  "Accesorios",
+  "Ver todo",
+];
+
+const categoriasHombre = [
+  "Jeans",
+  "Camperas",
+  "Sweaters y buzos",
+  "Camisas",
+  "Pantalones",
+  "Remeras",
+  "Bermudas",
+  "Accesorios",
+  "Ver todo",
+];
 
 function Barra() {
-  const [compacta, setCompacta] = useState(false)
+  const [compacta, setCompacta] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   useEffect(() => {
-    const manejarScroll = () => setCompacta(window.scrollY > 0)
-    window.addEventListener('scroll', manejarScroll, { passive: true })
-    manejarScroll()
-    return () => window.removeEventListener('scroll', manejarScroll)
-  }, [])
+    const manejarScroll = () => setCompacta(window.scrollY > 0);
+    window.addEventListener("scroll", manejarScroll, { passive: true });
+    manejarScroll();
+    return () => window.removeEventListener("scroll", manejarScroll);
+  }, []);
+
+  useEffect(() => {
+    function manejarClickFuera(evento) {
+      if (!evento.target.closest(".barra__item--menu")) {
+        setMenuAbierto(null);
+      }
+    }
+
+    document.addEventListener("mousedown", manejarClickFuera);
+
+    return () => {
+      document.removeEventListener("mousedown", manejarClickFuera);
+    };
+  }, []);
+
+  function alternarMenu(menu) {
+    setMenuAbierto((actual) => (actual === menu ? null : menu));
+  }
+
+  function cerrarMenu() {
+    setMenuAbierto(null);
+  }
 
   return (
-    <header className={`barra${compacta ? ' barra--compacta' : ''}`}>
+    <header className={`barra${compacta ? " barra--compacta" : ""}`}>
       <div className="barra__beneficio">
         <div className="barra__cinta">
-          {Array.from({ length: 8 }, () => promos).flat().map((texto, i) => (
-            <Fragment key={i}>
-              <span className="barra__promo">{texto}</span>
-              <img className="barra__divisor" src={logoSimbolo} alt="" width="512" height="512" />
-            </Fragment>
-          ))}
+          {Array.from({ length: 8 }, () => promos)
+            .flat()
+            .map((texto, i) => (
+              <Fragment key={i}>
+                <span className="barra__promo">{texto}</span>
+                <img
+                  className="barra__divisor"
+                  src={logoSimbolo}
+                  alt=""
+                  width="512"
+                  height="512"
+                />
+              </Fragment>
+            ))}
         </div>
       </div>
 
@@ -47,19 +103,29 @@ function Barra() {
 
         <nav className="barra__nav" aria-label="Navegacion principal">
           <ul className="barra__lista">
-            <li className="barra__item">Calzado</li>
-            <li className="barra__item">Ropa</li>
-            <li className="barra__item">Accesorios</li>
-            <li className="barra__item barra__item--sale">Sale</li>
+            <ItemMenu
+              titulo="HOMBRE"
+              items={categoriasHombre}
+              abierto={menuAbierto === "hombre"}
+              alAlternar={() => alternarMenu("hombre")}
+              alCerrar={cerrarMenu}
+            />
+
+            <ItemMenu
+              titulo="MUJER"
+              items={categoriasMujer}
+              abierto={menuAbierto === "mujer"}
+              alAlternar={() => alternarMenu("mujer")}
+              alCerrar={cerrarMenu}
+            />
+
+            <li className="barra__item">SEASONS</li>
+            <li className="barra__item barra__item--sale">SALE</li>
           </ul>
         </nav>
 
         <div className="barra__acciones">
-          <Boton
-            aria-label="Buscar"
-            className="barra__accion"
-            variante="icono"
-          >
+          <Boton aria-label="Buscar" className="barra__accion" variante="icono">
             <FiSearch />
           </Boton>
           <Boton
@@ -72,7 +138,7 @@ function Barra() {
         </div>
       </Contenedor>
     </header>
-  )
+  );
 }
 
-export default Barra
+export default Barra;
