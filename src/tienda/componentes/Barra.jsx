@@ -1,16 +1,16 @@
 import { Fragment, useEffect, useState } from 'react'
 import { FiMenu, FiSearch, FiShoppingCart } from 'react-icons/fi'
-import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
-import logoMarca from '../recursos/logos/logo-marca.svg'
-import Boton from '../componentesReuse/Boton'
-import ItemMenu from '../componentesReuse/ItemMenu'
-import MenuMobile from '../componentesReuse/MenuMobile'
-import Contenedor from './Contenedor'
+import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
+import logoMarca from '../../recursos/logos/logo-marca.svg'
+import Boton from '../../componentesReuse/Boton'
+import ItemMenu from '../../componentesReuse/ItemMenu'
+import MenuMobile from '../../componentesReuse/MenuMobile'
+import Contenedor from '../../componentesReuse/Contenedor'
 import {
   categoriasHombre,
   categoriasMujer,
   gruposSale,
-} from '../datos/navegacion'
+} from '../../datos/navegacion'
 
 const promos = [
   '3 cuotas sin interés',

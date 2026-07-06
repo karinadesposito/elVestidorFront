@@ -1,5 +1,5 @@
-import Contenedor from "./Contenedor";
-import Boton from "../componentesReuse/Boton";
+import Contenedor from "../../componentesReuse/Contenedor";
+import Boton from "../../componentesReuse/Boton";
 
 function Beneficios() {
   return (

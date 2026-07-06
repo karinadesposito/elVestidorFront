@@ -1,4 +1,4 @@
-import Contenedor from './Contenedor'
+import Contenedor from '../../componentesReuse/Contenedor'
 
 const promociones = [
   '3 cuotas sin interes',
