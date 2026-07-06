@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Contenedor from '../componentes/Contenedor'
+import Contenedor from './Contenedor'
 
 import merrell from '../recursos/logosMarcas/merrellLogo.png'
 import hushPuppies from '../recursos/logosMarcas/hushpippiesLogo.jpeg'

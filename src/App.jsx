@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import Barra from './componentes/Barra'
-import Portada from './componentes/Portada'
-import Categorias from './componentes/Categorias'
-import CarruselPromociones from './componentes/CarruselPromociones'
+import Barra from './tienda/componentes/Barra'
+import Portada from './tienda/componentes/Portada'
+import Categorias from './tienda/componentes/Categorias'
 import Cinta from './componentesReuse/Cinta'
-import BloqueEditorial from './componentes/BloqueEditorial'
-import Beneficios from './componentes/Beneficios'
-import PiePagina from './componentes/PiePagina'
+import BloqueEditorial from './tienda/componentes/BloqueEditorial'
+import Beneficios from './tienda/componentes/Beneficios'
+import PiePagina from './tienda/componentes/PiePagina'
 import ModalPromocional from './componentesReuse/ModalPromocional'
+import InicioPanel from './admin/paginas/InicioPanel'
 import marilyn from './recursos/imagenes/marilyn-promocional.webp'
 
 function App() {
@@ -18,7 +18,7 @@ function App() {
       {mostrarModalPromocional && (
         <ModalPromocional
           imagen={marilyn}
-         titulo={'NUEVA\nTEMPO\nRADA'}
+          titulo={'NUEVA\nTEMPO\nRADA'}
           subtitulo="VESTITE PRIMERO."
           destacado="10% OFF"
           descripcion="Comprando online"
@@ -32,10 +32,12 @@ function App() {
       <main>
         <Portada />
         <Categorias />
-        {/* <CarruselPromociones /> */}
         <Cinta />
         <BloqueEditorial />
         <Beneficios />
+
+        {/* Vista temporal del panel admin para mostrar al equipo */}
+        <InicioPanel />
       </main>
 
       <PiePagina />

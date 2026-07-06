@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import Contenedor from './Contenedor'
-import Card from '../componentesReuse/Cards'
-import ModalPromocional from '../componentesReuse/ModalPromocional'
+import Contenedor from '../../componentesReuse/Contenedor'
+import Card from '../../componentesReuse/Cards'
+import ModalPromocional from '../../componentesReuse/ModalPromocional'
 
-import modeloHombreImg from '../recursos/imagenes/modelo_hombre.webp'
-import modeloMujerImg from '../recursos/imagenes/modelo_mujer.webp'
-import modeloHombreApaisadaImg from '../recursos/imagenes/modelo_hombreApaisada.webp'
-import modeloMujerApaisadaImg from '../recursos/imagenes/modelo_mujerApaisada.webp'
-import accesoriosImg from '../recursos/imagenes/accesorios.webp'
-import saleImg from '../recursos/imagenes/sale.webp'
-import estatuaVansImg from '../recursos/imagenes/estatua-vans.webp'
+import modeloHombreImg from '../../recursos/imagenes/modelo_hombre.webp'
+import modeloMujerImg from '../../recursos/imagenes/modelo_mujer.webp'
+import modeloHombreApaisadaImg from '../../recursos/imagenes/modelo_hombreApaisada.webp'
+import modeloMujerApaisadaImg from '../../recursos/imagenes/modelo_mujerApaisada.webp'
+import accesoriosImg from '../../recursos/imagenes/accesorios.webp'
+import saleImg from '../../recursos/imagenes/sale.webp'
+import estatuaVansImg from '../../recursos/imagenes/estatua-vans.webp'
 
 const categorias = [
   {
