@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Contenedor from '../../componentesReuse/Contenedor'
 import Card from '../../componentesReuse/Cards'
 import ModalPromocional from '../../componentesReuse/ModalPromocional'
@@ -14,19 +15,22 @@ import estatuaVansImg from '../../recursos/imagenes/estatua-vans.webp'
 const categorias = [
   {
     nombre: 'HOMBRE',
+    ruta: '/hombre',
     imagen: modeloHombreImg,
     imagenDesktop: modeloHombreApaisadaImg,
   },
   {
     nombre: 'MUJER',
+    ruta: '/mujer',
     imagen: modeloMujerImg,
     imagenDesktop: modeloMujerApaisadaImg,
   },
-  { nombre: 'ACCESORIOS', imagen: accesoriosImg },
-  { nombre: 'SALE', imagen: saleImg },
+  { nombre: 'ACCESORIOS', ruta: '/mujer/accesorios', imagen: accesoriosImg },
+  { nombre: 'SALE', ruta: null, imagen: saleImg },
 ]
 
 function Categorias() {
+  const navigate = useNavigate()
   const [mostrarModalSale, setMostrarModalSale] = useState(false)
 
   const abrirModalSale = () => {
@@ -35,7 +39,6 @@ function Categorias() {
 
   const cerrarModalSale = () => {
     setMostrarModalSale(false)
-    console.log('Ir a página Sale')
   }
 
   return (
@@ -64,7 +67,7 @@ function Categorias() {
                 onClick={
                   categoria.nombre === 'SALE'
                     ? abrirModalSale
-                    : undefined
+                    : () => navigate(categoria.ruta)
                 }
               />
             ))}

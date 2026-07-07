@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { FiChevronDown, FiX } from 'react-icons/fi'
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../recursos/logos/logo-marca.svg'
@@ -58,9 +59,9 @@ function MenuMobile({
             <ul className="menu-mobile__sublista">
               {categoriasMujer.map((item) => (
                 <li key={item.titulo}>
-                  <button type="button" onClick={alCerrar}>
+                  <Link to={item.ruta} onClick={alCerrar}>
                     {item.titulo}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -79,9 +80,9 @@ function MenuMobile({
             <ul className="menu-mobile__sublista">
               {categoriasHombre.map((item) => (
                 <li key={item.titulo}>
-                  <button type="button" onClick={alCerrar}>
+                  <Link to={item.ruta} onClick={alCerrar}>
                     {item.titulo}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -105,9 +106,9 @@ function MenuMobile({
                   <ul className="menu-mobile__sublista">
                     {grupo.items.map((item) => (
                       <li key={`${grupo.titulo}-${item.titulo}`}>
-                        <button type="button" onClick={alCerrar}>
+                        <Link to={item.ruta} onClick={alCerrar}>
                           {item.titulo}
-                        </button>
+                        </Link>
                       </li>
                     ))}
                   </ul>
