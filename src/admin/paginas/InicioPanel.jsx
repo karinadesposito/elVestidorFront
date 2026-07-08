@@ -1,9 +1,19 @@
+import { useNavigate } from 'react-router-dom'
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
+import { useAuth } from "../contexto/AuthContext";
 
 import "../../estilos/admin-inicio.css";
 
 function InicioPanel() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+
+  const cerrarSesion = () => {
+    logout()
+    navigate('/admin', { replace: true })
+  }
+
   return (
     <main className="admin-inicio">
       <Contenedor>
@@ -22,6 +32,8 @@ function InicioPanel() {
             <span>Hoy</span>
 
             <Boton variante="icono">→</Boton>
+
+            <Boton variante="icono" onClick={cerrarSesion}>✕</Boton>
           </div>
         </section>
 

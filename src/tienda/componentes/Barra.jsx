@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { FiMenu, FiSearch, FiShoppingCart } from 'react-icons/fi'
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
@@ -86,7 +87,7 @@ function Barra() {
             <FiMenu />
           </button>
 
-          <div className="barra__marca">
+          <Link to="/" className="barra__marca" aria-label="Volver al inicio">
             <img
               aria-hidden="true"
               className="barra__simbolo"
@@ -94,7 +95,7 @@ function Barra() {
               alt=""
             />
             <img className="barra__logo" src={logoMarca} alt="El Vestidor" />
-          </div>
+          </Link>
 
           <nav className="barra__nav" aria-label="Navegación principal">
             <ul className="barra__lista">

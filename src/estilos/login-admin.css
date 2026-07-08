@@ -1,0 +1,93 @@
+.login-admin {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--espacio-4);
+  background: var(--color-fondo-principal);
+}
+
+.login-admin__card {
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--espacio-5);
+  border: thin solid var(--color-borde-suave);
+  border-radius: var(--radio-lg);
+  background: var(--color-fondo-alternativo);
+  box-shadow: var(--sombra-media);
+}
+
+.login-admin__encabezado {
+  text-align: center;
+  margin-bottom: var(--espacio-5);
+}
+
+.login-admin__titulo {
+  margin: 0;
+  font-family: var(--fuente-logo);
+  font-size: 1.8rem;
+  color: var(--color-texto-fuerte);
+}
+
+.login-admin__subtitulo {
+  margin: var(--espacio-2) 0 0;
+  color: var(--color-texto-secundario);
+  font-size: 0.85rem;
+}
+
+.login-admin__formulario {
+  display: grid;
+  gap: var(--espacio-4);
+}
+
+.login-admin__campo {
+  display: grid;
+  gap: var(--espacio-2);
+}
+
+.login-admin__campo label {
+  font-size: 0.8rem;
+  font-weight: var(--peso-medium);
+  color: var(--color-texto-principal);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.login-admin__campo input {
+  width: 100%;
+  padding: var(--espacio-3);
+  border: thin solid var(--color-borde-suave);
+  border-radius: var(--radio-md);
+  background: var(--color-fondo-principal);
+  color: var(--color-texto-principal);
+  font-family: var(--fuente-interfaz);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transicion-rapida), box-shadow var(--transicion-rapida);
+  box-sizing: border-box;
+}
+
+.login-admin__campo input::placeholder {
+  color: var(--color-texto-secundario);
+}
+
+.login-admin__campo input:focus {
+  border-color: var(--color-accion);
+  box-shadow: 0 0 0 2px rgb(13 13 13 / 0.08);
+}
+
+.login-admin__error {
+  margin: 0;
+  padding: var(--espacio-3);
+  border-radius: var(--radio-md);
+  background: #fde8e8;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.login-admin__boton {
+  width: 100%;
+  justify-content: center;
+  padding-block: var(--espacio-3);
+  font-size: 0.95rem;
+}

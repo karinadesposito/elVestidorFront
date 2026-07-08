@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function ItemMenu({
   titulo,
   items = [],
@@ -35,13 +37,13 @@ function ItemMenu({
                   <ul className="barra__dropdown-lista">
                     {grupo.items.map((item) => (
                       <li key={`${grupo.titulo}-${item.titulo}`}>
-                        <button
-                          type="button"
+                        <Link
+                          to={item.ruta}
                           className="barra__dropdown-item"
                           onClick={alCerrar}
                         >
                           {item.titulo}
-                        </button>
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -52,13 +54,13 @@ function ItemMenu({
             <ul className="barra__dropdown-lista">
               {items.map((item) => (
                 <li key={item.titulo}>
-                  <button
-                    type="button"
+                  <Link
+                    to={item.ruta}
                     className="barra__dropdown-item"
                     onClick={alCerrar}
                   >
                     {item.titulo}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
