@@ -28,6 +28,7 @@ import "./estilos/admin-inicio.css";
 
 
 
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

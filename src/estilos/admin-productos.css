@@ -1,0 +1,15 @@
+@media (min-width: 48rem) {
+  .admin-productos__cabecera,
+  .admin-productos__fila {
+    --estructura-tabla-ancho-minimo: 58rem;
+    --estructura-tabla-columnas:
+      minmax(6rem, 0.85fr)
+      minmax(9rem, 1.35fr)
+      minmax(6rem, 0.9fr)
+      minmax(8rem, 1.1fr)
+      minmax(4rem, 0.55fr)
+      minmax(5rem, 0.75fr)
+      minmax(5rem, 0.75fr)
+      minmax(10rem, 1.45fr);
+  }
+}
