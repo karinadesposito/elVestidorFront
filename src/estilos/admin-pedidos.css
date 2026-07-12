@@ -1,0 +1,81 @@
+.admin-pedidos__tabla {
+  gap: var(--espacio-2);
+}
+
+.admin-pedidos__cabecera {
+  display: none;
+}
+
+.admin-pedidos__fila {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-3);
+  padding: var(--espacio-3);
+  border-radius: var(--radio-md);
+}
+
+.admin-pedidos__dato {
+  display: grid;
+  align-content: start;
+  gap: var(--espacio-1);
+  min-width: 0;
+}
+
+.admin-pedidos__etiqueta {
+  color: var(--color-texto-secundario);
+  font-size: 0.7rem;
+  font-weight: var(--peso-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-pedidos__cliente {
+  width: fit-content;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medium);
+  text-align: left;
+}
+
+.admin-pedidos__cliente:hover {
+  text-decoration: underline;
+}
+
+.admin-pedidos__cliente:focus-visible {
+  border-radius: var(--radio-sm);
+  outline: 0.125rem solid var(--color-texto-fuerte);
+  outline-offset: var(--espacio-1);
+}
+
+@media (min-width: 48rem) {
+  .admin-pedidos__cabecera,
+  .admin-pedidos__fila {
+    display: grid;
+    grid-template-columns:
+      minmax(4.5rem, 0.7fr)
+      minmax(8rem, 1.5fr)
+      minmax(5rem, 0.8fr)
+      minmax(9rem, 1.4fr)
+      minmax(5rem, 0.7fr)
+      minmax(6rem, 1fr);
+    align-items: center;
+    column-gap: var(--espacio-3);
+  }
+
+  .admin-pedidos__cabecera {
+    padding: 0 var(--espacio-3) var(--espacio-2);
+    border-bottom: thin solid var(--color-borde-suave);
+    color: var(--color-texto-secundario);
+    font-size: 0.72rem;
+    font-weight: var(--peso-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .admin-pedidos__fila {
+    padding-block: var(--espacio-3);
+  }
+
+  .admin-pedidos__etiqueta {
+    display: none;
+  }
+}

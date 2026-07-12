@@ -125,3 +125,40 @@ h1 {
     padding-block: var(--espacio-7);
   }
 }
+/* ==========================================================
+   Utilidades de fondo
+   ========================================================== */
+
+/* ==========================================================
+   Utilidades de fondo
+   ========================================================== */
+
+.fondo-azul {
+  background: var(--color-fondo-azul) !important;
+  transition: background var(--transicion-base);
+}
+
+.fondo-verde {
+  background: var(--color-fondo-verde) !important;
+  transition: background var(--transicion-base);
+}
+
+.fondo-amarillo {
+  background: var(--color-fondo-amarillo) !important;
+  transition: background var(--transicion-base);
+}
+
+.fondo-violeta {
+  background: var(--color-fondo-violeta) !important;
+  transition: background var(--transicion-base);
+}
+
+.fondo-rojo {
+  background: var(--color-fondo-rojo) !important;
+  transition: background var(--transicion-base);
+}
+
+.fondo-gris {
+  background: var(--color-fondo-gris) !important;
+  transition: background var(--transicion-base);
+}
