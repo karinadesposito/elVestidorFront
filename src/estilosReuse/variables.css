@@ -71,4 +71,12 @@
   --padding-lateral-desktop: var(--espacio-5);
 
   --alto-barra: 5rem;
+  
+  /* Fondos reutilizables */
+--color-fondo-azul: #b8dbff;
+--color-fondo-verde: #c2e7c7;
+--color-fondo-amarillo: #ffe08a;
+--color-fondo-violeta: #cfbefc;
+--color-fondo-rojo: #f4bcbc;
+--color-fondo-gris: #d8dbe0;
 }

@@ -1,0 +1,244 @@
+.barra-admin {
+  position: sticky;
+  top: var(--espacio-0);
+  z-index: var(--z-header);
+  border-block-end: thin solid var(--color-borde-suave);
+  background: var(--color-fondo-principal);
+}
+
+.barra-admin__contenedor {
+  position: relative;
+  display: flex;
+  min-height: var(--alto-barra);
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+}
+
+.barra-admin__hamburguesa {
+  position: absolute;
+  inset-inline-start: var(--espacio-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.barra-admin__marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-1);
+}
+
+.barra-admin__simbolo {
+  width: auto;
+  height: 28px;
+}
+
+.barra-admin__logo {
+  width: 130px;
+  height: auto;
+}
+
+.barra-admin__navegacion {
+  display: none;
+}
+
+.barra-admin__acciones {
+  position: absolute;
+  inset-inline-end: var(--espacio-0);
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+}
+
+.barra-admin__fecha {
+  color: var(--color-texto-secundario);
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.barra-admin__usuario {
+  position: relative;
+  display: block;
+}
+
+.barra-admin__usuario-boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.barra-admin__usuario-menu {
+  position: absolute;
+  inset-block-start: calc(100% + var(--espacio-2));
+  inset-inline-end: var(--espacio-0);
+  min-width: 160px;
+  padding: var(--espacio-2);
+  border: thin solid var(--color-borde-suave);
+  border-radius: var(--radio-sm);
+  background: var(--color-fondo-alternativo);
+  box-shadow: var(--sombra-suave);
+}
+
+.barra-admin__usuario-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-2);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.barra-admin-mobile {
+  position: fixed;
+  inset: var(--espacio-0);
+  z-index: var(--z-overlay);
+}
+
+.barra-admin-mobile__fondo {
+  position: absolute;
+  inset: var(--espacio-0);
+  width: 100%;
+  height: 100%;
+  background: rgb(13 13 13 / 0.32);
+}
+
+.barra-admin-mobile__panel {
+  position: relative;
+  width: min(86vw, 340px);
+  height: 100%;
+  padding: var(--espacio-3);
+  overflow-y: auto;
+  background: var(--color-fondo-principal);
+  box-shadow: var(--sombra-media);
+}
+
+.barra-admin-mobile__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  padding-block-end: var(--espacio-3);
+  border-block-end: thin solid var(--color-borde-suave);
+}
+
+.barra-admin-mobile__marca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.barra-admin-mobile__marca img:first-child {
+  width: auto;
+  height: 32px;
+}
+
+.barra-admin-mobile__marca img:last-child {
+  width: 150px;
+  height: auto;
+}
+
+.barra-admin-mobile__cerrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.barra-admin-mobile__navegacion {
+  display: grid;
+  padding-block-start: var(--espacio-3);
+}
+
+.barra-admin-mobile__navegacion a,
+.barra-admin-mobile__navegacion button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding-block: var(--espacio-3);
+  border-block-end: thin solid var(--color-borde-suave);
+  color: var(--color-texto-fuerte);
+  font-size: 0.875rem;
+  font-weight: var(--peso-medium);
+  text-align: left;
+}
+
+.barra-admin-mobile__navegacion svg {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+}
+
+@media (min-width: 64rem) {
+  .barra-admin__contenedor {
+    justify-content: space-between;
+    min-height: calc(var(--alto-barra) + var(--espacio-2));
+  }
+
+  .barra-admin__hamburguesa {
+    display: none;
+  }
+
+  .barra-admin__marca {
+    flex-direction: row;
+    flex-shrink: 0;
+    gap: var(--espacio-2);
+  }
+
+  .barra-admin__simbolo {
+    height: 38px;
+  }
+
+  .barra-admin__logo {
+    width: 170px;
+  }
+
+  .barra-admin__navegacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-4);
+  }
+
+  .barra-admin__enlace {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-1);
+    padding-block: var(--espacio-2);
+    color: var(--color-texto-secundario);
+    font-size: 0.8125rem;
+    font-weight: var(--peso-medium);
+    white-space: nowrap;
+  }
+
+  .barra-admin__enlace svg {
+    font-size: 1.1rem;
+  }
+
+  .barra-admin__enlace:hover,
+  .barra-admin__enlace--activo {
+    color: var(--color-acento-hover);
+  }
+
+  .barra-admin__acciones {
+    position: static;
+    gap: var(--espacio-2);
+  }
+
+  .barra-admin__fecha {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .barra-admin__usuario-boton {
+    font-size: 1.25rem;
+  }
+
+  .barra-admin-mobile {
+    display: none;
+  }
+}

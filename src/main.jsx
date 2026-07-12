@@ -20,6 +20,13 @@ import App from './App.jsx'
 import './estilosReuse/ModalPromocional.css'
 import './estilosReuse/menuMobile.css'
 import './estilosReuse/itemMenu.css'
+import "./estilosReuse/estructura.css";
+import "./estilos/admin-inicio.css";
+
+
+
+
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
