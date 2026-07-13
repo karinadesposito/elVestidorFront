@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { ApolloProvider } from '@apollo/client/react'
+import client from './servicios/apolloClient'
 import './index.css'
 import './estilosReuse/variables.css'
 import './estilosReuse/tipografias.css'
@@ -25,13 +27,12 @@ import "./estilos/admin-inicio.css";
 
 
 
-
-
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ApolloProvider client={client}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ApolloProvider>
   </StrictMode>,
 )

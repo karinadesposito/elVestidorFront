@@ -75,6 +75,35 @@
   box-shadow: 0 0 0 2px rgb(13 13 13 / 0.08);
 }
 
+.login-admin__campo--password {
+  position: relative;
+  display: flex;
+}
+
+.login-admin__campo--password input {
+  flex: 1;
+  padding-right: 2.8rem;
+}
+
+.login-admin__ojito {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.3rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity var(--transicion-rapida);
+}
+
+.login-admin__ojito:hover {
+  opacity: 1;
+}
+
 .login-admin__error {
   margin: 0;
   padding: var(--espacio-3);
