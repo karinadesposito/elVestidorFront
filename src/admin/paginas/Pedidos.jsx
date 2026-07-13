@@ -93,8 +93,8 @@ function Pedidos() {
             <h2>Listado de pedidos</h2>
           </div>
 
-          <div className="estructura__tabla admin-pedidos__tabla">
-            <div className="admin-pedidos__cabecera">
+          <div className="estructura__tabla">
+            <div className="estructura__tabla-cabecera admin-pedidos__cabecera">
               <span>Pedido</span>
               <span>Cliente</span>
               <span>Fecha</span>
@@ -105,43 +105,43 @@ function Pedidos() {
 
             {pedidosIniciales.map((pedido) => (
               <article
-                className={`admin-pedidos__fila ${pedido.color}`}
+                className={`estructura__tabla-fila admin-pedidos__fila ${pedido.color}`}
                 key={pedido.id}
               >
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Pedido</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Pedido</span>
 
                   <strong>#{pedido.id}</strong>
                 </div>
 
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Cliente</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Cliente</span>
 
-                  <button className="admin-pedidos__cliente" type="button">
+                  <button className="estructura__tabla-boton" type="button">
                     {pedido.cliente}
                   </button>
                 </div>
 
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Fecha</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Fecha</span>
 
                   <span>{pedido.fecha}</span>
                 </div>
 
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Estado</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Estado</span>
 
                   <span>{pedido.estado}</span>
                 </div>
 
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Unidades</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Unidades</span>
 
                   <strong>{pedido.unidades}</strong>
                 </div>
 
-                <div className="admin-pedidos__dato">
-                  <span className="admin-pedidos__etiqueta">Total</span>
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Total</span>
 
                   <strong>{pedido.total}</strong>
                 </div>
