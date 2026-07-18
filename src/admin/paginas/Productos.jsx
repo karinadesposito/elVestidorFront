@@ -34,6 +34,8 @@ const productosIniciales = [
     barcode: "779001",
     nombre: "Remera basica",
     marca: "Vestidor",
+    genero: "Hombre",
+    categoria: "Remeras",
     variante: "Negro / M",
     stock: 12,
     costo: "$8.500",
@@ -45,6 +47,8 @@ const productosIniciales = [
     barcode: "779002",
     nombre: "Jean mom",
     marca: "Urbana",
+    genero: "Mujer",
+    categoria: "Jeans",
     variante: "Azul / 40",
     stock: 4,
     costo: "$21.000",
@@ -56,6 +60,8 @@ const productosIniciales = [
     barcode: "779003",
     nombre: "Campera denim",
     marca: "Norte",
+    genero: "Mujer",
+    categoria: "Camperas",
     variante: "Celeste / L",
     stock: 0,
     costo: "$35.000",
@@ -67,6 +73,8 @@ const productosIniciales = [
     barcode: "779004",
     nombre: "Vestido midi",
     marca: "Aura",
+    genero: "Mujer",
+    categoria: "Faldas y vestidos",
     variante: "Rojo / S",
     stock: 7,
     costo: "$18.400",
@@ -129,6 +137,8 @@ function Productos() {
               <span>Barcode</span>
               <span>Nombre</span>
               <span>Marca</span>
+              <span>Genero</span>
+              <span>Categoria</span>
               <span>Variante</span>
               <span>Stock</span>
               <span>Costo</span>
@@ -159,6 +169,18 @@ function Productos() {
                   <span className="estructura__tabla-etiqueta">Marca</span>
 
                   <span>{producto.marca}</span>
+                </div>
+
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Genero</span>
+
+                  <span>{producto.genero}</span>
+                </div>
+
+                <div className="estructura__tabla-dato">
+                  <span className="estructura__tabla-etiqueta">Categoria</span>
+
+                  <span>{producto.categoria}</span>
                 </div>
 
                 <div className="estructura__tabla-dato">
@@ -223,6 +245,32 @@ function Productos() {
             <div className="estructura__campo">
               <label htmlFor="producto-marca">Marca</label>
               <input id="producto-marca" name="marca" type="text" />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-genero">Genero</label>
+              <select id="producto-genero" name="genero">
+                <option value="">Seleccionar genero</option>
+                <option value="mujer">Mujer</option>
+                <option value="hombre">Hombre</option>
+              </select>
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-categoria">Categoria</label>
+              <select id="producto-categoria" name="categoria">
+                <option value="">Seleccionar categoria</option>
+                <option value="jeans">Jeans</option>
+                <option value="camperas">Camperas</option>
+                <option value="sweaters-y-buzos">Sweaters y buzos</option>
+                <option value="camisas">Camisas</option>
+                <option value="remeras">Remeras</option>
+                <option value="faldas-y-vestidos">Faldas y vestidos</option>
+                <option value="shorts-y-bermudas">Shorts y bermudas</option>
+                <option value="pantalones">Pantalones</option>
+                <option value="bermudas">Bermudas</option>
+                <option value="accesorios">Accesorios</option>
+              </select>
             </div>
 
             <div className="estructura__campo">
