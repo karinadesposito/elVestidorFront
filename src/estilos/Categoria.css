@@ -1,0 +1,29 @@
+.categoria__encabezado {
+  display: grid;
+  gap: var(--espacio-1);
+  margin-bottom: var(--espacio-3);
+}
+
+.categoria__encabezado h1 {
+  color: var(--color-texto-fuerte);
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-weight: var(--peso-medium);
+}
+
+.categoria__vacio {
+  display: grid;
+  gap: var(--espacio-1);
+  padding-block: var(--espacio-4);
+  border-top: thin solid var(--color-borde-suave);
+}
+
+.categoria__vacio h2 {
+  color: var(--color-texto-fuerte);
+  font-size: 1rem;
+  font-weight: var(--peso-semibold);
+}
+
+.categoria__vacio p {
+  color: var(--color-texto-secundario);
+  font-size: 0.85rem;
+}
