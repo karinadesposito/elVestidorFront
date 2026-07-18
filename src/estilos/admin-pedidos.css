@@ -1,13 +1,13 @@
 @media (min-width: 48rem) {
   .admin-pedidos__cabecera,
   .admin-pedidos__fila {
-    --estructura-tabla-ancho-minimo: 42rem;
+    --estructura-tabla-ancho-minimo: 38rem;
     --estructura-tabla-columnas:
-      minmax(4.5rem, 0.7fr)
-      minmax(8rem, 1.5fr)
-      minmax(5rem, 0.8fr)
-      minmax(9rem, 1.4fr)
-      minmax(5rem, 0.7fr)
-      minmax(6rem, 1fr);
+      minmax(4rem, 0.65fr)
+      minmax(7rem, 1.4fr)
+      minmax(4.5rem, 0.75fr)
+      minmax(7.5rem, 1.25fr)
+      minmax(4.5rem, 0.65fr)
+      minmax(5.5rem, 0.9fr);
   }
 }
