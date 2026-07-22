@@ -37,7 +37,7 @@
 .estructura__tarjeta,
 .estructura__panel,
 .estructura__modal-contenido {
-  border: thin solid var(--color-borde-suave);
+  
   border-radius: var(--radio-lg);
   background: var(--color-fondo-alternativo);
 }
