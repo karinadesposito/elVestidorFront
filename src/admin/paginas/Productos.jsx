@@ -241,7 +241,7 @@ function Productos() {
               <label htmlFor="producto-nombre">Nombre producto</label>
               <input id="producto-nombre" name="nombre" type="text" />
             </div>
-
+{/* 
             <div className="estructura__campo">
               <label htmlFor="producto-marca">Marca</label>
               <input id="producto-marca" name="marca" type="text" />
@@ -291,7 +291,7 @@ function Productos() {
             <div className="estructura__campo">
               <label htmlFor="producto-precio">Precio</label>
               <input id="producto-precio" name="precio" type="text" />
-            </div>
+            </div> */}
 
             <div className="estructura__campo">
               <label htmlFor="producto-observaciones">Observaciones</label>
@@ -331,13 +331,32 @@ function Productos() {
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-nombre">Variante</label>
-              <input id="variante-nombre" name="variante" type="text" />
+              <label htmlFor="variante-modelo">Modelo</label>
+              <input id="variante-modelo" name="modelo" type="text" />
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-stock">Stock inicial</label>
-              <input id="variante-stock" name="stock" type="number" min="0" />
+              <label htmlFor="variante-genero">Genero</label>
+              <select id="variante-genero" name="genero">
+                <option value="">Seleccionar genero</option>
+                <option value="mujer">Mujer</option>
+                <option value="hombre">Hombre</option>
+              </select>
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-marca">Marca</label>
+              <input id="variante-marca" name="marca" type="text" />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-talle">Talle</label>
+              <input id="variante-talle" name="talle" type="text" />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-color">Color</label>
+              <input id="variante-color" name="color" type="text" />
             </div>
 
             <div className="estructura__campo">
