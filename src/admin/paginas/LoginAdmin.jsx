@@ -29,14 +29,14 @@ function LoginAdmin() {
 
         <form className="login-admin__formulario" onSubmit={manejarEnvio}>
           <div className="login-admin__campo">
-            <label htmlFor="email">Correo electrónico</label>
+            <label htmlFor="email">Usuario</label>
             <input
               id="email"
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@elvestidor.com"
-              autoComplete="email"
+              placeholder="superadmin"
+              autoComplete="username"
               required
             />
           </div>

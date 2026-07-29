@@ -1,31 +1,81 @@
-const USUARIO_VALIDO = {
-  email: 'admin@elvestidor.com',
-  password: 'admin123',
-  nombre: 'Karina',
-}
+const LOGIN_MUTATION = `
+  mutation Login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      ... on CurrentUser {
+        id
+        identifier
+      }
+      ... on ErrorResult {
+        errorCode
+        message
+      }
+    }
+  }
+`
 
-function simularRetraso(ms = 600) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
+const LOGOUT_MUTATION = `
+  mutation Logout {
+    logout {
+      success
+    }
+  }
+`
 
 export async function iniciarSesion({ email, password }) {
-  await simularRetraso()
+  const response = await fetch('/admin-api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: LOGIN_MUTATION,
+      variables: { username: email, password },
+    }),
+  })
 
-  if (email !== USUARIO_VALIDO.email || password !== USUARIO_VALIDO.password) {
-    throw new Error('Credenciales inválidas')
+  const result = await response.json()
+
+  if (result.errors) {
+    throw new Error(result.errors[0].message)
+  }
+
+  const loginResult = result.data.login
+
+  if (loginResult.errorCode) {
+    throw new Error(loginResult.message)
+  }
+
+  const token = response.headers.get('vendure-auth-token')
+
+  if (!token) {
+    throw new Error('No se recibió token de autenticación')
   }
 
   const sesion = {
-    usuario: { nombre: USUARIO_VALIDO.nombre, email: USUARIO_VALIDO.email },
-    token: 'tok-simulado-' + Date.now(),
+    usuario: { email, nombre: loginResult.identifier },
+    token,
   }
 
   localStorage.setItem('admin_sesion', JSON.stringify(sesion))
   return sesion
 }
 
-export function cerrarSesion() {
-  localStorage.removeItem('admin_sesion')
+export async function cerrarSesion() {
+  const sesion = obtenerSesion()
+  if (sesion?.token) {
+    try {
+      await fetch('/admin-api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sesion.token}`,
+        },
+        body: JSON.stringify({ query: LOGOUT_MUTATION }),
+      })
+    } finally {
+      localStorage.removeItem('admin_sesion')
+    }
+  } else {
+    localStorage.removeItem('admin_sesion')
+  }
 }
 
 export function obtenerSesion() {

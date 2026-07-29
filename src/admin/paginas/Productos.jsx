@@ -1,91 +1,108 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+import { obtenerProductos, contarPorEstado, crearProducto, crearVariante } from "../servicios/productosService";
 
 import "../../estilos/admin-productos.css";
 
-const categoriasProductos = [
-  {
-    nombre: "Productos",
-    cantidad: 24,
-    color: "fondo-azul",
-  },
-  {
-    nombre: "Stock bajo",
-    cantidad: 5,
-    color: "fondo-amarillo",
-  },
-  {
-    nombre: "Sin stock",
-    cantidad: 2,
-    color: "fondo-violeta",
-  },
-  {
-    nombre: "Activos",
-    cantidad: 22,
-    color: "fondo-verde",
-  },
-];
-
-const productosIniciales = [
-  {
-    barcode: "779001",
-    nombre: "Remera basica",
-    marca: "Vestidor",
-    genero: "Hombre",
-    categoria: "Remeras",
-    variante: "Negro / M",
-    stock: 12,
-    costo: "$8.500",
-    precio: "$18.900",
-    observaciones: "Nueva temporada",
-    color: "fondo-azul",
-  },
-  {
-    barcode: "779002",
-    nombre: "Jean mom",
-    marca: "Urbana",
-    genero: "Mujer",
-    categoria: "Jeans",
-    variante: "Azul / 40",
-    stock: 4,
-    costo: "$21.000",
-    precio: "$42.500",
-    observaciones: "Stock bajo",
-    color: "fondo-amarillo",
-  },
-  {
-    barcode: "779003",
-    nombre: "Campera denim",
-    marca: "Norte",
-    genero: "Mujer",
-    categoria: "Camperas",
-    variante: "Celeste / L",
-    stock: 0,
-    costo: "$35.000",
-    precio: "$69.900",
-    observaciones: "Reponer",
-    color: "fondo-violeta",
-  },
-  {
-    barcode: "779004",
-    nombre: "Vestido midi",
-    marca: "Aura",
-    genero: "Mujer",
-    categoria: "Faldas y vestidos",
-    variante: "Rojo / S",
-    stock: 7,
-    costo: "$18.400",
-    precio: "$37.200",
-    observaciones: "Activo",
-    color: "fondo-verde",
-  },
-];
-
 function Productos() {
+  const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  const [formProducto, setFormProducto] = useState({
+    barcode: "",
+    nombre: "",
+    marca: "",
+    variante: "",
+    stock: "",
+    costo: "",
+    precio: "",
+    observaciones: "",
+  });
+
+  const [formVariante, setFormVariante] = useState({
+    productoId: "",
+    variante: "",
+    barcode: "",
+    stock: "",
+    precio: "",
+  });
+
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  async function cargar() {
+    try {
+      const { productos: datos } = await obtenerProductos();
+      setProductos(datos);
+      setCategorias(contarPorEstado(datos));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  function manejarCampo(e) {
+    const { name, value } = e.target;
+    setFormProducto((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function manejarCampoVariante(e) {
+    const { name, value } = e.target;
+    setFormVariante((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function manejarCrearProducto(e) {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    try {
+      await crearProducto({
+        nombre: formProducto.nombre,
+        descripcion: formProducto.observaciones,
+        sku: formProducto.barcode,
+        precio: formProducto.precio ? Number(formProducto.precio) : 0,
+        stock: formProducto.stock ? Number(formProducto.stock) : 0,
+      });
+      setModalAbierto(null);
+      setFormProducto({ barcode: "", nombre: "", marca: "", variante: "", stock: "", costo: "", precio: "", observaciones: "" });
+      await cargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function manejarCrearVariante(e) {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    try {
+      await crearVariante({
+        productId: formVariante.productoId,
+        nombre: formVariante.variante,
+        sku: formVariante.barcode,
+        precio: formVariante.precio ? Number(formVariante.precio) : 0,
+        stock: formVariante.stock ? Number(formVariante.stock) : 0,
+      });
+      setModalAbierto(null);
+      setFormVariante({ productoId: "", variante: "", barcode: "", stock: "", precio: "" });
+      await cargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
     <main className="estructura">
@@ -96,128 +113,114 @@ function Productos() {
           </div>
         </header>
 
-        <section
-          className="estructura__resumen"
-          aria-label="Categorias de productos"
-        >
-          {categoriasProductos.map((categoria) => (
-            <article
-              className={`estructura__tarjeta ${categoria.color}`}
-              key={categoria.nombre}
+        {error && <p className="login-admin__error">{error}</p>}
+
+        {!cargando && (
+          <>
+            <section
+              className="estructura__resumen"
+              aria-label="Categorias de productos"
             >
-              <span>{categoria.nombre}</span>
-              <strong>{categoria.cantidad}</strong>
-            </article>
-          ))}
-        </section>
+              {categorias.map((categoria) => (
+                <article
+                  className={`estructura__tarjeta ${categoria.color}`}
+                  key={categoria.nombre}
+                >
+                  <span>{categoria.nombre}</span>
+                  <strong>{categoria.cantidad}</strong>
+                </article>
+              ))}
+            </section>
 
-        <section className="estructura__panel">
-          <div className="estructura__panel-encabezado">
-            <h2>Listado de productos</h2>
+            <section className="estructura__panel">
+              <div className="estructura__panel-encabezado">
+                <h2>Listado de productos</h2>
 
-            <div className="estructura__panel-acciones">
-              <Boton
-                variante="admin"
-                onClick={() => setModalAbierto("producto")}
-              >
-                Nuevo ingreso producto
-              </Boton>
+                <div className="estructura__panel-acciones">
+                  <Boton
+                    variante="admin"
+                    onClick={() => setModalAbierto("producto")}
+                  >
+                    Nuevo ingreso producto
+                  </Boton>
 
-              <Boton
-                variante="admin"
-                onClick={() => setModalAbierto("variante")}
-              >
-                Nuevo ingreso variante
-              </Boton>
-            </div>
-          </div>
+                  <Boton
+                    variante="admin"
+                    onClick={() => setModalAbierto("variante")}
+                  >
+                    Nuevo ingreso variante
+                  </Boton>
+                </div>
+              </div>
 
-          <div className="estructura__tabla">
-            <div className="estructura__tabla-cabecera admin-productos__cabecera">
-              <span>Barcode</span>
-              <span>Nombre</span>
-              <span>Marca</span>
-              <span>Genero</span>
-              <span>Categoria</span>
-              <span>Variante</span>
-              <span>Stock</span>
-              <span>Costo</span>
-              <span>Precio</span>
-              <span>Observaciones</span>
-            </div>
-
-            {productosIniciales.map((producto) => (
-              <article
-                className={`estructura__tabla-fila admin-productos__fila ${producto.color}`}
-                key={producto.barcode}
-              >
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Barcode</span>
-
-                  <strong>{producto.barcode}</strong>
+              <div className="estructura__tabla">
+                <div className="estructura__tabla-cabecera admin-productos__cabecera">
+                  <span>Barcode</span>
+                  <span>Nombre</span>
+                  <span>Marca</span>
+                  <span>Variante</span>
+                  <span>Stock</span>
+                  <span>Costo</span>
+                  <span>Precio</span>
+                  <span>Observaciones</span>
                 </div>
 
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Nombre</span>
+                {productos.length === 0 && (
+                  <p>No hay productos para mostrar.</p>
+                )}
 
-                  <button className="estructura__tabla-boton" type="button">
-                    {producto.nombre}
-                  </button>
-                </div>
+                {productos.map((producto) => (
+                  <article
+                    className={`estructura__tabla-fila admin-productos__fila ${producto.color}`}
+                    key={producto.id}
+                  >
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Barcode</span>
+                      <strong>{producto.barcode}</strong>
+                    </div>
 
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Marca</span>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Nombre</span>
+                      <button className="estructura__tabla-boton" type="button">
+                        {producto.nombre}
+                      </button>
+                    </div>
 
-                  <span>{producto.marca}</span>
-                </div>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Marca</span>
+                      <span>—</span>
+                    </div>
 
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Genero</span>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Variante</span>
+                      <span>{producto.variante}</span>
+                    </div>
 
-                  <span>{producto.genero}</span>
-                </div>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Stock</span>
+                      <strong>{producto.stock}</strong>
+                    </div>
 
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Categoria</span>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Costo</span>
+                      <strong>—</strong>
+                    </div>
 
-                  <span>{producto.categoria}</span>
-                </div>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Precio</span>
+                      <strong>{producto.precio}</strong>
+                    </div>
 
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Variante</span>
-
-                  <span>{producto.variante}</span>
-                </div>
-
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Stock</span>
-
-                  <strong>{producto.stock}</strong>
-                </div>
-
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Costo</span>
-
-                  <strong>{producto.costo}</strong>
-                </div>
-
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">Precio</span>
-
-                  <strong>{producto.precio}</strong>
-                </div>
-
-                <div className="estructura__tabla-dato">
-                  <span className="estructura__tabla-etiqueta">
-                    Observaciones
-                  </span>
-
-                  <span>{producto.observaciones}</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                    <div className="estructura__tabla-dato">
+                      <span className="estructura__tabla-etiqueta">Observaciones</span>
+                      <span>{producto.descripcion || "—"}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
       </Contenedor>
 
       {modalAbierto === "producto" && (
@@ -225,7 +228,7 @@ function Productos() {
           titulo="Nuevo ingreso producto"
           onClose={() => setModalAbierto(null)}
         >
-          <form className="estructura__formulario">
+          <form className="estructura__formulario" onSubmit={manejarCrearProducto}>
             <div className="estructura__campo">
               <label htmlFor="producto-barcode">Barcode</label>
               <input
@@ -233,18 +236,35 @@ function Productos() {
                 name="barcode"
                 type="text"
                 placeholder="Escanear o ingresar codigo"
+                value={formProducto.barcode}
+                onChange={manejarCampo}
                 autoFocus
               />
             </div>
 
             <div className="estructura__campo">
               <label htmlFor="producto-nombre">Nombre producto</label>
-              <input id="producto-nombre" name="nombre" type="text" />
+              <input
+                id="producto-nombre"
+                name="nombre"
+                type="text"
+                value={formProducto.nombre}
+                onChange={manejarCampo}
+                required
+              />
             </div>
 {/* 
             <div className="estructura__campo">
               <label htmlFor="producto-marca">Marca</label>
-              <input id="producto-marca" name="marca" type="text" />
+              <input
+                id="producto-marca"
+                name="marca"
+                type="text"
+                value={formProducto.marca}
+                onChange={manejarCampo}
+                disabled
+                placeholder="Próximamente"
+              />
             </div>
 
             <div className="estructura__campo">
@@ -275,28 +295,67 @@ function Productos() {
 
             <div className="estructura__campo">
               <label htmlFor="producto-variante">Primera variante</label>
-              <input id="producto-variante" name="variante" type="text" />
+              <input
+                id="producto-variante"
+                name="variante"
+                type="text"
+                value={formProducto.variante}
+                onChange={manejarCampo}
+                placeholder="Ej: Negro / M"
+              />
             </div>
 
             <div className="estructura__campo">
               <label htmlFor="producto-stock">Stock inicial</label>
-              <input id="producto-stock" name="stock" type="number" min="0" />
+              <input
+                id="producto-stock"
+                name="stock"
+                type="number"
+                min="0"
+                value={formProducto.stock}
+                onChange={manejarCampo}
+              />
             </div>
 
             <div className="estructura__campo">
               <label htmlFor="producto-costo">Costo</label>
-              <input id="producto-costo" name="costo" type="text" />
+              <input
+                id="producto-costo"
+                name="costo"
+                type="text"
+                value={formProducto.costo}
+                onChange={manejarCampo}
+                disabled
+                placeholder="Próximamente"
+              />
             </div>
 
             <div className="estructura__campo">
               <label htmlFor="producto-precio">Precio</label>
-              <input id="producto-precio" name="precio" type="text" />
-            </div> */}
+              <input
+                id="producto-precio"
+                name="precio"
+                type="number"
+                min="0"
+                step="1"
+                value={formProducto.precio}
+                onChange={manejarCampo}
+              />
+            </div>
 
             <div className="estructura__campo">
               <label htmlFor="producto-observaciones">Observaciones</label>
-              <textarea id="producto-observaciones" name="observaciones" />
+              <textarea
+                id="producto-observaciones"
+                name="observaciones"
+                value={formProducto.observaciones}
+                onChange={manejarCampo}
+              />
             </div>
+
+            <Boton type="submit" disabled={guardando}>
+              {guardando ? "Guardando..." : "Guardar producto"}
+            </Boton>
           </form>
         </ModalAdmin>
       )}
@@ -306,24 +365,19 @@ function Productos() {
           titulo="Nuevo ingreso variante"
           onClose={() => setModalAbierto(null)}
         >
-          <form className="estructura__formulario">
-            <div className="estructura__campo">
-              <label htmlFor="variante-barcode">Barcode</label>
-              <input
-                id="variante-barcode"
-                name="barcode"
-                type="text"
-                placeholder="Escanear o ingresar codigo"
-                autoFocus
-              />
-            </div>
-
+          <form className="estructura__formulario" onSubmit={manejarCrearVariante}>
             <div className="estructura__campo">
               <label htmlFor="variante-producto">Producto padre</label>
-              <select id="variante-producto" name="producto">
+              <select
+                id="variante-producto"
+                name="productoId"
+                value={formVariante.productoId}
+                onChange={manejarCampoVariante}
+                required
+              >
                 <option value="">Seleccionar producto</option>
-                {productosIniciales.map((producto) => (
-                  <option key={producto.barcode} value={producto.nombre}>
+                {productos.map((producto) => (
+                  <option key={producto.id} value={producto.id}>
                     {producto.nombre}
                   </option>
                 ))}
@@ -331,43 +385,59 @@ function Productos() {
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-modelo">Modelo</label>
-              <input id="variante-modelo" name="modelo" type="text" />
+              <label htmlFor="variante-variante">Nombre variante</label>
+              <input
+                id="variante-variante"
+                name="variante"
+                type="text"
+                placeholder="Ej: Negro / M"
+                value={formVariante.variante}
+                onChange={manejarCampoVariante}
+                required
+              />
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-genero">Genero</label>
-              <select id="variante-genero" name="genero">
-                <option value="">Seleccionar genero</option>
-                <option value="mujer">Mujer</option>
-                <option value="hombre">Hombre</option>
-              </select>
+              <label htmlFor="variante-barcode">Barcode / SKU</label>
+              <input
+                id="variante-barcode"
+                name="barcode"
+                type="text"
+                placeholder="Escanear o ingresar codigo"
+                value={formVariante.barcode}
+                onChange={manejarCampoVariante}
+                autoFocus
+              />
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-marca">Marca</label>
-              <input id="variante-marca" name="marca" type="text" />
-            </div>
-
-            <div className="estructura__campo">
-              <label htmlFor="variante-talle">Talle</label>
-              <input id="variante-talle" name="talle" type="text" />
-            </div>
-
-            <div className="estructura__campo">
-              <label htmlFor="variante-color">Color</label>
-              <input id="variante-color" name="color" type="text" />
-            </div>
-
-            <div className="estructura__campo">
-              <label htmlFor="variante-costo">Costo</label>
-              <input id="variante-costo" name="costo" type="text" />
+              <label htmlFor="variante-stock">Stock</label>
+              <input
+                id="variante-stock"
+                name="stock"
+                type="number"
+                min="0"
+                value={formVariante.stock}
+                onChange={manejarCampoVariante}
+              />
             </div>
 
             <div className="estructura__campo">
               <label htmlFor="variante-precio">Precio</label>
-              <input id="variante-precio" name="precio" type="text" />
+              <input
+                id="variante-precio"
+                name="precio"
+                type="number"
+                min="0"
+                step="1"
+                value={formVariante.precio}
+                onChange={manejarCampoVariante}
+              />
             </div>
+
+            <Boton type="submit" disabled={guardando}>
+              {guardando ? "Guardando..." : "Guardar variante"}
+            </Boton>
           </form>
         </ModalAdmin>
       )}
