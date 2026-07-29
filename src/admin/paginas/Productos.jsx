@@ -253,7 +253,7 @@ function Productos() {
                 required
               />
             </div>
-
+{/* 
             <div className="estructura__campo">
               <label htmlFor="producto-marca">Marca</label>
               <input
@@ -265,6 +265,32 @@ function Productos() {
                 disabled
                 placeholder="Próximamente"
               />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-genero">Genero</label>
+              <select id="producto-genero" name="genero">
+                <option value="">Seleccionar genero</option>
+                <option value="mujer">Mujer</option>
+                <option value="hombre">Hombre</option>
+              </select>
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-categoria">Categoria</label>
+              <select id="producto-categoria" name="categoria">
+                <option value="">Seleccionar categoria</option>
+                <option value="jeans">Jeans</option>
+                <option value="camperas">Camperas</option>
+                <option value="sweaters-y-buzos">Sweaters y buzos</option>
+                <option value="camisas">Camisas</option>
+                <option value="remeras">Remeras</option>
+                <option value="faldas-y-vestidos">Faldas y vestidos</option>
+                <option value="shorts-y-bermudas">Shorts y bermudas</option>
+                <option value="pantalones">Pantalones</option>
+                <option value="bermudas">Bermudas</option>
+                <option value="accesorios">Accesorios</option>
+              </select>
             </div>
 
             <div className="estructura__campo">

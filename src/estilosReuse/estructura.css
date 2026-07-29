@@ -1,68 +1,61 @@
 .estructura {
+  --estructura-texto-xs: 0.65rem;
+  --estructura-texto-sm: 0.75rem;
+  --estructura-texto-md: 0.82rem;
+  --estructura-texto-lg: 1rem;
+  --estructura-texto-xl: 1.2rem;
+  --estructura-texto-titulo: clamp(1.2rem, 4vw, 1.6rem);
+
   min-height: 100vh;
-  padding-block: var(--espacio-4);
+  padding-block: var(--espacio-3);
   color: var(--color-texto-principal);
   background: var(--color-fondo-principal);
+  font-size: var(--estructura-texto-md);
 }
 
 .estructura__encabezado {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
-}
-
-.estructura__eyebrow {
-  margin-bottom: var(--espacio-1);
-  color: var(--color-texto-secundario);
-  font-size: 0.72rem;
-  font-weight: var(--peso-medium);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
 }
 
 .estructura__titulo {
   color: var(--color-texto-fuerte);
-  font-size: clamp(1.7rem, 8vw, 2.4rem);
+  font-size: var(--estructura-texto-titulo);
   font-weight: var(--peso-semibold);
   line-height: var(--linea-titulos);
-}
-
-.estructura__descripcion {
-  max-width: var(--ancho-lectura);
-  margin-top: var(--espacio-2);
-  color: var(--color-texto-secundario);
 }
 
 .estructura__resumen {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
 }
 
 .estructura__tarjeta,
-.estructura__panel {
-  border: thin solid var(--color-borde-suave);
+.estructura__panel,
+.estructura__modal-contenido {
+  
   border-radius: var(--radio-lg);
   background: var(--color-fondo-alternativo);
-  box-shadow: var(--sombra-suave);
 }
 
 .estructura__tarjeta {
-  padding: var(--espacio-3);
+  padding: var(--espacio-2);
 }
 
 .estructura__tarjeta span {
   display: block;
-  margin-bottom: var(--espacio-2);
+  margin-bottom: var(--espacio-1);
   color: var(--color-texto-secundario);
-  font-size: 0.85rem;
+  font-size: var(--estructura-texto-sm);
 }
 
 .estructura__tarjeta strong {
   color: var(--color-texto-fuerte);
-  font-size: 1.9rem;
+  font-size: var(--estructura-texto-xl);
   font-weight: var(--peso-semibold);
   line-height: 1;
 }
@@ -70,37 +63,37 @@
 .estructura__grilla {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--espacio-4);
-  margin-bottom: var(--espacio-4);
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
 }
 
 .estructura__panel {
-  padding: var(--espacio-3);
+  padding: var(--espacio-2);
 }
 
 .estructura__panel-encabezado {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-3);
+  gap: var(--espacio-1);
+  margin-bottom: var(--espacio-2);
 }
 
 .estructura__panel-acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
 }
 
 .estructura__panel-acciones .boton {
   padding-block: var(--espacio-1);
-  padding-inline: var(--espacio-3);
-  font-size: 0.85rem;
+  padding-inline: var(--espacio-2);
+  font-size: var(--estructura-texto-sm);
 }
 
 .estructura__tabla {
   display: grid;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   min-width: 0;
 }
 
@@ -111,8 +104,8 @@
 .estructura__tabla-fila {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--espacio-3);
-  padding: var(--espacio-3);
+  gap: var(--espacio-1);
+  padding: var(--espacio-2);
   border-radius: var(--radio-md);
 }
 
@@ -125,7 +118,7 @@
 
 .estructura__tabla-etiqueta {
   color: var(--color-texto-secundario);
-  font-size: 0.7rem;
+  font-size: var(--estructura-texto-xs);
   font-weight: var(--peso-semibold);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -134,6 +127,7 @@
 .estructura__tabla-boton {
   width: fit-content;
   color: var(--color-texto-fuerte);
+  font-size: inherit;
   font-weight: var(--peso-medium);
   text-align: left;
 }
@@ -148,21 +142,21 @@
   outline-offset: var(--espacio-1);
 }
 
-.estructura__fila {
+.estructura__lista-item {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   padding-block: var(--espacio-2);
   border-bottom: thin solid var(--color-borde-suave);
-  font-size: 0.88rem;
 }
 
-.estructura__fila--cabecera {
+.estructura__lista-item strong {
+  color: var(--color-texto-fuerte);
+  font-size: var(--estructura-texto-md);
+}
+
+.estructura__lista-item span {
   color: var(--color-texto-secundario);
-  font-size: 0.72rem;
-  font-weight: var(--peso-medium);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--estructura-texto-sm);
 }
 
 .estructura__modal {
@@ -184,28 +178,24 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: var(--espacio-4);
+  gap: var(--espacio-3);
   width: min(100%, 34rem);
-  max-height: calc(100vh - var(--espacio-6));
+  max-height: calc(100vh - var(--espacio-4));
   overflow: auto;
-  padding: var(--espacio-4);
-  border: thin solid var(--color-borde-suave);
-  border-radius: var(--radio-lg);
-  background: var(--color-fondo-alternativo);
-  box-shadow: var(--sombra-media);
+  padding: var(--espacio-3);
 }
 
 .estructura__modal-encabezado {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--espacio-3);
+  gap: var(--espacio-2);
 }
 
 .estructura__modal-encabezado h2 {
   margin: 0;
   color: var(--color-texto-fuerte);
-  font-size: 1.2rem;
+  font-size: var(--estructura-texto-xl);
   font-weight: var(--peso-semibold);
 }
 
@@ -217,7 +207,7 @@
   height: 2rem;
   border-radius: var(--radio-sm);
   color: var(--color-texto-fuerte);
-  font-size: 1rem;
+  font-size: var(--estructura-texto-lg);
   line-height: 1;
 }
 
@@ -231,17 +221,17 @@
 
 .estructura__formulario {
   display: grid;
-  gap: var(--espacio-3);
+  gap: var(--espacio-2);
 }
 
 .estructura__campo {
   display: grid;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
 }
 
 .estructura__campo label {
   color: var(--color-texto-principal);
-  font-size: 0.78rem;
+  font-size: var(--estructura-texto-sm);
   font-weight: var(--peso-medium);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -252,29 +242,18 @@
 .estructura__campo textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: var(--espacio-3);
+  padding: var(--espacio-2);
   border: thin solid var(--color-borde-suave);
   border-radius: var(--radio-md);
-  outline: none;
   background: var(--color-fondo-principal);
   color: var(--color-texto-principal);
   font-family: var(--fuente-interfaz);
-  font-size: 0.95rem;
-  transition:
-    border-color var(--transicion-rapida),
-    box-shadow var(--transicion-rapida);
+  font-size: var(--estructura-texto-md);
 }
 
 .estructura__campo textarea {
-  min-height: 6rem;
+  min-height: 4rem;
   resize: vertical;
-}
-
-.estructura__campo input:focus,
-.estructura__campo select:focus,
-.estructura__campo textarea:focus {
-  border-color: var(--color-accion);
-  box-shadow: 0 0 0 2px rgb(13 13 13 / 8%);
 }
 
 .estructura__modal-acciones {
@@ -288,10 +267,6 @@
 }
 
 @media (min-width: 48rem) {
-  .estructura {
-    padding-block: var(--espacio-5);
-  }
-
   .estructura__resumen {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -307,7 +282,7 @@
     display: grid;
     grid-template-columns: var(--estructura-tabla-columnas);
     align-items: center;
-    column-gap: var(--espacio-3);
+    column-gap: var(--espacio-2);
     min-width: var(--estructura-tabla-ancho-minimo, 100%);
   }
 
@@ -317,17 +292,17 @@
   }
 
   .estructura__tabla-cabecera {
-    padding: 0 var(--espacio-3) var(--espacio-2);
+    padding: 0 var(--espacio-2) var(--espacio-1);
     border-bottom: thin solid var(--color-borde-suave);
     color: var(--color-texto-secundario);
-    font-size: 0.72rem;
+    font-size: var(--estructura-texto-xs);
     font-weight: var(--peso-semibold);
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
 
   .estructura__tabla-fila {
-    padding-block: var(--espacio-3);
+    padding-block: var(--espacio-2);
   }
 
   .estructura__tabla-etiqueta {
@@ -336,7 +311,7 @@
 
   .estructura__modal {
     place-items: center;
-    padding: var(--espacio-5);
+    padding: var(--espacio-4);
   }
 
   .estructura__modal-acciones {
@@ -350,15 +325,10 @@
 }
 
 @media (min-width: 64rem) {
-  .estructura {
-    padding-block: var(--espacio-6);
-  }
-
   .estructura__encabezado {
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: var(--espacio-5);
   }
 
   .estructura__resumen {
@@ -367,10 +337,5 @@
 
   .estructura__grilla {
     grid-template-columns: 2fr 1fr;
-  }
-
-  .estructura__tarjeta,
-  .estructura__panel {
-    padding: var(--espacio-4);
   }
 }
