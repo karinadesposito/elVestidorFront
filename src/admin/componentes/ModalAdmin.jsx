@@ -1,6 +1,6 @@
 import Boton from "../../componentesReuse/Boton";
 
-function ModalAdmin({ titulo, children, onClose }) {
+function ModalAdmin({ titulo, children, onClose, formId }) {
   return (
     <div className="estructura__modal" role="dialog" aria-modal="true">
       <button
@@ -27,11 +27,13 @@ function ModalAdmin({ titulo, children, onClose }) {
         <div className="estructura__modal-cuerpo">{children}</div>
 
         <footer className="estructura__modal-acciones">
-          <Boton variante="admin" onClick={onClose}>
+          <Boton variante="admin" onClick={onClose} type="button">
             Cancelar
           </Boton>
 
-          <Boton>Guardar</Boton>
+          <Boton type="submit" form={formId}>
+            Guardar
+          </Boton>
         </footer>
       </section>
     </div>

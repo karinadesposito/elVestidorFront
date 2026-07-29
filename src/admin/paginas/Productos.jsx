@@ -21,22 +21,21 @@ function Productos() {
   const [guardando, setGuardando] = useState(false);
 
   const [formProducto, setFormProducto] = useState({
-    barcode: "",
     nombre: "",
     marca: "",
-    variante: "",
-    stock: "",
-    costo: "",
-    precio: "",
-    observaciones: "",
+    categoria: "",
+    genero: "",
+    descripcion: "",
+    activo: true,
   });
 
   const [formVariante, setFormVariante] = useState({
     productoId: "",
-    variante: "",
+    color: "",
+    talle: "",
     barcode: "",
-    stock: "",
     precio: "",
+    activo: true,
   });
 
   useEffect(() => {
@@ -56,13 +55,19 @@ function Productos() {
   }
 
   function manejarCampo(e) {
-    const { name, value } = e.target;
-    setFormProducto((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormProducto((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   }
 
   function manejarCampoVariante(e) {
-    const { name, value } = e.target;
-    setFormVariante((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormVariante((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   }
 
   async function manejarCrearProducto(e) {
@@ -72,21 +77,16 @@ function Productos() {
     try {
       await crearProducto({
         nombre: formProducto.nombre,
-        descripcion: formProducto.observaciones,
-        sku: formProducto.barcode,
-        precio: formProducto.precio ? Number(formProducto.precio) : 0,
-        stock: formProducto.stock ? Number(formProducto.stock) : 0,
+        descripcion: formProducto.descripcion,
       });
       setModalAbierto(null);
       setFormProducto({
-        barcode: "",
         nombre: "",
         marca: "",
-        variante: "",
-        stock: "",
-        costo: "",
-        precio: "",
-        observaciones: "",
+        categoria: "",
+        genero: "",
+        descripcion: "",
+        activo: true,
       });
       await cargar();
     } catch (err) {
@@ -103,18 +103,19 @@ function Productos() {
     try {
       await crearVariante({
         productId: formVariante.productoId,
-        nombre: formVariante.variante,
+        nombre: `${formVariante.color} - ${formVariante.talle}`,
         sku: formVariante.barcode,
-        precio: formVariante.precio ? Number(formVariante.precio) : 0,
-        stock: formVariante.stock ? Number(formVariante.stock) : 0,
+        precio: Number(formVariante.precio),
+        stock: 0,
       });
       setModalAbierto(null);
       setFormVariante({
         productoId: "",
-        variante: "",
+        color: "",
+        talle: "",
         barcode: "",
-        stock: "",
         precio: "",
+        activo: true,
       });
       await cargar();
     } catch (err) {
@@ -161,14 +162,14 @@ function Productos() {
                     variante="admin"
                     onClick={() => setModalAbierto("producto")}
                   >
-                    Nuevo ingreso producto
+                    Nuevo producto
                   </Boton>
 
                   <Boton
                     variante="admin"
                     onClick={() => setModalAbierto("variante")}
                   >
-                    Nuevo ingreso variante
+                    Nueva variante
                   </Boton>
                 </div>
               </div>
@@ -251,28 +252,17 @@ function Productos() {
 
       {modalAbierto === "producto" && (
         <ModalAdmin
-          titulo="Nuevo ingreso producto"
+          titulo="Nuevo producto"
           onClose={() => setModalAbierto(null)}
+          formId="formulario-nuevo-producto"
         >
           <form
+            id="formulario-nuevo-producto"
             className="estructura__formulario"
             onSubmit={manejarCrearProducto}
           >
             <div className="estructura__campo">
-              <label htmlFor="producto-barcode">Barcode</label>
-              <input
-                id="producto-barcode"
-                name="barcode"
-                type="text"
-                placeholder="Escanear o ingresar codigo"
-                value={formProducto.barcode}
-                onChange={manejarCampo}
-                autoFocus
-              />
-            </div>
-
-            <div className="estructura__campo">
-              <label htmlFor="producto-nombre">Nombre producto</label>
+              <label htmlFor="producto-nombre">Nombre</label>
               <input
                 id="producto-nombre"
                 name="nombre"
@@ -280,6 +270,158 @@ function Productos() {
                 value={formProducto.nombre}
                 onChange={manejarCampo}
                 required
+                autoFocus
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-marca">Marca</label>
+              <input
+                id="producto-marca"
+                name="marca"
+                type="text"
+                value={formProducto.marca}
+                onChange={manejarCampo}
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-categoria">Categoría</label>
+              <input
+                id="producto-categoria"
+                name="categoria"
+                type="text"
+                value={formProducto.categoria}
+                onChange={manejarCampo}
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-genero">Género</label>
+              <select
+                id="producto-genero"
+                name="genero"
+                value={formProducto.genero}
+                onChange={manejarCampo}
+              >
+                <option value="">Seleccionar género</option>
+                <option value="Mujer">Mujer</option>
+                <option value="Hombre">Hombre</option>
+              </select>
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-descripcion">Descripción</label>
+              <textarea
+                id="producto-descripcion"
+                name="descripcion"
+                value={formProducto.descripcion}
+                onChange={manejarCampo}
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="producto-activo">Activo</label>
+              <input
+                id="producto-activo"
+                name="activo"
+                type="checkbox"
+                checked={formProducto.activo}
+                onChange={manejarCampo}
+              />
+            </div>
+          </form>
+        </ModalAdmin>
+      )}
+
+      {modalAbierto === "variante" && (
+        <ModalAdmin
+          titulo="Nueva variante"
+          onClose={() => setModalAbierto(null)}
+          formId="formulario-nueva-variante"
+        >
+          <form
+            id="formulario-nueva-variante"
+            className="estructura__formulario"
+            onSubmit={manejarCrearVariante}
+          >
+            <div className="estructura__campo">
+              <label htmlFor="variante-producto">Producto</label>
+              <select
+                id="variante-producto"
+                name="productoId"
+                value={formVariante.productoId}
+                onChange={manejarCampoVariante}
+                required
+                autoFocus
+              >
+                <option value="">Seleccionar producto</option>
+                {productos.map((producto) => (
+                  <option key={producto.id} value={producto.id}>
+                    {producto.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-color">Color</label>
+              <input
+                id="variante-color"
+                name="color"
+                type="text"
+                value={formVariante.color}
+                onChange={manejarCampoVariante}
+                required
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-talle">Talle</label>
+              <input
+                id="variante-talle"
+                name="talle"
+                type="text"
+                value={formVariante.talle}
+                onChange={manejarCampoVariante}
+                required
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-barcode">Barcode</label>
+              <input
+                id="variante-barcode"
+                name="barcode"
+                type="text"
+                value={formVariante.barcode}
+                onChange={manejarCampoVariante}
+                required
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-precio">Precio</label>
+              <input
+                id="variante-precio"
+                name="precio"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formVariante.precio}
+                onChange={manejarCampoVariante}
+                required
+              />
+            </div>
+
+            <div className="estructura__campo">
+              <label htmlFor="variante-activo">Activo</label>
+              <input
+                id="variante-activo"
+                name="activo"
+                type="checkbox"
+                checked={formVariante.activo}
+                onChange={manejarCampoVariante}
               />
             </div>
           </form>
