@@ -1,18 +1,26 @@
+.admin-productos__fila {
+  background: var(--color-fondo-suave);
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio-md);
+  transition: background-color 0.2s ease;
+}
+
+.admin-productos__fila:hover {
+  background: var(--color-fondo-editorial);
+}
+
 @media (min-width: 48rem) {
   .admin-productos__cabecera,
   .admin-productos__fila {
-    --estructura-tabla-ancho-minimo: 56rem;
+    --estructura-tabla-ancho-minimo: 52rem;
     --estructura-tabla-columnas:
-      minmax(4.75rem, 0.75fr)
-      minmax(6.5rem, 1.2fr)
-      minmax(4.25rem, 0.75fr)
-      minmax(4.25rem, 0.7fr)
-      minmax(6rem, 1fr)
-      minmax(5.75rem, 0.95fr)
-      minmax(3rem, 0.45fr)
-      minmax(4rem, 0.65fr)
-      minmax(4rem, 0.65fr)
-      minmax(7rem, 1.15fr);
+      minmax(7rem, 1.25fr)
+      minmax(5.5rem, 0.85fr)
+      minmax(5rem, 0.75fr)
+      minmax(7rem, 1fr)
+      minmax(4.75rem, 0.65fr)
+      minmax(3.75rem, 0.5fr)
+      minmax(8rem, 1fr);
 
     font-size: var(--estructura-texto-sm);
   }
