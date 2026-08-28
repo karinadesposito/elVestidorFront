@@ -624,8 +624,45 @@ export async function obtenerCatalogosOpciones() {
     color: mapearGrupo(grupoColor),
     talleAlfabetico: mapearGrupo(grupoTalleAlfabetico),
     talleNumerico: mapearGrupo(grupoTalleNumerico),
+  } }
+  export async function obtenerCatalogosProducto() {
+  const facetas = await obtenerFacetas()
+
+  const facetaMarca = facetas.find(
+    (faceta) => faceta.code === FACETAS.marca.codigo,
+  )
+
+  const facetaGenero = facetas.find(
+    (faceta) => faceta.code === FACETAS.genero.codigo,
+  )
+
+  const facetaTipoProducto = facetas.find(
+    (faceta) => faceta.code === FACETAS.tipoProducto.codigo,
+  )
+
+  return {
+    marcas: (facetaMarca?.values || []).map((valor) => ({
+      id: valor.id,
+      nombre: valor.name,
+      codigo: valor.code,
+    })),
+
+    generos: (facetaGenero?.values || []).map((valor) => ({
+      id: valor.id,
+      nombre: valor.name,
+      codigo: valor.code,
+    })),
+
+    tiposProducto: (facetaTipoProducto?.values || []).map(
+      (valor) => ({
+        id: valor.id,
+        nombre: valor.name,
+        codigo: valor.code,
+      }),
+    ),
   }
 }
+
 
 export async function obtenerProductos({
   pagina = 1,
@@ -647,7 +684,89 @@ export async function obtenerProductos({
     total: data.products.totalItems,
   }
 }
+export async function buscarProductosPorNombre(nombre) {
+  const nombreBuscado = String(nombre || '').trim()
 
+  if (!nombreBuscado) {
+    return []
+  }
+
+  const palabras = nombreBuscado
+    .toLowerCase()
+    .split(/\s+/)
+    .map((palabra) => palabra.trim())
+    .filter(Boolean)
+
+  const filtros = palabras.map((palabra) => ({
+    name: {
+      contains: palabra,
+    },
+  }))
+
+  const { data } = await client.query({
+    query: OBTENER_PRODUCTOS,
+    variables: {
+      options: {
+        filter: {
+          _or: filtros,
+        },
+        take: 50,
+      },
+    },
+    fetchPolicy: 'network-only',
+  })
+
+  return data.products.items.map(mapearProducto)
+}
+function normalizarNombreParaComparacion(nombre) {
+  return String(nombre || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function analizarCoincidenciasNombre(nombre, productos) {
+  const nombreNormalizado =
+    normalizarNombreParaComparacion(nombre)
+
+  if (!nombreNormalizado) {
+    return []
+  }
+
+  return productos
+    .map((producto) => {
+      const productoNormalizado =
+        normalizarNombreParaComparacion(producto.nombre)
+
+      if (!productoNormalizado) {
+        return null
+      }
+
+      if (productoNormalizado === nombreNormalizado) {
+        return {
+          tipo: 'exacta',
+          producto,
+        }
+      }
+
+      if (
+        productoNormalizado.includes(nombreNormalizado) ||
+        nombreNormalizado.includes(productoNormalizado)
+      ) {
+        return {
+          tipo: 'similar',
+          producto,
+        }
+      }
+
+      return null
+    })
+    .filter(Boolean)
+}
 export async function crearProducto({
   nombre,
   descripcion,
