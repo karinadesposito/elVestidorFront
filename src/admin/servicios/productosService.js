@@ -22,18 +22,14 @@ const FACETAS = {
   },
 }
 
-const GRUPOS_OPCIONES = {
+const TIPOS_GRUPO = {
   color: {
     codigo: 'color',
     nombre: 'Color',
   },
-  talleAlfabetico: {
-    codigo: 'talle-alfabetico',
-    nombre: 'Talle alfabético',
-  },
-  talleNumerico: {
-    codigo: 'talle-numerico',
-    nombre: 'Talle numérico',
+  talle: {
+    codigo: 'talle',
+    nombre: 'Talle',
   },
 }
 
@@ -45,16 +41,19 @@ const OBTENER_PRODUCTOS = gql`
         name
         description
         enabled
+
         facetValues {
           id
           name
           code
+
           facet {
             id
             name
             code
           }
         }
+
         variants {
           id
           name
@@ -62,20 +61,24 @@ const OBTENER_PRODUCTOS = gql`
           enabled
           price
           stockOnHand
+
           options {
             id
             name
             code
+
             group {
               id
               name
               code
             }
           }
+
           facetValues {
             id
             name
             code
+
             facet {
               id
               name
@@ -84,6 +87,7 @@ const OBTENER_PRODUCTOS = gql`
           }
         }
       }
+
       totalItems
     }
   }
@@ -96,26 +100,32 @@ const OBTENER_PRODUCTO = gql`
       name
       description
       enabled
+
       facetValues {
         id
         name
         code
+
         facet {
           id
           name
           code
         }
       }
+
       optionGroups {
         id
         name
         code
+        productCount
+
         options {
           id
           name
           code
         }
       }
+
       variants {
         id
         name
@@ -123,10 +133,12 @@ const OBTENER_PRODUCTO = gql`
         enabled
         price
         stockOnHand
+
         options {
           id
           name
           code
+
           group {
             id
             name
@@ -145,33 +157,14 @@ const OBTENER_FACETAS = gql`
         id
         name
         code
+
         values {
           id
           name
           code
         }
       }
-      totalItems
-    }
-  }
-`
 
-const OBTENER_GRUPOS_OPCIONES = gql`
-  query ObtenerGruposOpciones(
-    $options: ProductOptionGroupListOptions
-  ) {
-    productOptionGroups(options: $options) {
-      items {
-        id
-        name
-        code
-        productCount
-        options {
-          id
-          name
-          code
-        }
-      }
       totalItems
     }
   }
@@ -184,10 +177,12 @@ const CREAR_PRODUCTO = gql`
       name
       description
       enabled
+
       facetValues {
         id
         name
         code
+
         facet {
           id
           name
@@ -204,6 +199,7 @@ const CREAR_FACETA = gql`
       id
       name
       code
+
       values {
         id
         name
@@ -224,6 +220,34 @@ const CREAR_VALOR_FACETA = gql`
   }
 `
 
+const CREAR_GRUPO_OPCIONES = gql`
+  mutation CrearGrupoOpciones($input: CreateProductOptionGroupInput!) {
+    createProductOptionGroup(input: $input) {
+      id
+      name
+      code
+      productCount
+
+      options {
+        id
+        name
+        code
+      }
+    }
+  }
+`
+
+const CREAR_OPCION_PRODUCTO = gql`
+  mutation CrearOpcionProducto($input: CreateProductOptionInput!) {
+    createProductOption(input: $input) {
+      id
+      name
+      code
+      groupId
+    }
+  }
+`
+
 const AGREGAR_GRUPO_AL_PRODUCTO = gql`
   mutation AgregarGrupoAlProducto(
     $productId: ID!
@@ -235,10 +259,18 @@ const AGREGAR_GRUPO_AL_PRODUCTO = gql`
     ) {
       id
       name
+
       optionGroups {
         id
         name
         code
+        productCount
+
+        options {
+          id
+          name
+          code
+        }
       }
     }
   }
@@ -255,20 +287,24 @@ const CREAR_VARIANTE = gql`
       enabled
       price
       stockOnHand
+
       options {
         id
         name
         code
+
         group {
           id
           name
           code
         }
       }
+
       facetValues {
         id
         name
         code
+
         facet {
           id
           name
@@ -295,6 +331,14 @@ function generarSlug(nombre) {
   return generarCodigo(nombre)
 }
 
+function normalizarTexto(valor) {
+  return String(valor || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 function pesosACentavos(precio) {
   const valorNormalizado = String(precio ?? '')
     .trim()
@@ -317,57 +361,55 @@ function formatearPrecio(precioEnCentavos = 0) {
   }).format(precioEnCentavos / 100)
 }
 
-function obtenerValorFaceta(valoresFaceta, codigoFaceta) {
+function obtenerValorFaceta(
+  valoresFaceta,
+  codigoFaceta,
+) {
   return (
     valoresFaceta?.find(
-      (valor) => valor.facet?.code === codigoFaceta,
+      (valor) =>
+        valor.facet?.code === codigoFaceta,
     )?.name || ''
   )
 }
 
-function obtenerOpcionPorGrupo(opciones, codigoGrupo) {
+function esGrupoColor(grupo) {
+  const codigo = normalizarTexto(grupo?.code)
+  const nombre = normalizarTexto(grupo?.name)
+
   return (
-    opciones?.find(
-      (opcion) => opcion.group?.code === codigoGrupo,
+    nombre === 'color' ||
+    codigo === 'color' ||
+    codigo.startsWith('color-')
+  )
+}
+
+function esGrupoTalle(grupo) {
+  const codigo = normalizarTexto(grupo?.code)
+  const nombre = normalizarTexto(grupo?.name)
+
+  return (
+    nombre === 'talle' ||
+    nombre.startsWith('talle ') ||
+    codigo === 'talle' ||
+    codigo.startsWith('talle-')
+  )
+}
+
+function obtenerOpcionColor(opciones = []) {
+  return (
+    opciones.find((opcion) =>
+      esGrupoColor(opcion.group),
     )?.name || ''
   )
 }
 
-function obtenerTalle(opciones) {
+function obtenerOpcionTalle(opciones = []) {
   return (
-    obtenerOpcionPorGrupo(
-      opciones,
-      GRUPOS_OPCIONES.talleAlfabetico.codigo,
-    ) ||
-    obtenerOpcionPorGrupo(
-      opciones,
-      GRUPOS_OPCIONES.talleNumerico.codigo,
-    )
+    opciones.find((opcion) =>
+      esGrupoTalle(opcion.group),
+    )?.name || ''
   )
-}
-
-function obtenerTipoTalle(opciones) {
-  const tieneTalleAlfabetico = opciones?.some(
-    (opcion) =>
-      opcion.group?.code ===
-      GRUPOS_OPCIONES.talleAlfabetico.codigo,
-  )
-
-  if (tieneTalleAlfabetico) {
-    return 'alfabetico'
-  }
-
-  const tieneTalleNumerico = opciones?.some(
-    (opcion) =>
-      opcion.group?.code ===
-      GRUPOS_OPCIONES.talleNumerico.codigo,
-  )
-
-  if (tieneTalleNumerico) {
-    return 'numerico'
-  }
-
-  return 'sin-talle'
 }
 
 function mapearVariante(variante) {
@@ -375,21 +417,30 @@ function mapearVariante(variante) {
 
   return {
     id: variante.id,
+
     nombre:
       variante.name ||
-      opciones.map((opcion) => opcion.name).join(' / ') ||
+      opciones
+        .map((opcion) => opcion.name)
+        .join(' / ') ||
       'Variante',
+
     sku: variante.sku || '—',
+
     precio: variante.price ?? 0,
-    precioFormateado: formatearPrecio(variante.price),
-    activo: variante.enabled,
-    stock: variante.stockOnHand ?? 0,
-    color: obtenerOpcionPorGrupo(
-      opciones,
-      GRUPOS_OPCIONES.color.codigo,
+
+    precioFormateado: formatearPrecio(
+      variante.price,
     ),
-    talle: obtenerTalle(opciones),
-    tipoTalle: obtenerTipoTalle(opciones),
+
+    activo: variante.enabled,
+
+    stock: variante.stockOnHand ?? 0,
+
+    color: obtenerOpcionColor(opciones),
+
+    talle: obtenerOpcionTalle(opciones),
+
     opciones: opciones.map((opcion) => ({
       id: opcion.id,
       nombre: opcion.name,
@@ -401,37 +452,59 @@ function mapearVariante(variante) {
 }
 
 function mapearProducto(producto) {
-  const valoresFaceta = producto.facetValues || []
-  const variantes = (producto.variants || []).map(mapearVariante)
+  const valoresFaceta =
+    producto.facetValues || []
+
+  const variantes = (
+    producto.variants || []
+  ).map(mapearVariante)
 
   return {
     id: producto.id,
+
     nombre: producto.name,
-    descripcion: producto.description || '',
+
+    descripcion:
+      producto.description || '',
+
     activo: producto.enabled,
+
     marca: obtenerValorFaceta(
       valoresFaceta,
       FACETAS.marca.codigo,
     ),
+
     genero: obtenerValorFaceta(
       valoresFaceta,
       FACETAS.genero.codigo,
     ),
+
     tipoProducto: obtenerValorFaceta(
       valoresFaceta,
       FACETAS.tipoProducto.codigo,
     ),
+
     variantes,
-    cantidadVariantes: variantes.length,
+
+    cantidadVariantes:
+      variantes.length,
   }
 }
 
-function mapearGrupo(grupo) {
+function mapearGrupoProducto(grupo) {
   return {
     id: grupo.id,
+
     nombre: grupo.name,
+
     codigo: grupo.code,
-    opciones: (grupo.options || []).map((opcion) => ({
+
+    productCount:
+      grupo.productCount ?? 0,
+
+    opciones: (
+      grupo.options || []
+    ).map((opcion) => ({
       id: opcion.id,
       nombre: opcion.name,
       codigo: opcion.code,
@@ -439,17 +512,23 @@ function mapearGrupo(grupo) {
   }
 }
 
-async function obtenerProductoPorId(productId) {
+async function obtenerProductoPorId(
+  productId,
+) {
   const { data } = await client.query({
     query: OBTENER_PRODUCTO,
+
     variables: {
       id: productId,
     },
+
     fetchPolicy: 'network-only',
   })
 
   if (!data.product) {
-    throw new Error('No se encontró el producto seleccionado.')
+    throw new Error(
+      'No se encontró el producto seleccionado.',
+    )
   }
 
   return data.product
@@ -458,37 +537,29 @@ async function obtenerProductoPorId(productId) {
 async function obtenerFacetas() {
   const { data } = await client.query({
     query: OBTENER_FACETAS,
+
     variables: {
       options: {
         take: 1000,
       },
     },
+
     fetchPolicy: 'network-only',
   })
 
   return data.facets.items
 }
 
-async function obtenerGruposOpciones() {
-  const { data } = await client.query({
-    query: OBTENER_GRUPOS_OPCIONES,
-    variables: {
-      options: {
-        take: 1000,
-      },
-    },
-    fetchPolicy: 'network-only',
-  })
-
-  return data.productOptionGroups.items
-}
-
-async function obtenerOCrearFaceta(configuracion) {
-  const facetas = await obtenerFacetas()
-
-  const facetaExistente = facetas.find(
-    (faceta) => faceta.code === configuracion.codigo,
-  )
+async function obtenerOCrearFaceta(
+  configuracion,
+  facetas,
+) {
+  const facetaExistente =
+    facetas.find(
+      (faceta) =>
+        faceta.code ===
+        configuracion.codigo,
+    )
 
   if (facetaExistente) {
     return facetaExistente
@@ -496,14 +567,20 @@ async function obtenerOCrearFaceta(configuracion) {
 
   const { data } = await client.mutate({
     mutation: CREAR_FACETA,
+
     variables: {
       input: {
-        code: configuracion.codigo,
+        code:
+          configuracion.codigo,
+
         isPrivate: false,
+
         translations: [
           {
             languageCode: IDIOMA,
-            name: configuracion.nombre,
+
+            name:
+              configuracion.nombre,
           },
         ],
       },
@@ -516,222 +593,500 @@ async function obtenerOCrearFaceta(configuracion) {
 async function obtenerOCrearValorFaceta({
   configuracionFaceta,
   valor,
+  facetas,
 }) {
-  const nombreValor = String(valor || '').trim()
+  const nombreValor =
+    String(valor || '').trim()
 
   if (!nombreValor) {
     return null
   }
 
-  const codigoValor = generarCodigo(nombreValor)
-  const faceta = await obtenerOCrearFaceta(configuracionFaceta)
+  const codigoValor =
+    generarCodigo(nombreValor)
 
-  const valorExistente = faceta.values?.find(
-    (valorFaceta) => valorFaceta.code === codigoValor,
-  )
+  const faceta =
+    await obtenerOCrearFaceta(
+      configuracionFaceta,
+      facetas,
+    )
+
+  const valorExistente =
+    faceta.values?.find(
+      (valorFaceta) =>
+        valorFaceta.code ===
+        codigoValor,
+    )
 
   if (valorExistente) {
     return valorExistente.id
   }
 
-  const { data } = await client.mutate({
-    mutation: CREAR_VALOR_FACETA,
-    variables: {
-      input: {
-        facetId: faceta.id,
-        code: codigoValor,
-        translations: [
-          {
-            languageCode: IDIOMA,
-            name: nombreValor,
-          },
-        ],
+  const { data } =
+    await client.mutate({
+      mutation:
+        CREAR_VALOR_FACETA,
+
+      variables: {
+        input: {
+          facetId: faceta.id,
+
+          code: codigoValor,
+
+          translations: [
+            {
+              languageCode:
+                IDIOMA,
+
+              name: nombreValor,
+            },
+          ],
+        },
       },
-    },
-  })
+    })
 
   return data.createFacetValue.id
 }
 
-async function asegurarGrupoEnProducto({
+function obtenerGruposSemanticos(
   producto,
-  grupo,
-}) {
-  const grupoYaAsignado = producto.optionGroups?.some(
-    (grupoProducto) => grupoProducto.id === grupo.id,
-  )
+) {
+  const grupos =
+    producto.optionGroups || []
 
-  if (grupoYaAsignado) {
+  const gruposColor =
+    grupos.filter(esGrupoColor)
+
+  const gruposTalle =
+    grupos.filter(esGrupoTalle)
+
+  if (gruposColor.length > 1) {
+    throw new Error(
+      'El producto tiene más de un grupo de opciones de Color. Revisá su estructura en Vendure antes de agregar variantes.',
+    )
+  }
+
+  if (gruposTalle.length > 1) {
+    throw new Error(
+      'El producto tiene más de un grupo de opciones de Talle. Revisá su estructura en Vendure antes de agregar variantes.',
+    )
+  }
+
+  return {
+    color:
+      gruposColor[0] || null,
+
+    talle:
+      gruposTalle[0] || null,
+  }
+}
+
+function validarGrupoPropioProducto(
+  grupo,
+  tipoGrupo,
+) {
+  if (!grupo) {
     return
   }
 
+  if (
+    Number(
+      grupo.productCount,
+    ) > 1
+  ) {
+    throw new Error(
+      `El grupo ${tipoGrupo.nombre} de este producto está compartido con otros productos. Pertenece al modelo anterior de grupos globales y no se utilizará para crear nuevas variantes.`,
+    )
+  }
+}
+
+async function crearGrupoProducto({
+  productId,
+  tipoGrupo,
+}) {
+  const codigoGrupo =
+    `${tipoGrupo.codigo}-${productId}`
+
+  const { data } =
+    await client.mutate({
+      mutation:
+        CREAR_GRUPO_OPCIONES,
+
+      variables: {
+        input: {
+          code: codigoGrupo,
+
+          translations: [
+            {
+              languageCode:
+                IDIOMA,
+
+              name:
+                tipoGrupo.nombre,
+            },
+          ],
+        },
+      },
+    })
+
+  const grupoCreado =
+    data.createProductOptionGroup
+
   await client.mutate({
-    mutation: AGREGAR_GRUPO_AL_PRODUCTO,
+    mutation:
+      AGREGAR_GRUPO_AL_PRODUCTO,
+
     variables: {
-      productId: producto.id,
-      optionGroupId: grupo.id,
+      productId,
+
+      optionGroupId:
+        grupoCreado.id,
     },
+  })
+
+  return {
+    ...grupoCreado,
+
+    productCount: 1,
+
+    options:
+      grupoCreado.options || [],
+  }
+}
+
+async function obtenerOCrearGrupoProducto({
+  producto,
+  tipoGrupo,
+  grupoExistente,
+}) {
+  if (grupoExistente) {
+    validarGrupoPropioProducto(
+      grupoExistente,
+      tipoGrupo,
+    )
+
+    return grupoExistente
+  }
+
+  if (
+    (producto.variants || [])
+      .length > 0
+  ) {
+    throw new Error(
+      `El producto ya tiene variantes pero no posee un grupo propio de ${tipoGrupo.nombre}. Revisá el producto antes de modificar su estructura de opciones.`,
+    )
+  }
+
+  return crearGrupoProducto({
+    productId:
+      producto.id,
+
+    tipoGrupo,
   })
 }
 
-function buscarGrupoPorCodigo(grupos, codigo) {
-  return grupos.find((grupo) => grupo.code === codigo)
-}
+function buscarOpcionPorNombre(
+  grupo,
+  nombreOpcion,
+) {
+  const codigo =
+    generarCodigo(nombreOpcion)
 
-function buscarOpcionPorId(grupo, opcionId) {
-  return grupo?.options?.find(
-    (opcion) => String(opcion.id) === String(opcionId),
+  return grupo.options?.find(
+    (opcion) =>
+      opcion.code === codigo ||
+      generarCodigo(
+        opcion.name,
+      ) === codigo,
   )
 }
 
-export async function obtenerCatalogosOpciones() {
-  const grupos = await obtenerGruposOpciones()
+async function crearOpcionEnGrupo({
+  grupo,
+  nombre,
+}) {
+  const nombreOpcion =
+    String(nombre || '').trim()
 
-  const grupoColor = buscarGrupoPorCodigo(
-    grupos,
-    GRUPOS_OPCIONES.color.codigo,
-  )
-
-  const grupoTalleAlfabetico = buscarGrupoPorCodigo(
-    grupos,
-    GRUPOS_OPCIONES.talleAlfabetico.codigo,
-  )
-
-  const grupoTalleNumerico = buscarGrupoPorCodigo(
-    grupos,
-    GRUPOS_OPCIONES.talleNumerico.codigo,
-  )
-
-  if (!grupoColor) {
+  if (!nombreOpcion) {
     throw new Error(
-      'No existe el grupo de opciones Color en Vendure.',
+      'El nombre de la opción es obligatorio.',
     )
   }
 
-  if (!grupoTalleAlfabetico) {
-    throw new Error(
-      'No existe el grupo Talle alfabético en Vendure.',
+  const codigoOpcion =
+    generarCodigo(
+      nombreOpcion,
     )
+
+  const { data } =
+    await client.mutate({
+      mutation:
+        CREAR_OPCION_PRODUCTO,
+
+      variables: {
+        input: {
+          productOptionGroupId:
+            grupo.id,
+
+          code: codigoOpcion,
+
+          translations: [
+            {
+              languageCode:
+                IDIOMA,
+
+              name:
+                nombreOpcion,
+            },
+          ],
+        },
+      },
+    })
+
+  return data.createProductOption
+}
+
+async function obtenerOCrearOpcionGrupo({
+  grupo,
+  nombre,
+}) {
+  const nombreOpcion =
+    String(nombre || '').trim()
+
+  const opcionExistente =
+    buscarOpcionPorNombre(
+      grupo,
+      nombreOpcion,
+    )
+
+  if (opcionExistente) {
+    return opcionExistente
   }
 
-  if (!grupoTalleNumerico) {
-    throw new Error(
-      'No existe el grupo Talle numérico en Vendure.',
+  return crearOpcionEnGrupo({
+    grupo,
+    nombre:
+      nombreOpcion,
+  })
+}
+
+export async function obtenerCatalogosProducto() {
+  const facetas =
+    await obtenerFacetas()
+
+  const facetaMarca =
+    facetas.find(
+      (faceta) =>
+        faceta.code ===
+        FACETAS.marca.codigo,
     )
-  }
+
+  const facetaGenero =
+    facetas.find(
+      (faceta) =>
+        faceta.code ===
+        FACETAS.genero.codigo,
+    )
+
+  const facetaTipoProducto =
+    facetas.find(
+      (faceta) =>
+        faceta.code ===
+        FACETAS.tipoProducto
+          .codigo,
+    )
+
+  const facetaColor =
+    facetas.find(
+      (faceta) =>
+        faceta.code ===
+        FACETAS.color.codigo,
+    )
 
   return {
-    color: mapearGrupo(grupoColor),
-    talleAlfabetico: mapearGrupo(grupoTalleAlfabetico),
-    talleNumerico: mapearGrupo(grupoTalleNumerico),
-  } }
-  export async function obtenerCatalogosProducto() {
-  const facetas = await obtenerFacetas()
-
-  const facetaMarca = facetas.find(
-    (faceta) => faceta.code === FACETAS.marca.codigo,
-  )
-
-  const facetaGenero = facetas.find(
-    (faceta) => faceta.code === FACETAS.genero.codigo,
-  )
-
-  const facetaTipoProducto = facetas.find(
-    (faceta) => faceta.code === FACETAS.tipoProducto.codigo,
-  )
-
-  return {
-    marcas: (facetaMarca?.values || []).map((valor) => ({
+    marcas: (
+      facetaMarca?.values || []
+    ).map((valor) => ({
       id: valor.id,
       nombre: valor.name,
       codigo: valor.code,
     })),
 
-    generos: (facetaGenero?.values || []).map((valor) => ({
+    generos: (
+      facetaGenero?.values || []
+    ).map((valor) => ({
       id: valor.id,
       nombre: valor.name,
       codigo: valor.code,
     })),
 
-    tiposProducto: (facetaTipoProducto?.values || []).map(
-      (valor) => ({
-        id: valor.id,
-        nombre: valor.name,
-        codigo: valor.code,
-      }),
-    ),
+    tiposProducto: (
+      facetaTipoProducto?.values ||
+      []
+    ).map((valor) => ({
+      id: valor.id,
+      nombre: valor.name,
+      codigo: valor.code,
+    })),
+
+    colores: (
+      facetaColor?.values || []
+    ).map((valor) => ({
+      id: valor.id,
+      nombre: valor.name,
+      codigo: valor.code,
+    })),
   }
 }
 
+export async function obtenerOpcionesProducto(
+  productId,
+) {
+  if (!productId) {
+    return {
+      color: null,
+      talle: null,
+    }
+  }
+
+  const producto =
+    await obtenerProductoPorId(
+      productId,
+    )
+
+  const grupos =
+    obtenerGruposSemanticos(
+      producto,
+    )
+
+  return {
+    color: grupos.color
+      ? mapearGrupoProducto(
+          grupos.color,
+        )
+      : null,
+
+    talle: grupos.talle
+      ? mapearGrupoProducto(
+          grupos.talle,
+        )
+      : null,
+  }
+}
 
 export async function obtenerProductos({
   pagina = 1,
   take = 50,
 } = {}) {
-  const { data } = await client.query({
-    query: OBTENER_PRODUCTOS,
-    variables: {
-      options: {
-        skip: (pagina - 1) * take,
-        take,
+  const { data } =
+    await client.query({
+      query: OBTENER_PRODUCTOS,
+
+      variables: {
+        options: {
+          skip:
+            (pagina - 1) *
+            take,
+
+          take,
+        },
       },
-    },
-    fetchPolicy: 'network-only',
-  })
+
+      fetchPolicy:
+        'network-only',
+    })
 
   return {
-    productos: data.products.items.map(mapearProducto),
-    total: data.products.totalItems,
+    productos:
+      data.products.items.map(
+        mapearProducto,
+      ),
+
+    total:
+      data.products.totalItems,
   }
 }
-export async function buscarProductosPorNombre(nombre) {
-  const nombreBuscado = String(nombre || '').trim()
+
+export async function buscarProductosPorNombre(
+  nombre,
+) {
+  const nombreBuscado =
+    String(nombre || '').trim()
 
   if (!nombreBuscado) {
     return []
   }
 
-  const palabras = nombreBuscado
-    .toLowerCase()
-    .split(/\s+/)
-    .map((palabra) => palabra.trim())
-    .filter(Boolean)
+  const palabras =
+    nombreBuscado
+      .toLowerCase()
+      .split(/\s+/)
+      .map((palabra) =>
+        palabra.trim(),
+      )
+      .filter(Boolean)
 
-  const filtros = palabras.map((palabra) => ({
-    name: {
-      contains: palabra,
-    },
-  }))
-
-  const { data } = await client.query({
-    query: OBTENER_PRODUCTOS,
-    variables: {
-      options: {
-        filter: {
-          _or: filtros,
+  const filtros =
+    palabras.map(
+      (palabra) => ({
+        name: {
+          contains:
+            palabra,
         },
-        take: 50,
-      },
-    },
-    fetchPolicy: 'network-only',
-  })
+      }),
+    )
 
-  return data.products.items.map(mapearProducto)
+  const { data } =
+    await client.query({
+      query: OBTENER_PRODUCTOS,
+
+      variables: {
+        options: {
+          filter: {
+            _or: filtros,
+          },
+
+          take: 50,
+        },
+      },
+
+      fetchPolicy:
+        'network-only',
+    })
+
+  return data.products.items.map(
+    mapearProducto,
+  )
 }
-function normalizarNombreParaComparacion(nombre) {
+
+function normalizarNombreParaComparacion(
+  nombre,
+) {
   return String(nombre || '')
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(
+      /[\u0300-\u036f]/g,
+      '',
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      ' ',
+    )
     .replace(/\s+/g, ' ')
     .trim()
 }
 
-export function analizarCoincidenciasNombre(nombre, productos) {
+export function analizarCoincidenciasNombre(
+  nombre,
+  productos,
+) {
   const nombreNormalizado =
-    normalizarNombreParaComparacion(nombre)
+    normalizarNombreParaComparacion(
+      nombre,
+    )
 
   if (!nombreNormalizado) {
     return []
@@ -740,25 +1095,38 @@ export function analizarCoincidenciasNombre(nombre, productos) {
   return productos
     .map((producto) => {
       const productoNormalizado =
-        normalizarNombreParaComparacion(producto.nombre)
+        normalizarNombreParaComparacion(
+          producto.nombre,
+        )
 
-      if (!productoNormalizado) {
+      if (
+        !productoNormalizado
+      ) {
         return null
       }
 
-      if (productoNormalizado === nombreNormalizado) {
+      if (
+        productoNormalizado ===
+        nombreNormalizado
+      ) {
         return {
           tipo: 'exacta',
+
           producto,
         }
       }
 
       if (
-        productoNormalizado.includes(nombreNormalizado) ||
-        nombreNormalizado.includes(productoNormalizado)
+        productoNormalizado.includes(
+          nombreNormalizado,
+        ) ||
+        nombreNormalizado.includes(
+          productoNormalizado,
+        )
       ) {
         return {
           tipo: 'similar',
+
           producto,
         }
       }
@@ -767,6 +1135,7 @@ export function analizarCoincidenciasNombre(nombre, productos) {
     })
     .filter(Boolean)
 }
+
 export async function crearProducto({
   nombre,
   descripcion,
@@ -775,194 +1144,257 @@ export async function crearProducto({
   genero,
   tipoProducto,
 }) {
-  const nombreProducto = String(nombre || '').trim()
+  const nombreProducto =
+    String(nombre || '').trim()
 
   if (!nombreProducto) {
-    throw new Error('El nombre del producto es obligatorio.')
+    throw new Error(
+      'El nombre del producto es obligatorio.',
+    )
   }
 
   if (!marca?.trim()) {
-    throw new Error('La marca es obligatoria.')
+    throw new Error(
+      'La marca es obligatoria.',
+    )
   }
 
   if (!genero?.trim()) {
-    throw new Error('El género es obligatorio.')
+    throw new Error(
+      'El género es obligatorio.',
+    )
   }
 
   if (!tipoProducto?.trim()) {
-    throw new Error('El tipo de producto es obligatorio.')
+    throw new Error(
+      'El tipo de producto es obligatorio.',
+    )
   }
 
-  const facetValueIds = await Promise.all([
-    obtenerOCrearValorFaceta({
-      configuracionFaceta: FACETAS.marca,
-      valor: marca,
-    }),
-    obtenerOCrearValorFaceta({
-      configuracionFaceta: FACETAS.genero,
-      valor: genero,
-    }),
-    obtenerOCrearValorFaceta({
-      configuracionFaceta: FACETAS.tipoProducto,
-      valor: tipoProducto,
-    }),
-  ])
+  const facetas =
+    await obtenerFacetas()
 
-  const { data } = await client.mutate({
-    mutation: CREAR_PRODUCTO,
-    variables: {
-      input: {
-        enabled: Boolean(activo),
-        facetValueIds: facetValueIds.filter(Boolean),
-        translations: [
-          {
-            languageCode: IDIOMA,
-            name: nombreProducto,
-            description: String(descripcion || '').trim(),
-            slug: generarSlug(nombreProducto),
-          },
-        ],
-      },
+  const facetValueIds = []
+
+  const configuraciones = [
+    {
+      configuracionFaceta:
+        FACETAS.marca,
+
+      valor: marca,
     },
-  })
+    {
+      configuracionFaceta:
+        FACETAS.genero,
+
+      valor: genero,
+    },
+    {
+      configuracionFaceta:
+        FACETAS.tipoProducto,
+
+      valor: tipoProducto,
+    },
+  ]
+
+  for (
+    const configuracion
+    of configuraciones
+  ) {
+    const facetValueId =
+      await obtenerOCrearValorFaceta({
+        ...configuracion,
+
+        facetas,
+      })
+
+    if (facetValueId) {
+      facetValueIds.push(
+        facetValueId,
+      )
+    }
+  }
+
+  const { data } =
+    await client.mutate({
+      mutation:
+        CREAR_PRODUCTO,
+
+      variables: {
+        input: {
+          enabled:
+            Boolean(activo),
+
+          facetValueIds,
+
+          translations: [
+            {
+              languageCode:
+                IDIOMA,
+
+              name:
+                nombreProducto,
+
+              description:
+                String(
+                  descripcion || '',
+                ).trim(),
+
+              slug:
+                generarSlug(
+                  nombreProducto,
+                ),
+            },
+          ],
+        },
+      },
+    })
 
   return data.createProduct
 }
 
 export async function crearVariante({
   productId,
-  colorId,
-  tipoTalle,
-  talleId,
+  color,
+  talle,
   sku,
   precio,
   activo,
 }) {
   if (!productId) {
-    throw new Error('Debés seleccionar un producto.')
+    throw new Error(
+      'Debés seleccionar un producto.',
+    )
   }
 
-  const codigoSku = String(sku || '').trim()
+  const nombreColor =
+    String(color || '').trim()
+
+  if (!nombreColor) {
+    throw new Error(
+      'Debés indicar un color.',
+    )
+  }
+
+  const nombreTalle =
+    String(talle || '').trim()
+
+  const codigoSku =
+    String(sku || '').trim()
 
   if (!codigoSku) {
-    throw new Error('El barcode o SKU es obligatorio.')
+    throw new Error(
+      'El barcode o SKU es obligatorio.',
+    )
   }
 
-  if (!colorId) {
-    throw new Error('Debés seleccionar un color.')
-  }
+  const producto =
+    await obtenerProductoPorId(
+      productId,
+    )
 
-  const tiposTalleValidos = [
-    'alfabetico',
-    'numerico',
-    'sin-talle',
-  ]
+  const gruposActuales =
+    obtenerGruposSemanticos(
+      producto,
+    )
 
-  if (!tiposTalleValidos.includes(tipoTalle)) {
-    throw new Error('Debés seleccionar un tipo de talle.')
-  }
-
-  if (tipoTalle !== 'sin-talle' && !talleId) {
-    throw new Error('Debés seleccionar un talle.')
-  }
-
-  const producto = await obtenerProductoPorId(productId)
-  const grupos = await obtenerGruposOpciones()
-
-  const grupoColor = buscarGrupoPorCodigo(
-    grupos,
-    GRUPOS_OPCIONES.color.codigo,
+  validarGrupoPropioProducto(
+    gruposActuales.color,
+    TIPOS_GRUPO.color,
   )
 
-  if (!grupoColor) {
+  validarGrupoPropioProducto(
+    gruposActuales.talle,
+    TIPOS_GRUPO.talle,
+  )
+
+  if (
+    gruposActuales.talle &&
+    !nombreTalle
+  ) {
     throw new Error(
-      'No existe el grupo de opciones Color en Vendure.',
+      'Este producto utiliza talle. Debés indicar un talle para la variante.',
     )
   }
 
-  const opcionColor = buscarOpcionPorId(grupoColor, colorId)
-
-  if (!opcionColor) {
+  if (
+    !gruposActuales.talle &&
+    !nombreTalle &&
+    (
+      producto.variants || []
+    ).some(
+      (variante) =>
+        obtenerOpcionTalle(
+          variante.options || [],
+        ),
+    )
+  ) {
     throw new Error(
-      'El color seleccionado no pertenece al catálogo de colores.',
+      'Las variantes existentes del producto utilizan talle. Revisá la estructura del producto.',
     )
   }
 
-  const optionIds = [opcionColor.id]
+  const grupoColor =
+    await obtenerOCrearGrupoProducto({
+      producto,
 
-  await asegurarGrupoEnProducto({
-    producto,
-    grupo: grupoColor,
-  })
+      tipoGrupo:
+        TIPOS_GRUPO.color,
+
+      grupoExistente:
+        gruposActuales.color,
+    })
+
+  const opcionColor =
+    await obtenerOCrearOpcionGrupo({
+      grupo: grupoColor,
+
+      nombre: nombreColor,
+    })
+
+  const optionIds = [
+    opcionColor.id,
+  ]
 
   let opcionTalle = null
 
-  if (tipoTalle === 'alfabetico') {
-    const grupoTalleAlfabetico = buscarGrupoPorCodigo(
-      grupos,
-      GRUPOS_OPCIONES.talleAlfabetico.codigo,
+  if (nombreTalle) {
+    const grupoTalle =
+      await obtenerOCrearGrupoProducto({
+        producto,
+
+        tipoGrupo:
+          TIPOS_GRUPO.talle,
+
+        grupoExistente:
+          gruposActuales.talle,
+      })
+
+    opcionTalle =
+      await obtenerOCrearOpcionGrupo({
+        grupo: grupoTalle,
+
+        nombre:
+          nombreTalle,
+      })
+
+    optionIds.push(
+      opcionTalle.id,
     )
-
-    if (!grupoTalleAlfabetico) {
-      throw new Error(
-        'No existe el grupo Talle alfabético en Vendure.',
-      )
-    }
-
-    opcionTalle = buscarOpcionPorId(
-      grupoTalleAlfabetico,
-      talleId,
-    )
-
-    if (!opcionTalle) {
-      throw new Error(
-        'El talle seleccionado no pertenece al catálogo alfabético.',
-      )
-    }
-
-    await asegurarGrupoEnProducto({
-      producto,
-      grupo: grupoTalleAlfabetico,
-    })
-
-    optionIds.push(opcionTalle.id)
   }
 
-  if (tipoTalle === 'numerico') {
-    const grupoTalleNumerico = buscarGrupoPorCodigo(
-      grupos,
-      GRUPOS_OPCIONES.talleNumerico.codigo,
-    )
+  const facetas =
+    await obtenerFacetas()
 
-    if (!grupoTalleNumerico) {
-      throw new Error(
-        'No existe el grupo Talle numérico en Vendure.',
-      )
-    }
+  const colorFacetValueId =
+    await obtenerOCrearValorFaceta({
+      configuracionFaceta:
+        FACETAS.color,
 
-    opcionTalle = buscarOpcionPorId(
-      grupoTalleNumerico,
-      talleId,
-    )
+      valor: nombreColor,
 
-    if (!opcionTalle) {
-      throw new Error(
-        'El talle seleccionado no pertenece al catálogo numérico.',
-      )
-    }
-
-    await asegurarGrupoEnProducto({
-      producto,
-      grupo: grupoTalleNumerico,
+      facetas,
     })
-
-    optionIds.push(opcionTalle.id)
-  }
-
-  const colorFacetValueId = await obtenerOCrearValorFaceta({
-    configuracionFaceta: FACETAS.color,
-    valor: opcionColor.name,
-  })
 
   const nombreVariante = [
     opcionColor.name,
@@ -971,73 +1403,125 @@ export async function crearVariante({
     .filter(Boolean)
     .join(' / ')
 
-  const { data } = await client.mutate({
-    mutation: CREAR_VARIANTE,
-    variables: {
-      input: [
-        {
-          productId,
-          enabled: Boolean(activo),
-          sku: codigoSku,
-          price: pesosACentavos(precio),
-          optionIds,
-          facetValueIds: [colorFacetValueId].filter(Boolean),
-          translations: [
-            {
-              languageCode: IDIOMA,
-              name: nombreVariante,
-            },
-          ],
-        },
-      ],
-    },
-  })
+  const { data } =
+    await client.mutate({
+      mutation:
+        CREAR_VARIANTE,
 
-  const varianteCreada = data.createProductVariants?.[0]
+      variables: {
+        input: [
+          {
+            productId,
+
+            enabled:
+              Boolean(activo),
+
+            sku:
+              codigoSku,
+
+            price:
+              pesosACentavos(
+                precio,
+              ),
+
+            optionIds,
+
+            facetValueIds:
+              colorFacetValueId
+                ? [
+                    colorFacetValueId,
+                  ]
+                : [],
+
+            translations: [
+              {
+                languageCode:
+                  IDIOMA,
+
+                name:
+                  nombreVariante,
+              },
+            ],
+          },
+        ],
+      },
+    })
+
+  const varianteCreada =
+    data.createProductVariants?.[0]
 
   if (!varianteCreada) {
-    throw new Error('Vendure no pudo crear la variante.')
+    throw new Error(
+      'Vendure no pudo crear la variante.',
+    )
   }
 
   return varianteCreada
 }
 
-export function contarPorEstado(productos) {
-  const totalProductos = productos.length
+export function contarPorEstado(
+  productos,
+) {
+  const totalProductos =
+    productos.length
 
-  const productosActivos = productos.filter(
-    (producto) => producto.activo,
-  ).length
+  const productosActivos =
+    productos.filter(
+      (producto) =>
+        producto.activo,
+    ).length
 
   const productosInactivos =
-    totalProductos - productosActivos
+    totalProductos -
+    productosActivos
 
-  const totalVariantes = productos.reduce(
-    (cantidad, producto) =>
-      cantidad + producto.variantes.length,
-    0,
-  )
+  const totalVariantes =
+    productos.reduce(
+      (
+        cantidad,
+        producto,
+      ) =>
+        cantidad +
+        producto.variantes
+          .length,
+      0,
+    )
 
   return [
     {
       nombre: 'Productos',
-      cantidad: totalProductos,
+
+      cantidad:
+        totalProductos,
+
       color: 'fondo-azul',
     },
     {
       nombre: 'Variantes',
-      cantidad: totalVariantes,
-      color: 'fondo-amarillo',
+
+      cantidad:
+        totalVariantes,
+
+      color:
+        'fondo-amarillo',
     },
     {
       nombre: 'Inactivos',
-      cantidad: productosInactivos,
-      color: 'fondo-violeta',
+
+      cantidad:
+        productosInactivos,
+
+      color:
+        'fondo-violeta',
     },
     {
       nombre: 'Activos',
-      cantidad: productosActivos,
-      color: 'fondo-verde',
+
+      cantidad:
+        productosActivos,
+
+      color:
+        'fondo-verde',
     },
   ]
 }
