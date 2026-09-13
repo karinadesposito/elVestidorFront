@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+
 import {
   obtenerProductos,
-  obtenerCatalogosOpciones,
   obtenerCatalogosProducto,
+  obtenerOpcionesProducto,
   contarPorEstado,
   crearProducto,
   crearVariante,
@@ -15,6 +16,126 @@ import {
 } from "../servicios/productosService";
 
 import "../../estilos/admin-productos.css";
+import VariantesProducto from "../componentes/VariantesProducto";
+const COLORES_REFERENCIA = [
+  "Negro",
+  "Blanco",
+  "Gris",
+  "Azul",
+  "Azul marino",
+  "Celeste",
+  "Rojo",
+  "Bordo",
+  "Verde",
+  "Verde oliva",
+  "Beige",
+  "Marrón",
+  "Camel",
+  "Amarillo",
+  "Naranja",
+  "Rosa",
+  "Violeta",
+  "Lila",
+  "Chocolate",
+  "Multicolor",
+];
+
+const TALLES_ALFABETICOS = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+const TALLES_NUMERICOS = [
+  "24",
+  "25",
+  "26",
+  "27",
+  "28",
+  "29",
+  "30",
+  "31",
+  "32",
+  "33",
+  "34",
+  "35",
+  "36",
+  "38",
+  "40",
+  "42",
+  "44",
+  "46",
+  "48",
+  "50",
+  "52",
+  "54",
+  "56",
+  "58",
+  "60",
+];
+
+function normalizarBusqueda(valor) {
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function obtenerValoresSinRepetidos(...listas) {
+  const valores = listas.flat();
+  const mapa = new Map();
+
+  valores.forEach((valor) => {
+    const nombre = typeof valor === "string" ? valor : valor?.nombre;
+
+    if (!nombre) {
+      return;
+    }
+
+    const clave = normalizarBusqueda(nombre);
+
+    if (!mapa.has(clave)) {
+      mapa.set(clave, nombre);
+    }
+  });
+
+  return Array.from(mapa.values());
+}
+
+function filtrarSugerencias(valores, busqueda) {
+  const termino = normalizarBusqueda(busqueda);
+
+  if (!termino) {
+    return [];
+  }
+
+  return valores.filter((valor) =>
+    normalizarBusqueda(valor).startsWith(termino),
+  );
+}
+
+function obtenerValorCanonico(valores, valorIngresado) {
+  const termino = normalizarBusqueda(valorIngresado);
+
+  if (!termino) {
+    return valorIngresado;
+  }
+
+  const coincidenciaExacta = valores.find(
+    (valor) => normalizarBusqueda(valor) === termino,
+  );
+
+  if (coincidenciaExacta) {
+    return coincidenciaExacta;
+  }
+
+  const coincidenciasParciales = valores.filter((valor) =>
+    normalizarBusqueda(valor).startsWith(termino),
+  );
+
+  if (coincidenciasParciales.length === 1) {
+    return coincidenciasParciales[0];
+  }
+
+  return valorIngresado;
+}
 
 const FORM_PRODUCTO_INICIAL = {
   nombre: "",
@@ -27,9 +148,8 @@ const FORM_PRODUCTO_INICIAL = {
 
 const FORM_VARIANTE_INICIAL = {
   productoId: "",
-  colorId: "",
-  tipoTalle: "",
-  talleId: "",
+  color: "",
+  talle: "",
   barcode: "",
   precio: "",
   activo: true,
@@ -38,45 +158,75 @@ const FORM_VARIANTE_INICIAL = {
 function Productos() {
   const [productos, setProductos] = useState([]);
   const [resumenProductos, setResumenProductos] = useState([]);
-  const [catalogos, setCatalogos] = useState(null);
   const [catalogosProducto, setCatalogosProducto] = useState(null);
+  const [opcionesProducto, setOpcionesProducto] = useState({
+    color: null,
+    talle: null,
+  });
+
   const [cargando, setCargando] = useState(true);
+  const [cargandoOpciones, setCargandoOpciones] = useState(false);
   const [error, setError] = useState(null);
+  const [mensajeExito, setMensajeExito] = useState("");
   const [modalAbierto, setModalAbierto] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [advertenciasNombre, setAdvertenciasNombre] = useState([]);
-  const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
-  const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
 
+  const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
+
+  const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
+  const [productoVariantesAbiertoId, setProductoVariantesAbiertoId] =
+    useState(null);
   useEffect(() => {
     cargarDatos();
   }, []);
-
+  const [colorSeleccionado, setColorSeleccionado] = useState(false);
   async function cargarDatos() {
     setCargando(true);
     setError(null);
 
     try {
-      const [
-        respuestaProductos,
-        respuestaCatalogos,
-        respuestaCatalogosProducto,
-      ] = await Promise.all([
-        obtenerProductos(),
-        obtenerCatalogosOpciones(),
-        obtenerCatalogosProducto(),
-      ]);
-
+      const [respuestaProductos, respuestaCatalogosProducto] =
+        await Promise.all([obtenerProductos(), obtenerCatalogosProducto()]);
+      console.log("PRODUCTOS VENDURE:", respuestaProductos.productos);
       setProductos(respuestaProductos.productos);
 
       setResumenProductos(contarPorEstado(respuestaProductos.productos));
 
-      setCatalogos(respuestaCatalogos);
       setCatalogosProducto(respuestaCatalogosProducto);
     } catch (err) {
       setError(err.message);
     } finally {
       setCargando(false);
+    }
+  }
+
+  async function cargarOpcionesProducto(productoId) {
+    if (!productoId) {
+      setOpcionesProducto({
+        color: null,
+        talle: null,
+      });
+
+      return;
+    }
+
+    setCargandoOpciones(true);
+    setError(null);
+
+    try {
+      const opciones = await obtenerOpcionesProducto(productoId);
+
+      setOpcionesProducto(opciones);
+    } catch (err) {
+      setOpcionesProducto({
+        color: null,
+        talle: null,
+      });
+
+      setError(err.message);
+    } finally {
+      setCargandoOpciones(false);
     }
   }
 
@@ -87,6 +237,7 @@ function Productos() {
       ...anterior,
       [name]: type === "checkbox" ? checked : value,
     }));
+
     if (name === "nombre") {
       setAdvertenciasNombre([]);
     }
@@ -95,50 +246,106 @@ function Productos() {
   function manejarCampoVariante(e) {
     const { name, value, type, checked } = e.target;
 
-    setFormVariante((anterior) => {
-      if (name === "tipoTalle") {
-        return {
-          ...anterior,
-          tipoTalle: value,
-          talleId: "",
-        };
-      }
+    setFormVariante((anterior) => ({
+      ...anterior,
+      [name]: type === "checkbox" ? checked : value,
+    }));
 
-      return {
+    if (name === "productoId") {
+      setFormVariante((anterior) => ({
         ...anterior,
-        [name]: type === "checkbox" ? checked : value,
-      };
-    });
+        productoId: value,
+        color: "",
+        talle: "",
+      }));
+
+      cargarOpcionesProducto(value);
+    }
+  }
+
+  function seleccionarColor(color) {
+    setFormVariante((anterior) => ({
+      ...anterior,
+      color,
+    }));
+
+    setColorSeleccionado(true);
+  }
+
+  function seleccionarTalle(talle) {
+    setFormVariante((anterior) => ({
+      ...anterior,
+      talle,
+    }));
+  }
+
+  function normalizarColorIngresado() {
+    setFormVariante((anterior) => ({
+      ...anterior,
+      color: obtenerValorCanonico(coloresDisponibles, anterior.color),
+    }));
+  }
+
+  function normalizarTalleIngresado() {
+    setFormVariante((anterior) => ({
+      ...anterior,
+      talle: obtenerValorCanonico(
+        tallesDisponibles,
+        anterior.talle,
+      ).toUpperCase(),
+    }));
   }
 
   function abrirModalProducto() {
     setError(null);
+    setMensajeExito("");
+    setAdvertenciasNombre([]);
+    setFormProducto(FORM_PRODUCTO_INICIAL);
     setModalAbierto("producto");
   }
 
   function abrirModalVariante(productoId = "") {
     setError(null);
+    setMensajeExito("");
 
     setFormVariante({
       ...FORM_VARIANTE_INICIAL,
       productoId,
     });
 
-    setModalAbierto("variante");
-  }
+    setOpcionesProducto({
+      color: null,
+      talle: null,
+    });
 
+    setModalAbierto("variante");
+
+    if (productoId) {
+      cargarOpcionesProducto(productoId);
+    }
+  }
   function cerrarModal() {
     if (guardando) {
       return;
     }
 
     setModalAbierto(null);
+    setError(null);
+    setMensajeExito("");
+    setAdvertenciasNombre([]);
+
+    setOpcionesProducto({
+      color: null,
+      talle: null,
+    });
   }
 
   async function manejarCrearProducto(e) {
     e.preventDefault();
+
     setGuardando(true);
     setError(null);
+    setMensajeExito("");
 
     try {
       await crearProducto({
@@ -151,9 +358,16 @@ function Productos() {
       });
 
       setFormProducto(FORM_PRODUCTO_INICIAL);
-      setModalAbierto(null);
+      setAdvertenciasNombre([]);
+
+      setMensajeExito("Producto guardado correctamente.");
 
       await cargarDatos();
+
+      setTimeout(() => {
+        setModalAbierto(null);
+        setMensajeExito("");
+      }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -163,30 +377,102 @@ function Productos() {
 
   async function manejarCrearVariante(e) {
     e.preventDefault();
+    if (!colorSeleccionado) {
+      setError("Debés seleccionar un color de la lista.");
+      return;
+    }
+    const colorNormalizado = obtenerValorCanonico(
+      coloresDisponibles,
+      formVariante.color.trim(),
+    );
+
+    const colorValido = coloresDisponibles.some(
+      (color) =>
+        normalizarBusqueda(color) === normalizarBusqueda(colorNormalizado),
+    );
+
+    if (!colorValido) {
+      setError("Debés seleccionar un color válido de la lista.");
+      return;
+    }
+
+    const talleIngresado = formVariante.talle.trim();
+    const talleNormalizado = talleIngresado
+      ? obtenerValorCanonico(tallesDisponibles, talleIngresado).toUpperCase()
+      : "";
+
+    if (!colorNormalizado) {
+      setError("El color es obligatorio.");
+      return;
+    }
+
+    if (talleNormalizado) {
+      const esTalleNumerico = /^\d{1,2}$/.test(talleNormalizado);
+
+      const esTalleAlfabetico = TALLES_ALFABETICOS.includes(talleNormalizado);
+
+      if (!esTalleNumerico && !esTalleAlfabetico) {
+        setError(
+          "El talle debe ser numérico de hasta 2 dígitos o uno de los talles alfabéticos sugeridos.",
+        );
+        return;
+      }
+    }
+
+    const productoSeleccionado = productos.find(
+      (producto) => String(producto.id) === String(formVariante.productoId),
+    );
+
+    const varianteExistente = productoSeleccionado?.variantes?.some(
+      (variante) =>
+        normalizarBusqueda(variante.color) ===
+          normalizarBusqueda(colorNormalizado) &&
+        normalizarBusqueda(variante.talle) ===
+          normalizarBusqueda(talleNormalizado),
+    );
+
+    if (varianteExistente) {
+      setError(
+        "Ya existe una variante con ese color y talle para este producto.",
+      );
+      return;
+    }
+
     setGuardando(true);
     setError(null);
+    setMensajeExito("");
 
     try {
       await crearVariante({
         productId: formVariante.productoId,
-        colorId: formVariante.colorId,
-        tipoTalle: formVariante.tipoTalle,
-        talleId: formVariante.talleId,
+        color: colorNormalizado,
+        talle: talleNormalizado,
         sku: formVariante.barcode,
         precio: formVariante.precio,
         activo: formVariante.activo,
       });
 
       setFormVariante(FORM_VARIANTE_INICIAL);
-      setModalAbierto(null);
+
+      setOpcionesProducto({
+        color: null,
+        talle: null,
+      });
+      setMensajeExito("Variante guardada correctamente.");
 
       await cargarDatos();
+
+      setTimeout(() => {
+        setModalAbierto(null);
+        setMensajeExito("");
+      }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
       setGuardando(false);
     }
   }
+
   async function verificarNombreProducto() {
     const nombre = formProducto.nombre.trim();
 
@@ -208,28 +494,54 @@ function Productos() {
       setAdvertenciasNombre([]);
     }
   }
-  function obtenerOpcionesTalle() {
-    if (!catalogos) {
-      return [];
-    }
 
-    if (formVariante.tipoTalle === "alfabetico") {
-      return catalogos.talleAlfabetico.opciones;
-    }
+  const coloresExistentesProducto = opcionesProducto.color?.opciones || [];
 
-    if (formVariante.tipoTalle === "numerico") {
-      return catalogos.talleNumerico.opciones;
-    }
+  const tallesExistentesProducto = opcionesProducto.talle?.opciones || [];
 
-    return [];
+  const coloresCatalogo = catalogosProducto?.colores || [];
+
+  const coloresDisponibles = obtenerValoresSinRepetidos(
+    COLORES_REFERENCIA,
+    coloresCatalogo,
+    coloresExistentesProducto,
+  );
+  console.log("COLORES CATÁLOGO:", coloresCatalogo);
+  console.log("COLORES EXISTENTES PRODUCTO:", coloresExistentesProducto);
+  const tallesDisponibles = obtenerValoresSinRepetidos(
+    TALLES_ALFABETICOS,
+    TALLES_NUMERICOS,
+    tallesExistentesProducto,
+  );
+
+  const coloresSugeridos = filtrarSugerencias(
+    coloresDisponibles,
+    formVariante.color,
+  );
+
+  const tallesSugeridos = filtrarSugerencias(
+    tallesDisponibles,
+    formVariante.talle,
+  );
+
+  const mostrarSugerenciasColor =
+    Boolean(formVariante.color.trim()) &&
+    !coloresDisponibles.some(
+      (color) =>
+        normalizarBusqueda(color) === normalizarBusqueda(formVariante.color),
+    );
+
+  const mostrarSugerenciasTalle =
+    Boolean(formVariante.talle.trim()) &&
+    !tallesDisponibles.some(
+      (talle) =>
+        normalizarBusqueda(talle) === normalizarBusqueda(formVariante.talle),
+    );
+  function alternarVariantesProducto(productoId) {
+    setProductoVariantesAbiertoId((productoActualId) =>
+      String(productoActualId) === String(productoId) ? null : productoId,
+    );
   }
-
-  const opcionesTalle = obtenerOpcionesTalle();
-
-  const usaTalle =
-    formVariante.tipoTalle === "alfabetico" ||
-    formVariante.tipoTalle === "numerico";
-
   return (
     <main className="estructura">
       <Contenedor>
@@ -239,7 +551,9 @@ function Productos() {
           </div>
         </header>
 
-        {error && <p className="login-admin__error">{error}</p>}
+        {error && modalAbierto !== "variante" && (
+          <p className="login-admin__error">{error}</p>
+        )}
 
         {!cargando && (
           <>
@@ -253,6 +567,7 @@ function Productos() {
                   key={item.nombre}
                 >
                   <span>{item.nombre}</span>
+
                   <strong>{item.cantidad}</strong>
                 </article>
               ))}
@@ -267,11 +582,7 @@ function Productos() {
                     Nuevo producto
                   </Boton>
 
-                  <Boton
-                    variante="admin"
-                    onClick={() => abrirModalVariante()}
-                    disabled={!catalogos}
-                  >
+                  <Boton variante="admin" onClick={() => abrirModalVariante()}>
                     Nueva variante
                   </Boton>
                 </div>
@@ -293,66 +604,89 @@ function Productos() {
                 )}
 
                 {productos.map((producto) => (
-                  <article
-                    className="estructura__tabla-fila admin-productos__fila"
-                    key={producto.id}
-                  >
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Nombre</span>
+                  <Fragment key={producto.id}>
+                    <article className="estructura__tabla-fila admin-productos__fila">
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Nombre
+                        </span>
 
-                      <button className="estructura__tabla-boton" type="button">
-                        {producto.nombre}
-                      </button>
-                    </div>
+                        <button
+                          className="estructura__tabla-boton"
+                          type="button"
+                        >
+                          {producto.nombre}
+                        </button>
+                      </div>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Marca</span>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Marca
+                        </span>
 
-                      <span>{producto.marca || "—"}</span>
-                    </div>
+                        <span>{producto.marca || "—"}</span>
+                      </div>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Género</span>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Género
+                        </span>
 
-                      <span>{producto.genero || "—"}</span>
-                    </div>
+                        <span>{producto.genero || "—"}</span>
+                      </div>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">
-                        Tipo de producto
-                      </span>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Tipo de producto
+                        </span>
 
-                      <span>{producto.tipoProducto || "—"}</span>
-                    </div>
+                        <span>{producto.tipoProducto || "—"}</span>
+                      </div>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">
-                        Variantes
-                      </span>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Variantes
+                        </span>
 
-                      <strong>{producto.cantidadVariantes}</strong>
-                    </div>
+                        <Boton
+                          variante="admin"
+                          type="button"
+                          onClick={() => alternarVariantesProducto(producto.id)}
+                        >
+                          {producto.cantidadVariantes} ·{" "}
+                          {String(productoVariantesAbiertoId) ===
+                          String(producto.id)
+                            ? "Ocultar variantes"
+                            : "Mostrar variantes"}
+                        </Boton>
+                      </div>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Activo
+                        </span>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Activo</span>
+                        <span>{producto.activo ? "Sí" : "No"}</span>
+                      </div>
 
-                      <span>{producto.activo ? "Sí" : "No"}</span>
-                    </div>
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Acciones
+                        </span>
 
-                    <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">
-                        Acciones
-                      </span>
+                        <Boton
+                          variante="admin"
+                          onClick={() => abrirModalVariante(producto.id)}
+                        >
+                          Agregar variante
+                        </Boton>
+                      </div>
+                    </article>
 
-                      <Boton
-                        variante="admin"
-                        onClick={() => abrirModalVariante(producto.id)}
-                        disabled={!catalogos}
-                      >
-                        Agregar variante
-                      </Boton>
-                    </div>
-                  </article>
+                    {String(productoVariantesAbiertoId) ===
+                      String(producto.id) && (
+                      <VariantesProducto variantes={producto.variantes} />
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </section>
@@ -384,6 +718,7 @@ function Productos() {
                 required
                 autoFocus
               />
+
               {advertenciasNombre.map((advertencia) => (
                 <p
                   key={`${advertencia.tipo}-${advertencia.producto.id}`}
@@ -479,21 +814,12 @@ function Productos() {
                 checked={formProducto.activo}
                 onChange={manejarCampoProducto}
               />
-              {advertenciasNombre.map((advertencia) => (
-                <p
-                  key={`${advertencia.tipo}-${advertencia.producto.id}`}
-                  className="admin-productos__advertencia"
-                >
-                  ⚠️{" "}
-                  {advertencia.tipo === "exacta"
-                    ? "Ya existe un producto con el mismo nombre:"
-                    : "Existe un producto con un nombre similar:"}{" "}
-                  <strong>{advertencia.producto.nombre}</strong>
-                </p>
-              ))}
             </div>
-
-            {guardando && <p>Guardando...</p>}
+            {mensajeExito ? (
+              <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
+            ) : (
+              guardando && <p>Guardando...</p>
+            )}
           </form>
         </ModalAdmin>
       )}
@@ -530,67 +856,77 @@ function Productos() {
               </select>
             </div>
 
+            {cargandoOpciones && <p>Cargando opciones del producto...</p>}
+
+            {error && <p className="login-admin__error">{error}</p>}
+
+            {mensajeExito && (
+              <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
+            )}
             <div className="estructura__campo">
               <label htmlFor="variante-color">Color</label>
 
-              <select
+              <input
                 id="variante-color"
-                name="colorId"
-                value={formVariante.colorId}
-                onChange={manejarCampoVariante}
+                name="color"
+                type="text"
+                value={formVariante.color}
+                onChange={(e) => {
+                  manejarCampoVariante(e);
+                  setColorSeleccionado(false);
+                }}
+                autoComplete="off"
                 required
-              >
-                <option value="">Seleccionar color</option>
+              />
 
-                {catalogos?.color.opciones.map((opcion) => (
-                  <option key={opcion.id} value={opcion.id}>
-                    {opcion.nombre}
-                  </option>
+              {mostrarSugerenciasColor &&
+                coloresSugeridos.map((color) => (
+                  <div
+                    className="estructura__lista-item"
+                    key={normalizarBusqueda(color)}
+                  >
+                    <button
+                      className="estructura__tabla-boton"
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => seleccionarColor(color)}
+                    >
+                      {color}
+                    </button>
+                  </div>
                 ))}
-              </select>
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="variante-tipo-talle">Tipo de talle</label>
+              <label htmlFor="variante-talle">Talle</label>
 
-              <select
-                id="variante-tipo-talle"
-                name="tipoTalle"
-                value={formVariante.tipoTalle}
+              <input
+                id="variante-talle"
+                name="talle"
+                type="text"
+                value={formVariante.talle}
                 onChange={manejarCampoVariante}
-                required
-              >
-                <option value="">Seleccionar tipo de talle</option>
+                onBlur={normalizarTalleIngresado}
+                autoComplete="off"
+              />
 
-                <option value="alfabetico">Alfabético</option>
-
-                <option value="numerico">Numérico</option>
-
-                <option value="sin-talle">Sin talle</option>
-              </select>
+              {mostrarSugerenciasTalle &&
+                tallesSugeridos.map((talle) => (
+                  <div
+                    className="estructura__lista-item"
+                    key={normalizarBusqueda(talle)}
+                  >
+                    <button
+                      className="estructura__tabla-boton"
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => seleccionarTalle(talle)}
+                    >
+                      {talle}
+                    </button>
+                  </div>
+                ))}
             </div>
-
-            {usaTalle && (
-              <div className="estructura__campo">
-                <label htmlFor="variante-talle">Talle</label>
-
-                <select
-                  id="variante-talle"
-                  name="talleId"
-                  value={formVariante.talleId}
-                  onChange={manejarCampoVariante}
-                  required
-                >
-                  <option value="">Seleccionar talle</option>
-
-                  {opcionesTalle.map((opcion) => (
-                    <option key={opcion.id} value={opcion.id}>
-                      {opcion.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div className="estructura__campo">
               <label htmlFor="variante-barcode">Barcode</label>

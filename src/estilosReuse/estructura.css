@@ -277,6 +277,36 @@
     justify-content: space-between;
   }
 
+  .estructura__modal {
+    place-items: center;
+    padding: var(--espacio-4);
+  }
+
+  .estructura__modal-acciones {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .estructura__modal-acciones .boton {
+    width: auto;
+  }
+}
+
+@media (min-width: 64rem) {
+  .estructura__encabezado {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .estructura__resumen {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .estructura__grilla {
+    grid-template-columns: 2fr 1fr;
+  }
+
   .estructura__tabla-cabecera,
   .estructura__tabla-fila {
     display: grid;
@@ -307,35 +337,5 @@
 
   .estructura__tabla-etiqueta {
     display: none;
-  }
-
-  .estructura__modal {
-    place-items: center;
-    padding: var(--espacio-4);
-  }
-
-  .estructura__modal-acciones {
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-
-  .estructura__modal-acciones .boton {
-    width: auto;
-  }
-}
-
-@media (min-width: 64rem) {
-  .estructura__encabezado {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
-
-  .estructura__resumen {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .estructura__grilla {
-    grid-template-columns: 2fr 1fr;
   }
 }
