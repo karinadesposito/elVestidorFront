@@ -315,7 +315,7 @@ function obtenerEstadoStock(disponible) {
   if (disponible === 0) {
     return {
       estado: 'Sin stock',
-      color: 'fondo-violeta',
+      color: 'fondo-rojo',
     }
   }
 
@@ -328,7 +328,7 @@ function obtenerEstadoStock(disponible) {
 
   return {
     estado: 'Disponible',
-    color: 'fondo-azul',
+    color: 'fondo-verde',
   }
 }
 
@@ -574,22 +574,22 @@ export function contarStock(stock) {
     {
       nombre: 'Disponibles',
       cantidad: categorias.disponibles,
-      color: 'fondo-azul',
+      color: 'fondo-verde',
     },
     {
       nombre: 'Unidades reservadas',
       cantidad: categorias.reservadas,
-      color: 'fondo-amarillo',
+      color: 'fondo-violeta',
     },
     {
       nombre: 'Stock bajo',
       cantidad: categorias.stockBajo,
-      color: 'fondo-violeta',
+      color: 'fondo-amarillo',
     },
     {
       nombre: 'Sin stock',
       cantidad: categorias.sinStock,
-      color: 'fondo-verde',
+      color: 'fondo-rojo',
     },
   ]
 }
