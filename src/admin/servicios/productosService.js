@@ -278,9 +278,9 @@ const AGREGAR_GRUPO_AL_PRODUCTO = gql`
 
 const CREAR_VARIANTE = gql`
   mutation CrearVariante(
-    $input: [CreateProductVariantInput!]!
+    $input: CreateProductVariantInput!
   ) {
-    createProductVariants(input: $input) {
+    crearVariante(input: $input) {
       id
       name
       sku
@@ -1409,46 +1409,44 @@ export async function crearVariante({
         CREAR_VARIANTE,
 
       variables: {
-        input: [
-          {
-            productId,
+        input: {
+          productId,
 
-            enabled:
-              Boolean(activo),
+          enabled:
+            Boolean(activo),
 
-            sku:
-              codigoSku,
+          sku:
+            codigoSku,
 
-            price:
-              pesosACentavos(
-                precio,
-              ),
+          price:
+            pesosACentavos(
+              precio,
+            ),
 
-            optionIds,
+          optionIds,
 
-            facetValueIds:
-              colorFacetValueId
-                ? [
-                    colorFacetValueId,
-                  ]
-                : [],
+          facetValueIds:
+            colorFacetValueId
+              ? [
+                  colorFacetValueId,
+                ]
+              : [],
 
-            translations: [
-              {
-                languageCode:
-                  IDIOMA,
+          translations: [
+            {
+              languageCode:
+                IDIOMA,
 
-                name:
-                  nombreVariante,
-              },
-            ],
-          },
-        ],
+              name:
+                nombreVariante,
+            },
+          ],
+        },
       },
     })
 
   const varianteCreada =
-    data.createProductVariants?.[0]
+    data.crearVariante
 
   if (!varianteCreada) {
     throw new Error(
