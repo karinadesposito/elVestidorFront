@@ -1,8 +1,10 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { FiMoreVertical, FiSearch, FiX } from "react-icons/fi";
 
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+import VariantesProducto from "../componentes/VariantesProducto";
 
 import {
   obtenerProductos,
@@ -12,13 +14,15 @@ import {
   crearProducto,
   actualizarProducto,
   cambiarEstadoProducto,
+  eliminarProducto,
   crearVariante,
+  buscarProductos,
   buscarProductosPorNombre,
   analizarCoincidenciasNombre,
 } from "../servicios/productosService";
 
 import "../../estilos/admin-productos.css";
-import VariantesProducto from "../componentes/VariantesProducto";
+
 const COLORES_REFERENCIA = [
   "Negro",
   "Blanco",
@@ -42,7 +46,16 @@ const COLORES_REFERENCIA = [
   "Multicolor",
 ];
 
-const TALLES_ALFABETICOS = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const TALLES_ALFABETICOS = [
+  "XXS",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "XXXL",
+];
 
 const TALLES_NUMERICOS = [
   "24",
@@ -71,6 +84,24 @@ const TALLES_NUMERICOS = [
   "58",
   "60",
 ];
+
+const FORM_PRODUCTO_INICIAL = {
+  nombre: "",
+  marca: "",
+  tipoProducto: "",
+  genero: "",
+  descripcion: "",
+  activo: true,
+};
+
+const FORM_VARIANTE_INICIAL = {
+  productoId: "",
+  color: "",
+  talle: "",
+  barcode: "",
+  precio: "",
+  activo: true,
+};
 
 function normalizarBusqueda(valor) {
   return String(valor || "")
@@ -139,28 +170,11 @@ function obtenerValorCanonico(valores, valorIngresado) {
   return valorIngresado;
 }
 
-const FORM_PRODUCTO_INICIAL = {
-  nombre: "",
-  marca: "",
-  tipoProducto: "",
-  genero: "",
-  descripcion: "",
-  activo: true,
-};
-
-const FORM_VARIANTE_INICIAL = {
-  productoId: "",
-  color: "",
-  talle: "",
-  barcode: "",
-  precio: "",
-  activo: true,
-};
-
 function Productos() {
   const [productos, setProductos] = useState([]);
   const [resumenProductos, setResumenProductos] = useState([]);
   const [catalogosProducto, setCatalogosProducto] = useState(null);
+
   const [opcionesProducto, setOpcionesProducto] = useState({
     color: null,
     talle: null,
@@ -172,31 +186,63 @@ function Productos() {
   const [mensajeExito, setMensajeExito] = useState("");
   const [modalAbierto, setModalAbierto] = useState(null);
   const [guardando, setGuardando] = useState(false);
+
   const [productoEditandoId, setProductoEditandoId] = useState(null);
   const [productoConfirmarEstado, setProductoConfirmarEstado] = useState(null);
+  const [productoEliminar, setProductoEliminar] = useState(null);
+  const [procesandoProductoId, setProcesandoProductoId] = useState(null);
+
   const [advertenciasNombre, setAdvertenciasNombre] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [menuAccionesAbiertoId, setMenuAccionesAbiertoId] = useState(null);
 
   const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
-
   const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
+
   const [productoVariantesAbiertoId, setProductoVariantesAbiertoId] =
     useState(null);
+
+  const [colorSeleccionado, setColorSeleccionado] = useState(false);
+  const primeraBusqueda = useRef(true);
+
   useEffect(() => {
     cargarDatos();
   }, []);
-  const [colorSeleccionado, setColorSeleccionado] = useState(false);
-  async function cargarDatos() {
-    setCargando(true);
+
+  useEffect(() => {
+    if (primeraBusqueda.current) {
+      primeraBusqueda.current = false;
+      return;
+    }
+
+    const temporizador = setTimeout(async () => {
+      setBuscando(true);
+      await cargarDatos(busqueda);
+      setBuscando(false);
+    }, 350);
+
+    return () => clearTimeout(temporizador);
+  }, [busqueda]);
+
+  async function cargarDatos(terminoBusqueda = "") {
+    if (!terminoBusqueda.trim()) {
+      setCargando(true);
+    }
+
     setError(null);
 
     try {
       const [respuestaProductos, respuestaCatalogosProducto] =
-        await Promise.all([obtenerProductos(), obtenerCatalogosProducto()]);
-      console.log("PRODUCTOS VENDURE:", respuestaProductos.productos);
+        await Promise.all([
+          terminoBusqueda.trim()
+            ? buscarProductos(terminoBusqueda.trim())
+            : obtenerProductos(),
+          obtenerCatalogosProducto(),
+        ]);
+
       setProductos(respuestaProductos.productos);
-
       setResumenProductos(contarPorEstado(respuestaProductos.productos));
-
       setCatalogosProducto(respuestaCatalogosProducto);
     } catch (err) {
       setError(err.message);
@@ -220,7 +266,6 @@ function Productos() {
 
     try {
       const opciones = await obtenerOpcionesProducto(productoId);
-
       setOpcionesProducto(opciones);
     } catch (err) {
       setOpcionesProducto({
@@ -283,13 +328,6 @@ function Productos() {
     }));
   }
 
-  function normalizarColorIngresado() {
-    setFormVariante((anterior) => ({
-      ...anterior,
-      color: obtenerValorCanonico(coloresDisponibles, anterior.color),
-    }));
-  }
-
   function normalizarTalleIngresado() {
     setFormVariante((anterior) => ({
       ...anterior,
@@ -308,9 +346,9 @@ function Productos() {
     setFormProducto(FORM_PRODUCTO_INICIAL);
     setModalAbierto("producto");
   }
+
   function abrirModalEditarProducto(producto) {
     setProductoEditandoId(producto.id);
-
     setError(null);
     setMensajeExito("");
     setAdvertenciasNombre([]);
@@ -330,6 +368,7 @@ function Productos() {
   function abrirModalVariante(productoId = "") {
     setError(null);
     setMensajeExito("");
+    setColorSeleccionado(false);
 
     setFormVariante({
       ...FORM_VARIANTE_INICIAL,
@@ -347,6 +386,7 @@ function Productos() {
       cargarOpcionesProducto(productoId);
     }
   }
+
   function cerrarModal() {
     if (guardando) {
       return;
@@ -356,6 +396,7 @@ function Productos() {
     setError(null);
     setMensajeExito("");
     setAdvertenciasNombre([]);
+    setColorSeleccionado(false);
 
     setOpcionesProducto({
       color: null,
@@ -400,7 +441,7 @@ function Productos() {
       setProductoEditandoId(null);
       setAdvertenciasNombre([]);
 
-      await cargarDatos();
+      await cargarDatos(busqueda);
 
       setTimeout(() => {
         setModalAbierto(null);
@@ -412,7 +453,10 @@ function Productos() {
       setGuardando(false);
     }
   }
+
   async function manejarCambiarEstadoProducto(producto) {
+    setMenuAccionesAbiertoId(null);
+
     if (producto.activo) {
       setProductoConfirmarEstado(producto);
       return;
@@ -420,9 +464,11 @@ function Productos() {
 
     await ejecutarCambioEstadoProducto(producto);
   }
+
   async function ejecutarCambioEstadoProducto(producto) {
     const nuevoEstado = !producto.activo;
 
+    setProcesandoProductoId(producto.id);
     setError(null);
     setMensajeExito("");
 
@@ -439,22 +485,50 @@ function Productos() {
       );
 
       setProductoConfirmarEstado(null);
-
-      await cargarDatos();
+      await cargarDatos(busqueda);
 
       setTimeout(() => {
         setMensajeExito("");
       }, 1500);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setProcesandoProductoId(null);
     }
   }
+
+  async function ejecutarEliminarProducto(producto) {
+    setProcesandoProductoId(producto.id);
+    setError(null);
+    setMensajeExito("");
+
+    try {
+      await eliminarProducto(producto.id);
+
+      setProductoEliminar(null);
+      setMenuAccionesAbiertoId(null);
+      setMensajeExito("Producto eliminado correctamente.");
+
+      await cargarDatos(busqueda);
+
+      setTimeout(() => {
+        setMensajeExito("");
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setProcesandoProductoId(null);
+    }
+  }
+
   async function manejarCrearVariante(e) {
     e.preventDefault();
+
     if (!colorSeleccionado) {
       setError("Debés seleccionar un color de la lista.");
       return;
     }
+
     const colorNormalizado = obtenerValorCanonico(
       coloresDisponibles,
       formVariante.color.trim(),
@@ -471,6 +545,7 @@ function Productos() {
     }
 
     const talleIngresado = formVariante.talle.trim();
+
     const talleNormalizado = talleIngresado
       ? obtenerValorCanonico(tallesDisponibles, talleIngresado).toUpperCase()
       : "";
@@ -482,7 +557,6 @@ function Productos() {
 
     if (talleNormalizado) {
       const esTalleNumerico = /^\d{1,2}$/.test(talleNormalizado);
-
       const esTalleAlfabetico = TALLES_ALFABETICOS.includes(talleNormalizado);
 
       if (!esTalleNumerico && !esTalleAlfabetico) {
@@ -527,14 +601,15 @@ function Productos() {
       });
 
       setFormVariante(FORM_VARIANTE_INICIAL);
+      setColorSeleccionado(false);
 
       setOpcionesProducto({
         color: null,
         talle: null,
       });
-      setMensajeExito("Variante guardada correctamente.");
 
-      await cargarDatos();
+      setMensajeExito("Variante guardada correctamente.");
+      await cargarDatos(busqueda);
 
       setTimeout(() => {
         setModalAbierto(null);
@@ -575,10 +650,25 @@ function Productos() {
     }
   }
 
+  function alternarVariantesProducto(productoId) {
+    setProductoVariantesAbiertoId((productoActualId) =>
+      String(productoActualId) === String(productoId) ? null : productoId,
+    );
+  }
+
+  function alternarMenuAcciones(productoId) {
+    setMenuAccionesAbiertoId((idActual) =>
+      String(idActual) === String(productoId) ? null : productoId,
+    );
+  }
+
+  function seleccionarAccion(accion) {
+    setMenuAccionesAbiertoId(null);
+    accion();
+  }
+
   const coloresExistentesProducto = opcionesProducto.color?.opciones || [];
-
   const tallesExistentesProducto = opcionesProducto.talle?.opciones || [];
-
   const coloresCatalogo = catalogosProducto?.colores || [];
 
   const coloresDisponibles = obtenerValoresSinRepetidos(
@@ -586,8 +676,7 @@ function Productos() {
     coloresCatalogo,
     coloresExistentesProducto,
   );
-  console.log("COLORES CATÁLOGO:", coloresCatalogo);
-  console.log("COLORES EXISTENTES PRODUCTO:", coloresExistentesProducto);
+
   const tallesDisponibles = obtenerValoresSinRepetidos(
     TALLES_ALFABETICOS,
     TALLES_NUMERICOS,
@@ -617,11 +706,7 @@ function Productos() {
       (talle) =>
         normalizarBusqueda(talle) === normalizarBusqueda(formVariante.talle),
     );
-  function alternarVariantesProducto(productoId) {
-    setProductoVariantesAbiertoId((productoActualId) =>
-      String(productoActualId) === String(productoId) ? null : productoId,
-    );
-  }
+
   return (
     <main className="estructura">
       <Contenedor>
@@ -633,6 +718,10 @@ function Productos() {
 
         {error && modalAbierto !== "variante" && (
           <p className="login-admin__error">{error}</p>
+        )}
+
+        {mensajeExito && !modalAbierto && (
+          <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
         )}
 
         {!cargando && (
@@ -647,7 +736,6 @@ function Productos() {
                   key={item.nombre}
                 >
                   <span>{item.nombre}</span>
-
                   <strong>{item.cantidad}</strong>
                 </article>
               ))}
@@ -668,6 +756,35 @@ function Productos() {
                 </div>
               </div>
 
+              <div className="admin-productos__buscador">
+                <label htmlFor="buscar-productos">Buscar productos</label>
+
+                <div className="admin-productos__buscador-control">
+                  <FiSearch aria-hidden="true" />
+
+                  <input
+                    id="buscar-productos"
+                    type="search"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por nombre o barcode"
+                    autoComplete="off"
+                  />
+
+                  {busqueda && (
+                    <button
+                      type="button"
+                      onClick={() => setBusqueda("")}
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <FiX aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+
+                {buscando && <span>Buscando...</span>}
+              </div>
+
               <div className="estructura__tabla">
                 <div className="estructura__tabla-cabecera admin-productos__cabecera">
                   <span>Nombre</span>
@@ -680,7 +797,11 @@ function Productos() {
                 </div>
 
                 {productos.length === 0 && (
-                  <p>No hay productos para mostrar.</p>
+                  <p>
+                    {busqueda
+                      ? "No se encontraron productos."
+                      : "No hay productos para mostrar."}
+                  </p>
                 )}
 
                 {productos.map((producto) => (
@@ -691,13 +812,7 @@ function Productos() {
                           Nombre
                         </span>
 
-                        <button
-                          className="estructura__tabla-boton"
-                          type="button"
-                          onClick={() => abrirModalEditarProducto(producto)}
-                        >
-                          {producto.nombre}
-                        </button>
+                        <span>{producto.nombre}</span>
                       </div>
 
                       <div className="estructura__tabla-dato">
@@ -740,7 +855,17 @@ function Productos() {
                             ? "Ocultar variantes"
                             : "Mostrar variantes"}
                         </Boton>
+
+                        <Boton
+                          className="admin-productos__agregar-variante-mobile"
+                          variante="admin"
+                          type="button"
+                          onClick={() => abrirModalVariante(producto.id)}
+                        >
+                          Agregar variante
+                        </Boton>
                       </div>
+
                       <div className="estructura__tabla-dato">
                         <span className="estructura__tabla-etiqueta">
                           Activo
@@ -754,26 +879,92 @@ function Productos() {
                           Acciones
                         </span>
 
-                        <Boton
-                          variante="admin"
-                          onClick={() => abrirModalEditarProducto(producto)}
-                        >
-                          Editar
-                        </Boton>
+                        <div className="admin-productos__acciones-mobile">
+                          <button
+                            className="admin-productos__acciones-disparador"
+                            type="button"
+                            onClick={() => alternarMenuAcciones(producto.id)}
+                            aria-label={`Acciones de ${producto.nombre}`}
+                            aria-expanded={
+                              String(menuAccionesAbiertoId) ===
+                              String(producto.id)
+                            }
+                          >
+                            <FiMoreVertical aria-hidden="true" />
+                          </button>
 
-                        <Boton
-                          variante="admin"
-                          onClick={() => manejarCambiarEstadoProducto(producto)}
-                        >
-                          {producto.activo ? "Desactivar" : "Activar"}
-                        </Boton>
+                          {String(menuAccionesAbiertoId) ===
+                            String(producto.id) && (
+                            <div className="admin-productos__acciones-menu">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  seleccionarAccion(() =>
+                                    abrirModalEditarProducto(producto),
+                                  )
+                                }
+                              >
+                                Editar
+                              </button>
 
-                        <Boton
-                          variante="admin"
-                          onClick={() => abrirModalVariante(producto.id)}
-                        >
-                          Agregar variante
-                        </Boton>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  seleccionarAccion(() =>
+                                    manejarCambiarEstadoProducto(producto),
+                                  )
+                                }
+                              >
+                                {producto.activo ? "Desactivar" : "Activar"}
+                              </button>
+
+                              <button
+                                className="admin-productos__accion-peligrosa"
+                                type="button"
+                                onClick={() =>
+                                  seleccionarAccion(() =>
+                                    setProductoEliminar(producto),
+                                  )
+                                }
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="admin-productos__acciones-desktop">
+                          <Boton
+                            variante="admin"
+                            onClick={() => abrirModalEditarProducto(producto)}
+                          >
+                            Editar
+                          </Boton>
+
+                          <Boton
+                            variante="admin"
+                            onClick={() =>
+                              manejarCambiarEstadoProducto(producto)
+                            }
+                          >
+                            {producto.activo ? "Desactivar" : "Activar"}
+                          </Boton>
+
+                          <Boton
+                            variante="admin"
+                            onClick={() => abrirModalVariante(producto.id)}
+                          >
+                            Agregar variante
+                          </Boton>
+
+                          <Boton
+                            className="admin-productos__accion-peligrosa"
+                            variante="admin"
+                            onClick={() => setProductoEliminar(producto)}
+                          >
+                            Eliminar
+                          </Boton>
+                        </div>
                       </div>
                     </article>
 
@@ -910,6 +1101,7 @@ function Productos() {
                 onChange={manejarCampoProducto}
               />
             </div>
+
             {mensajeExito ? (
               <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
             ) : (
@@ -918,10 +1110,15 @@ function Productos() {
           </form>
         </ModalAdmin>
       )}
+
       {productoConfirmarEstado && (
         <ModalAdmin
           titulo="Desactivar producto"
           botonConfirmar="Desactivar"
+          botonConfirmarDeshabilitado={
+            String(procesandoProductoId) ===
+            String(productoConfirmarEstado.id)
+          }
           onClose={() => setProductoConfirmarEstado(null)}
           formId="form-confirmar-desactivar-producto"
         >
@@ -939,6 +1136,38 @@ function Productos() {
               </p>
 
               <p>El producto no se eliminará. Simplemente quedará inactivo.</p>
+            </div>
+          </form>
+        </ModalAdmin>
+      )}
+
+      {productoEliminar && (
+        <ModalAdmin
+          titulo="Eliminar producto"
+          botonConfirmar="Eliminar"
+          botonConfirmarDeshabilitado={
+            String(procesandoProductoId) === String(productoEliminar.id)
+          }
+          onClose={() => setProductoEliminar(null)}
+          formId="form-confirmar-eliminar-producto"
+        >
+          <form
+            id="form-confirmar-eliminar-producto"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await ejecutarEliminarProducto(productoEliminar);
+            }}
+          >
+            <div className="admin-productos__confirmacion">
+              <p>
+                ¿Estás seguro que deseas eliminar el producto{" "}
+                <strong>{productoEliminar.nombre}</strong>?
+              </p>
+
+              <p>
+                El producto dejará de aparecer en el listado, pero conservará
+                su registro en Vendure.
+              </p>
             </div>
           </form>
         </ModalAdmin>
@@ -983,6 +1212,7 @@ function Productos() {
             {mensajeExito && (
               <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
             )}
+
             <div className="estructura__campo">
               <label htmlFor="variante-color">Color</label>
 
