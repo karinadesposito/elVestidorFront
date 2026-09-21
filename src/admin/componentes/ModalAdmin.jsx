@@ -6,6 +6,7 @@ function ModalAdmin({
   onClose,
   formId,
   botonConfirmar = "Guardar",
+  botonConfirmarDeshabilitado = false,
 }) {
   return (
     <div className="estructura__modal" role="dialog" aria-modal="true">
@@ -37,7 +38,11 @@ function ModalAdmin({
             Cancelar
           </Boton>
 
-          <Boton type="submit" form={formId}>
+          <Boton
+            type="submit"
+            form={formId}
+            disabled={botonConfirmarDeshabilitado}
+          >
             {botonConfirmar}
           </Boton>
         </footer>
@@ -47,3 +52,4 @@ function ModalAdmin({
 }
 
 export default ModalAdmin;
+

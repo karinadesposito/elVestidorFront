@@ -213,6 +213,15 @@ const ACTUALIZAR_PRODUCTO = gql`
   }
 `
 
+const ELIMINAR_PRODUCTO = gql`
+  mutation EliminarProducto($id: ID!) {
+    deleteProduct(id: $id) {
+      result
+      message
+    }
+  }
+`
+
 const CREAR_FACETA = gql`
   mutation CrearFaceta($input: CreateFacetInput!) {
     createFacet(input: $input) {
@@ -1028,6 +1037,58 @@ export async function obtenerProductos({
   }
 }
 
+export async function buscarProductos(
+  termino,
+) {
+  const terminoBuscado =
+    String(termino || '').trim()
+
+  if (!terminoBuscado) {
+    return obtenerProductos()
+  }
+
+  const { data } =
+    await client.query({
+      query: OBTENER_PRODUCTOS,
+
+      variables: {
+        options: {
+          filter: {
+            _or: [
+              {
+                name: {
+                  contains:
+                    terminoBuscado,
+                },
+              },
+              {
+                sku: {
+                  contains:
+                    terminoBuscado,
+                },
+              },
+            ],
+          },
+
+          take: 50,
+        },
+      },
+
+      fetchPolicy:
+        'network-only',
+    })
+
+  return {
+    productos:
+      data.products.items.map(
+        mapearProducto,
+      ),
+
+    total:
+      data.products.totalItems,
+  }
+}
+
 export async function buscarProductosPorNombre(
   nombre,
 ) {
@@ -1303,9 +1364,34 @@ export async function actualizarProducto({
     throw new Error('El tipo de producto es obligatorio.')
   }
 
-  const facetas = await obtenerFacetas()
+  const [facetas, productoActual] =
+    await Promise.all([
+      obtenerFacetas(),
+      obtenerProductoPorId(
+        productId,
+      ),
+    ])
 
-  const facetValueIds = []
+  const codigosFacetasEditables =
+    new Set([
+      FACETAS.marca.codigo,
+      FACETAS.genero.codigo,
+      FACETAS.tipoProducto.codigo,
+    ])
+
+  const facetValueIds = (
+    productoActual.facetValues || []
+  )
+    .filter(
+      (valorFaceta) =>
+        !codigosFacetasEditables.has(
+          valorFaceta.facet?.code,
+        ),
+    )
+    .map(
+      (valorFaceta) =>
+        valorFaceta.id,
+    )
 
   const configuraciones = [
     {
@@ -1328,8 +1414,15 @@ export async function actualizarProducto({
       facetas,
     })
 
-    if (facetValueId) {
-      facetValueIds.push(facetValueId)
+    if (
+      facetValueId &&
+      !facetValueIds.includes(
+        facetValueId,
+      )
+    ) {
+      facetValueIds.push(
+        facetValueId,
+      )
     }
   }
 
@@ -1381,6 +1474,41 @@ export async function cambiarEstadoProducto({
 
   return data.updateProduct
 }
+export async function eliminarProducto(
+  productId,
+) {
+  if (!productId) {
+    throw new Error(
+      'Debés seleccionar un producto.',
+    )
+  }
+
+  const { data } =
+    await client.mutate({
+      mutation:
+        ELIMINAR_PRODUCTO,
+
+      variables: {
+        id: productId,
+      },
+    })
+
+  const respuesta =
+    data.deleteProduct
+
+  if (
+    respuesta.result !==
+    'DELETED'
+  ) {
+    throw new Error(
+      respuesta.message ||
+        'Vendure no pudo eliminar el producto.',
+    )
+  }
+
+  return respuesta
+}
+
 export async function crearVariante({
   productId,
   color,
