@@ -1,6 +1,12 @@
 import Boton from "../../componentesReuse/Boton";
 
-function ModalAdmin({ titulo, children, onClose, formId }) {
+function ModalAdmin({
+  titulo,
+  children,
+  onClose,
+  formId,
+  botonConfirmar = "Guardar",
+}) {
   return (
     <div className="estructura__modal" role="dialog" aria-modal="true">
       <button
@@ -32,7 +38,7 @@ function ModalAdmin({ titulo, children, onClose, formId }) {
           </Boton>
 
           <Boton type="submit" form={formId}>
-            Guardar
+            {botonConfirmar}
           </Boton>
         </footer>
       </section>

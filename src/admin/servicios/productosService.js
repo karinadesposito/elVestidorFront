@@ -192,6 +192,26 @@ const CREAR_PRODUCTO = gql`
     }
   }
 `
+const ACTUALIZAR_PRODUCTO = gql`
+  mutation ActualizarProducto($input: UpdateProductInput!) {
+    updateProduct(input: $input) {
+      id
+      name
+      description
+      enabled
+      facetValues {
+        id
+        name
+        code
+        facet {
+          id
+          name
+          code
+        }
+      }
+    }
+  }
+`
 
 const CREAR_FACETA = gql`
   mutation CrearFaceta($input: CreateFacetInput!) {
@@ -1252,7 +1272,115 @@ export async function crearProducto({
 
   return data.createProduct
 }
+export async function actualizarProducto({
+  productId,
+  nombre,
+  descripcion,
+  activo,
+  marca,
+  genero,
+  tipoProducto,
+}) {
+  if (!productId) {
+    throw new Error('Debés seleccionar un producto.')
+  }
 
+  const nombreProducto = String(nombre || '').trim()
+
+  if (!nombreProducto) {
+    throw new Error('El nombre del producto es obligatorio.')
+  }
+
+  if (!marca?.trim()) {
+    throw new Error('La marca es obligatoria.')
+  }
+
+  if (!genero?.trim()) {
+    throw new Error('El género es obligatorio.')
+  }
+
+  if (!tipoProducto?.trim()) {
+    throw new Error('El tipo de producto es obligatorio.')
+  }
+
+  const facetas = await obtenerFacetas()
+
+  const facetValueIds = []
+
+  const configuraciones = [
+    {
+      configuracionFaceta: FACETAS.marca,
+      valor: marca,
+    },
+    {
+      configuracionFaceta: FACETAS.genero,
+      valor: genero,
+    },
+    {
+      configuracionFaceta: FACETAS.tipoProducto,
+      valor: tipoProducto,
+    },
+  ]
+
+  for (const configuracion of configuraciones) {
+    const facetValueId = await obtenerOCrearValorFaceta({
+      ...configuracion,
+      facetas,
+    })
+
+    if (facetValueId) {
+      facetValueIds.push(facetValueId)
+    }
+  }
+
+  const { data } = await client.mutate({
+    mutation: ACTUALIZAR_PRODUCTO,
+    variables: {
+      input: {
+        id: productId,
+        enabled: Boolean(activo),
+        facetValueIds,
+        translations: [
+          {
+            languageCode: IDIOMA,
+            name: nombreProducto,
+            description: String(descripcion || '').trim(),
+            slug: generarSlug(nombreProducto),
+          },
+        ],
+      },
+    },
+  })
+
+  return data.updateProduct
+}
+export async function cambiarEstadoProducto({
+  productId,
+  activo,
+}) {
+  if (!productId) {
+    throw new Error(
+      'Debés seleccionar un producto.',
+    )
+  }
+
+  const { data } =
+    await client.mutate({
+      mutation:
+        ACTUALIZAR_PRODUCTO,
+
+      variables: {
+        input: {
+          id: productId,
+
+          enabled:
+            Boolean(activo),
+        },
+      },
+    })
+
+  return data.updateProduct
+}
 export async function crearVariante({
   productId,
   color,

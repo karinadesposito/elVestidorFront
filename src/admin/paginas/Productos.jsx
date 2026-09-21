@@ -10,6 +10,8 @@ import {
   obtenerOpcionesProducto,
   contarPorEstado,
   crearProducto,
+  actualizarProducto,
+  cambiarEstadoProducto,
   crearVariante,
   buscarProductosPorNombre,
   analizarCoincidenciasNombre,
@@ -170,6 +172,8 @@ function Productos() {
   const [mensajeExito, setMensajeExito] = useState("");
   const [modalAbierto, setModalAbierto] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [productoEditandoId, setProductoEditandoId] = useState(null);
+  const [productoConfirmarEstado, setProductoConfirmarEstado] = useState(null);
   const [advertenciasNombre, setAdvertenciasNombre] = useState([]);
 
   const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
@@ -297,10 +301,29 @@ function Productos() {
   }
 
   function abrirModalProducto() {
+    setProductoEditandoId(null);
     setError(null);
     setMensajeExito("");
     setAdvertenciasNombre([]);
     setFormProducto(FORM_PRODUCTO_INICIAL);
+    setModalAbierto("producto");
+  }
+  function abrirModalEditarProducto(producto) {
+    setProductoEditandoId(producto.id);
+
+    setError(null);
+    setMensajeExito("");
+    setAdvertenciasNombre([]);
+
+    setFormProducto({
+      nombre: producto.nombre || "",
+      marca: producto.marca || "",
+      tipoProducto: producto.tipoProducto || "",
+      genero: producto.genero || "",
+      descripcion: producto.descripcion || "",
+      activo: Boolean(producto.activo),
+    });
+
     setModalAbierto("producto");
   }
 
@@ -348,19 +371,34 @@ function Productos() {
     setMensajeExito("");
 
     try {
-      await crearProducto({
-        nombre: formProducto.nombre,
-        marca: formProducto.marca,
-        genero: formProducto.genero,
-        tipoProducto: formProducto.tipoProducto,
-        descripcion: formProducto.descripcion,
-        activo: formProducto.activo,
-      });
+      if (productoEditandoId) {
+        await actualizarProducto({
+          productId: productoEditandoId,
+          nombre: formProducto.nombre,
+          marca: formProducto.marca,
+          genero: formProducto.genero,
+          tipoProducto: formProducto.tipoProducto,
+          descripcion: formProducto.descripcion,
+          activo: formProducto.activo,
+        });
+
+        setMensajeExito("Producto actualizado correctamente.");
+      } else {
+        await crearProducto({
+          nombre: formProducto.nombre,
+          marca: formProducto.marca,
+          genero: formProducto.genero,
+          tipoProducto: formProducto.tipoProducto,
+          descripcion: formProducto.descripcion,
+          activo: formProducto.activo,
+        });
+
+        setMensajeExito("Producto creado correctamente.");
+      }
 
       setFormProducto(FORM_PRODUCTO_INICIAL);
+      setProductoEditandoId(null);
       setAdvertenciasNombre([]);
-
-      setMensajeExito("Producto guardado correctamente.");
 
       await cargarDatos();
 
@@ -374,7 +412,43 @@ function Productos() {
       setGuardando(false);
     }
   }
+  async function manejarCambiarEstadoProducto(producto) {
+    if (producto.activo) {
+      setProductoConfirmarEstado(producto);
+      return;
+    }
 
+    await ejecutarCambioEstadoProducto(producto);
+  }
+  async function ejecutarCambioEstadoProducto(producto) {
+    const nuevoEstado = !producto.activo;
+
+    setError(null);
+    setMensajeExito("");
+
+    try {
+      await cambiarEstadoProducto({
+        productId: producto.id,
+        activo: nuevoEstado,
+      });
+
+      setMensajeExito(
+        nuevoEstado
+          ? "Producto activado correctamente."
+          : "Producto desactivado correctamente.",
+      );
+
+      setProductoConfirmarEstado(null);
+
+      await cargarDatos();
+
+      setTimeout(() => {
+        setMensajeExito("");
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
   async function manejarCrearVariante(e) {
     e.preventDefault();
     if (!colorSeleccionado) {
@@ -484,9 +558,15 @@ function Productos() {
     try {
       const productosEncontrados = await buscarProductosPorNombre(nombre);
 
+      const productosSinActual = productoEditandoId
+        ? productosEncontrados.filter(
+            (producto) => String(producto.id) !== String(productoEditandoId),
+          )
+        : productosEncontrados;
+
       const coincidencias = analizarCoincidenciasNombre(
         nombre,
-        productosEncontrados,
+        productosSinActual,
       );
 
       setAdvertenciasNombre(coincidencias);
@@ -614,6 +694,7 @@ function Productos() {
                         <button
                           className="estructura__tabla-boton"
                           type="button"
+                          onClick={() => abrirModalEditarProducto(producto)}
                         >
                           {producto.nombre}
                         </button>
@@ -675,6 +756,20 @@ function Productos() {
 
                         <Boton
                           variante="admin"
+                          onClick={() => abrirModalEditarProducto(producto)}
+                        >
+                          Editar
+                        </Boton>
+
+                        <Boton
+                          variante="admin"
+                          onClick={() => manejarCambiarEstadoProducto(producto)}
+                        >
+                          {producto.activo ? "Desactivar" : "Activar"}
+                        </Boton>
+
+                        <Boton
+                          variante="admin"
                           onClick={() => abrirModalVariante(producto.id)}
                         >
                           Agregar variante
@@ -696,7 +791,7 @@ function Productos() {
 
       {modalAbierto === "producto" && (
         <ModalAdmin
-          titulo="Nuevo producto"
+          titulo={productoEditandoId ? "Editar producto" : "Nuevo producto"}
           onClose={cerrarModal}
           formId="formulario-nuevo-producto"
         >
@@ -820,6 +915,31 @@ function Productos() {
             ) : (
               guardando && <p>Guardando...</p>
             )}
+          </form>
+        </ModalAdmin>
+      )}
+      {productoConfirmarEstado && (
+        <ModalAdmin
+          titulo="Desactivar producto"
+          botonConfirmar="Desactivar"
+          onClose={() => setProductoConfirmarEstado(null)}
+          formId="form-confirmar-desactivar-producto"
+        >
+          <form
+            id="form-confirmar-desactivar-producto"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await ejecutarCambioEstadoProducto(productoConfirmarEstado);
+            }}
+          >
+            <div className="admin-productos__confirmacion">
+              <p>
+                ¿Estás seguro que deseas desactivar el producto{" "}
+                <strong>{productoConfirmarEstado.nombre}</strong>?
+              </p>
+
+              <p>El producto no se eliminará. Simplemente quedará inactivo.</p>
+            </div>
           </form>
         </ModalAdmin>
       )}
