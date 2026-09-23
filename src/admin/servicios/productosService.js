@@ -93,6 +93,20 @@ const OBTENER_PRODUCTOS = gql`
   }
 `
 
+const OBTENER_RESUMEN_PRODUCTOS = gql`
+  query ObtenerResumenProductos($options: ProductListOptions) {
+    products(options: $options) {
+      items {
+        id
+        variants {
+          id
+        }
+      }
+      totalItems
+    }
+  }
+`
+
 const OBTENER_PRODUCTO = gql`
   query ObtenerProducto($id: ID!) {
     product(id: $id) {
@@ -192,6 +206,7 @@ const CREAR_PRODUCTO = gql`
     }
   }
 `
+
 const ACTUALIZAR_PRODUCTO = gql`
   mutation ActualizarProducto($input: UpdateProductInput!) {
     updateProduct(input: $input) {
@@ -1333,6 +1348,7 @@ export async function crearProducto({
 
   return data.createProduct
 }
+
 export async function actualizarProducto({
   productId,
   nombre,
@@ -1447,6 +1463,7 @@ export async function actualizarProducto({
 
   return data.updateProduct
 }
+
 export async function cambiarEstadoProducto({
   productId,
   activo,
@@ -1474,6 +1491,7 @@ export async function cambiarEstadoProducto({
 
   return data.updateProduct
 }
+
 export async function eliminarProducto(
   productId,
 ) {
@@ -1713,69 +1731,43 @@ export async function crearVariante({
   return varianteCreada
 }
 
-export function contarPorEstado(
-  productos,
-) {
-  const totalProductos =
-    productos.length
+export async function obtenerResumenProductos() {
+  const take = 50
+  let skip = 0
+  let totalProductos = 0
+  let totalVariantes = 0
 
-  const productosActivos =
-    productos.filter(
-      (producto) =>
-        producto.activo,
-    ).length
+  do {
+    const { data } = await client.query({
+      query: OBTENER_RESUMEN_PRODUCTOS,
+      variables: {
+        options: { skip, take },
+      },
+      fetchPolicy: 'network-only',
+    })
 
-  const productosInactivos =
-    totalProductos -
-    productosActivos
-
-  const totalVariantes =
-    productos.reduce(
-      (
-        cantidad,
-        producto,
-      ) =>
-        cantidad +
-        producto.variantes
-          .length,
+    const productos = data.products.items
+    totalProductos = data.products.totalItems
+    totalVariantes += productos.reduce(
+      (cantidad, producto) => cantidad + (producto.variants || []).length,
       0,
     )
 
+    if (productos.length === 0 && skip < totalProductos) {
+      throw new Error('No se pudo completar el resumen de productos.')
+    }
+
+    skip += productos.length
+  } while (skip < totalProductos)
+
   return [
     {
-      nombre: 'Productos',
-
-      cantidad:
-        totalProductos,
-
-      color: 'fondo-azul',
+      nombre: 'Modelos de producto',
+      cantidad: totalProductos,
     },
     {
-      nombre: 'Variantes',
-
-      cantidad:
-        totalVariantes,
-
-      color:
-        'fondo-amarillo',
-    },
-    {
-      nombre: 'Inactivos',
-
-      cantidad:
-        productosInactivos,
-
-      color:
-        'fondo-violeta',
-    },
-    {
-      nombre: 'Activos',
-
-      cantidad:
-        productosActivos,
-
-      color:
-        'fondo-verde',
+      nombre: 'Productos diferentes',
+      cantidad: totalVariantes,
     },
   ]
 }

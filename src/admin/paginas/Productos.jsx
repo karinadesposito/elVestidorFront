@@ -10,7 +10,7 @@ import {
   obtenerProductos,
   obtenerCatalogosProducto,
   obtenerOpcionesProducto,
-  contarPorEstado,
+  obtenerResumenProductos,
   crearProducto,
   actualizarProducto,
   cambiarEstadoProducto,
@@ -218,31 +218,30 @@ function Productos() {
 
     const temporizador = setTimeout(async () => {
       setBuscando(true);
-      await cargarDatos(busqueda);
+      await cargarDatos(busqueda, false);
       setBuscando(false);
     }, 350);
 
     return () => clearTimeout(temporizador);
   }, [busqueda]);
 
-  async function cargarDatos(terminoBusqueda = "") {
-    if (!terminoBusqueda.trim()) {
-      setCargando(true);
-    }
-
+  async function cargarDatos(terminoBusqueda = "", actualizarResumen = true) {
     setError(null);
 
     try {
-      const [respuestaProductos, respuestaCatalogosProducto] =
+      const [respuestaProductos, respuestaCatalogosProducto, nuevoResumen] =
         await Promise.all([
           terminoBusqueda.trim()
             ? buscarProductos(terminoBusqueda.trim())
             : obtenerProductos(),
           obtenerCatalogosProducto(),
+          actualizarResumen ? obtenerResumenProductos() : Promise.resolve(null),
         ]);
 
       setProductos(respuestaProductos.productos);
-      setResumenProductos(contarPorEstado(respuestaProductos.productos));
+      if (nuevoResumen) {
+        setResumenProductos(nuevoResumen);
+      }
       setCatalogosProducto(respuestaCatalogosProducto);
     } catch (err) {
       setError(err.message);
@@ -731,10 +730,7 @@ function Productos() {
               aria-label="Resumen de productos"
             >
               {resumenProductos.map((item) => (
-                <article
-                  className={`estructura__tarjeta ${item.color}`}
-                  key={item.nombre}
-                >
+                <article className="estructura__tarjeta" key={item.nombre}>
                   <span>{item.nombre}</span>
                   <strong>{item.cantidad}</strong>
                 </article>
@@ -764,7 +760,7 @@ function Productos() {
 
                   <input
                     id="buscar-productos"
-                    type="search"
+                    type="text"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     placeholder="Buscar por nombre o barcode"
