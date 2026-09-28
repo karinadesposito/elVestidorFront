@@ -16,6 +16,7 @@ import {
   cambiarEstadoProducto,
   eliminarProducto,
   crearVariante,
+  actualizarVariante,
   buscarProductos,
   buscarProductosPorNombre,
   analizarCoincidenciasNombre,
@@ -46,16 +47,7 @@ const COLORES_REFERENCIA = [
   "Multicolor",
 ];
 
-const TALLES_ALFABETICOS = [
-  "XXS",
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "XXL",
-  "XXXL",
-];
+const TALLES_ALFABETICOS = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 const TALLES_NUMERICOS = [
   "24",
@@ -199,6 +191,7 @@ function Productos() {
 
   const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
   const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
+  const [varianteEditandoId, setVarianteEditandoId] = useState(null);
 
   const [productoVariantesAbiertoId, setProductoVariantesAbiertoId] =
     useState(null);
@@ -265,6 +258,7 @@ function Productos() {
 
     try {
       const opciones = await obtenerOpcionesProducto(productoId);
+      console.log("OPCIONES DEL PRODUCTO:", opciones);
       setOpcionesProducto(opciones);
     } catch (err) {
       setOpcionesProducto({
@@ -365,6 +359,7 @@ function Productos() {
   }
 
   function abrirModalVariante(productoId = "") {
+    setVarianteEditandoId(null);
     setError(null);
     setMensajeExito("");
     setColorSeleccionado(false);
@@ -385,7 +380,35 @@ function Productos() {
       cargarOpcionesProducto(productoId);
     }
   }
+  function abrirModalEditarVariante(variante) {
+    console.log("VARIANTE A EDITAR:", variante);
+    console.log("OPCIONES DE LA VARIANTE:", variante.opciones);
 
+    setVarianteEditandoId(variante.id);
+    setError(null);
+    setMensajeExito("");
+    setColorSeleccionado(true);
+
+    setFormVariante({
+      productoId: variante.productoId || "",
+      color: variante.color || "",
+      talle: variante.talle || "",
+      barcode: variante.sku || "",
+      precio: variante.precio != null ? variante.precio / 100 : "",
+      activo: Boolean(variante.activo),
+    });
+
+    setOpcionesProducto({
+      color: null,
+      talle: null,
+    });
+
+    setModalAbierto("variante");
+
+    if (variante.productoId) {
+      cargarOpcionesProducto(variante.productoId);
+    }
+  }
   function cerrarModal() {
     if (guardando) {
       return;
@@ -522,42 +545,33 @@ function Productos() {
 
   async function manejarCrearVariante(e) {
     e.preventDefault();
-
-    if (!colorSeleccionado) {
+    if (!varianteEditandoId && !colorSeleccionado) {
       setError("Debés seleccionar un color de la lista.");
       return;
     }
-
     const colorNormalizado = obtenerValorCanonico(
       coloresDisponibles,
       formVariante.color.trim(),
     );
-
     const colorValido = coloresDisponibles.some(
       (color) =>
         normalizarBusqueda(color) === normalizarBusqueda(colorNormalizado),
     );
-
     if (!colorValido) {
       setError("Debés seleccionar un color válido de la lista.");
       return;
     }
-
     const talleIngresado = formVariante.talle.trim();
-
     const talleNormalizado = talleIngresado
       ? obtenerValorCanonico(tallesDisponibles, talleIngresado).toUpperCase()
       : "";
-
     if (!colorNormalizado) {
       setError("El color es obligatorio.");
       return;
     }
-
     if (talleNormalizado) {
       const esTalleNumerico = /^\d{1,2}$/.test(talleNormalizado);
       const esTalleAlfabetico = TALLES_ALFABETICOS.includes(talleNormalizado);
-
       if (!esTalleNumerico && !esTalleAlfabetico) {
         setError(
           "El talle debe ser numérico de hasta 2 dígitos o uno de los talles alfabéticos sugeridos.",
@@ -565,51 +579,78 @@ function Productos() {
         return;
       }
     }
-
     const productoSeleccionado = productos.find(
       (producto) => String(producto.id) === String(formVariante.productoId),
     );
-
-    const varianteExistente = productoSeleccionado?.variantes?.some(
-      (variante) =>
-        normalizarBusqueda(variante.color) ===
-          normalizarBusqueda(colorNormalizado) &&
-        normalizarBusqueda(variante.talle) ===
-          normalizarBusqueda(talleNormalizado),
-    );
-
-    if (varianteExistente) {
-      setError(
-        "Ya existe una variante con ese color y talle para este producto.",
+    if (!varianteEditandoId) {
+      const varianteExistente = productoSeleccionado?.variantes?.some(
+        (variante) =>
+          normalizarBusqueda(variante.color) ===
+            normalizarBusqueda(colorNormalizado) &&
+          normalizarBusqueda(variante.talle) ===
+            normalizarBusqueda(talleNormalizado),
       );
-      return;
+      if (varianteExistente) {
+        setError(
+          "Ya existe una variante con ese color y talle para este producto.",
+        );
+        return;
+      }
     }
-
     setGuardando(true);
     setError(null);
     setMensajeExito("");
-
     try {
-      await crearVariante({
-        productId: formVariante.productoId,
-        color: colorNormalizado,
-        talle: talleNormalizado,
-        sku: formVariante.barcode,
-        precio: formVariante.precio,
-        activo: formVariante.activo,
-      });
-
+      if (varianteEditandoId) {
+        /* * Al editar una variante necesitamos enviar los IDs * de las opciones NUEVAS seleccionadas. * * Ejemplo: * Azul -> id 3 * 44 -> id 33 * * optionIds: ["3", "33"] */ const opcionColorSeleccionada =
+          opcionesProducto.color?.opciones?.find(
+            (opcion) =>
+              normalizarBusqueda(opcion.nombre) ===
+              normalizarBusqueda(colorNormalizado),
+          );
+        const opcionTalleSeleccionada = opcionesProducto.talle?.opciones?.find(
+          (opcion) =>
+            normalizarBusqueda(opcion.nombre) ===
+            normalizarBusqueda(talleNormalizado),
+        );
+        if (!opcionColorSeleccionada) {
+          throw new Error(
+            `No se encontró la opción de color "${colorNormalizado}".`,
+          );
+        }
+        if (!opcionTalleSeleccionada) {
+          throw new Error(
+            `No se encontró la opción de talle "${talleNormalizado}".`,
+          );
+        }
+        const opcionIds = [
+          opcionColorSeleccionada.id,
+          opcionTalleSeleccionada.id,
+        ];
+        await actualizarVariante({
+          variantId: varianteEditandoId,
+          sku: formVariante.barcode,
+          precio: formVariante.precio,
+          activo: formVariante.activo,
+          optionIds: opcionIds,
+        });
+        setMensajeExito("Variante actualizada correctamente.");
+      } else {
+        await crearVariante({
+          productId: formVariante.productoId,
+          color: colorNormalizado,
+          talle: talleNormalizado,
+          sku: formVariante.barcode,
+          precio: formVariante.precio,
+          activo: formVariante.activo,
+        });
+        setMensajeExito("Variante guardada correctamente.");
+      }
       setFormVariante(FORM_VARIANTE_INICIAL);
+      setVarianteEditandoId(null);
       setColorSeleccionado(false);
-
-      setOpcionesProducto({
-        color: null,
-        talle: null,
-      });
-
-      setMensajeExito("Variante guardada correctamente.");
+      setOpcionesProducto({ color: null, talle: null });
       await cargarDatos(busqueda);
-
       setTimeout(() => {
         setModalAbierto(null);
         setMensajeExito("");
@@ -620,7 +661,41 @@ function Productos() {
       setGuardando(false);
     }
   }
+  async function manejarCambiarEstadoVariante(variante) {
+    setError(null);
+    setMensajeExito("");
 
+    try {
+      /*
+       * Para cambiar solamente el estado de la variante,
+       * conservamos sus datos actuales.
+       */
+
+      const opcionIds = variante.opciones?.map((opcion) => opcion.id) || [];
+
+      await actualizarVariante({
+        variantId: variante.id,
+        sku: variante.sku,
+        precio: variante.precio / 100,
+        activo: !variante.activo,
+        optionIds: opcionIds,
+      });
+
+      setMensajeExito(
+        !variante.activo
+          ? "Variante activada correctamente."
+          : "Variante desactivada correctamente.",
+      );
+
+      await cargarDatos(busqueda);
+
+      setTimeout(() => {
+        setMensajeExito("");
+      }, 1500);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
   async function verificarNombreProducto() {
     const nombre = formProducto.nombre.trim();
 
@@ -966,7 +1041,11 @@ function Productos() {
 
                     {String(productoVariantesAbiertoId) ===
                       String(producto.id) && (
-                      <VariantesProducto variantes={producto.variantes} />
+                      <VariantesProducto
+                        variantes={producto.variantes}
+                        onEditar={abrirModalEditarVariante}
+                        onCambiarEstado={manejarCambiarEstadoVariante}
+                      />
                     )}
                   </Fragment>
                 ))}
@@ -1112,8 +1191,7 @@ function Productos() {
           titulo="Desactivar producto"
           botonConfirmar="Desactivar"
           botonConfirmarDeshabilitado={
-            String(procesandoProductoId) ===
-            String(productoConfirmarEstado.id)
+            String(procesandoProductoId) === String(productoConfirmarEstado.id)
           }
           onClose={() => setProductoConfirmarEstado(null)}
           formId="form-confirmar-desactivar-producto"
@@ -1161,8 +1239,8 @@ function Productos() {
               </p>
 
               <p>
-                El producto dejará de aparecer en el listado, pero conservará
-                su registro en Vendure.
+                El producto dejará de aparecer en el listado, pero conservará su
+                registro en Vendure.
               </p>
             </div>
           </form>
@@ -1171,7 +1249,7 @@ function Productos() {
 
       {modalAbierto === "variante" && (
         <ModalAdmin
-          titulo="Nueva variante"
+          titulo={varianteEditandoId ? "Editar variante" : "Nueva variante"}
           onClose={cerrarModal}
           formId="formulario-nueva-variante"
         >
@@ -1189,6 +1267,7 @@ function Productos() {
                 value={formVariante.productoId}
                 onChange={manejarCampoVariante}
                 required
+                disabled={Boolean(varianteEditandoId)}
                 autoFocus
               >
                 <option value="">Seleccionar producto</option>
