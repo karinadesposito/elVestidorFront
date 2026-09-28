@@ -468,7 +468,7 @@ function Productos() {
       setTimeout(() => {
         setModalAbierto(null);
         setMensajeExito("");
-      }, 1500);
+      }, 4000);
     } catch (err) {
       setError(err.message);
     } finally {
