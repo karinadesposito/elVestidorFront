@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
@@ -12,18 +11,14 @@ import {
   obtenerProveedores,
   registrarIngresoStock,
 } from "../servicios/stockService";
-
 import "../../estilos/admin-stock.css";
-
 function obtenerFechaActual() {
   const fecha = new Date();
   const anio = fecha.getFullYear();
   const mes = String(fecha.getMonth() + 1).padStart(2, "0");
   const dia = String(fecha.getDate()).padStart(2, "0");
-
   return `${anio}-${mes}-${dia}`;
 }
-
 function crearFormularioIngresoInicial() {
   return {
     proveedorId: "",
@@ -33,18 +28,15 @@ function crearFormularioIngresoInicial() {
     observaciones: "",
   };
 }
-
 const FORM_PROVEEDOR_INICIAL = {
   nombre: "",
   cuit: "",
   telefono: "",
 };
-
 const FORM_DETALLE_INICIAL = {
   barcode: "",
   cantidad: "1",
 };
-
 function Stock() {
   const [stock, setStock] = useState([]);
   const [categoriasStock, setCategoriasStock] = useState([]);
@@ -64,18 +56,15 @@ function Stock() {
   const [barcodeNoEncontrado, setBarcodeNoEncontrado] = useState(false);
   const cantidadRefs = useRef(new Map());
   const barcodeRef = useRef(null);
-
   useEffect(() => {
     async function cargarInicial() {
       setCargando(true);
       setError(null);
-
       try {
         const [datosStock, datosProveedores] = await Promise.all([
           obtenerDatosStock(),
           obtenerProveedores(),
         ]);
-
         setStock(datosStock.stock);
         setCategoriasStock(contarStock(datosStock.stock));
         setProveedores(datosProveedores);
@@ -85,19 +74,15 @@ function Stock() {
         setCargando(false);
       }
     }
-
     cargarInicial();
   }, []);
-
   async function recargarStock() {
     const datosStock = await obtenerDatosStock();
     setStock(datosStock.stock);
     setCategoriasStock(contarStock(datosStock.stock));
   }
-
   async function recargarProveedores() {
     setCargandoProveedores(true);
-
     try {
       const datosProveedores = await obtenerProveedores();
       setProveedores(datosProveedores);
@@ -106,7 +91,6 @@ function Stock() {
       setCargandoProveedores(false);
     }
   }
-
   function abrirModalIngreso() {
     setError(null);
     setMensajeExito("");
@@ -116,49 +100,37 @@ function Stock() {
     setBarcodeNoEncontrado(false);
     setModalAbierto("ingreso");
   }
-
   function cerrarModalIngreso() {
     if (guardando) {
       return;
     }
-
     setModalAbierto(null);
     setError(null);
     setFormDetalle(FORM_DETALLE_INICIAL);
     setDetalles([]);
     setBarcodeNoEncontrado(false);
   }
-
   function abrirModalProveedor() {
     setError(null);
-    setFormProveedor({
-      ...FORM_PROVEEDOR_INICIAL,
-      nombre: formIngreso.proveedorNombre.trim(),
-    });
+    setFormProveedor({ ...FORM_PROVEEDOR_INICIAL });
     setModalAbierto("proveedor");
   }
-
   function volverAlIngreso() {
     if (guardandoProveedor) {
       return;
     }
-
     setError(null);
     setModalAbierto("ingreso");
   }
-
   function manejarCampoIngreso(e) {
     const { name, value } = e.target;
-
     setFormIngreso((anterior) => ({
       ...anterior,
       [name]: value,
       ...(name === "proveedorNombre" ? { proveedorId: "" } : {}),
     }));
-
     setError(null);
   }
-
   function seleccionarProveedor(proveedor) {
     setFormIngreso((anterior) => ({
       ...anterior,
@@ -167,54 +139,41 @@ function Stock() {
     }));
     setError(null);
   }
-
   function manejarTeclaProveedor(e) {
     if (e.key !== "Enter") {
       return;
     }
-
     e.preventDefault();
-
     if (!proveedorSeleccionado) {
       setError("Debés seleccionar un proveedor de la lista.");
     }
   }
-
   function manejarCampoProveedor(e) {
     const { name, value } = e.target;
-
     setFormProveedor((anterior) => ({
       ...anterior,
-      [name]: value,
+      [name]: name === "telefono" ? value.replace(/\D/g, "").slice(0, 15) : value,
     }));
     setError(null);
   }
-
   function manejarCampoDetalle(e) {
     const { name, value } = e.target;
-
     setFormDetalle((anterior) => ({
       ...anterior,
       [name]: value,
     }));
-
     if (name === "barcode") {
       setBarcodeNoEncontrado(false);
     }
-
     setError(null);
   }
-
   async function manejarCrearProveedor(e) {
     e.preventDefault();
-
     if (guardandoProveedor) {
       return;
     }
-
     setGuardandoProveedor(true);
     setError(null);
-
     try {
       const proveedorCreado = await crearProveedor(formProveedor);
       const proveedoresActualizados = await recargarProveedores();
@@ -222,7 +181,6 @@ function Stock() {
         proveedoresActualizados.find(
           (proveedor) => String(proveedor.id) === String(proveedorCreado.id),
         ) || proveedorCreado;
-
       seleccionarProveedor(proveedorSeleccionado);
       setFormProveedor(FORM_PROVEEDOR_INICIAL);
       setMensajeExito("Proveedor guardado y seleccionado correctamente.");
@@ -233,54 +191,42 @@ function Stock() {
       setGuardandoProveedor(false);
     }
   }
-
   async function manejarAgregarVariante() {
     if (buscandoBarcode) {
       return;
     }
-
     const barcode = formDetalle.barcode.trim();
     const cantidad = Number(formDetalle.cantidad);
-
     if (!barcode) {
       setError("El barcode es obligatorio.");
       return;
     }
-
     if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 9999) {
       setError("La cantidad debe ser un número entero entre 1 y 9999.");
       return;
     }
-
     const detalleExistente = detalles.find(
       (detalle) => detalle.barcode === barcode,
     );
-
     if (detalleExistente) {
       setError(
         "La variante ya está agregada. Modificá la cantidad en su renglón.",
       );
-
       setTimeout(() => {
         cantidadRefs.current.get(String(detalleExistente.id))?.focus();
       }, 0);
-
       return;
     }
-
     setBuscandoBarcode(true);
     setError(null);
     setBarcodeNoEncontrado(false);
-
     try {
       const variante = await buscarVariantePorBarcode(barcode);
-
       if (!variante) {
         setBarcodeNoEncontrado(true);
         setError(`No existe una variante con el barcode ${barcode}.`);
         return;
       }
-
       setDetalles((anteriores) => [
         ...anteriores,
         {
@@ -289,7 +235,6 @@ function Stock() {
         },
       ]);
       setFormDetalle(FORM_DETALLE_INICIAL);
-
       setTimeout(() => {
         barcodeRef.current?.focus();
       }, 0);
@@ -299,7 +244,6 @@ function Stock() {
       setBuscandoBarcode(false);
     }
   }
-
   function manejarCantidadDetalle(varianteId, valor) {
     setDetalles((anteriores) =>
       anteriores.map((detalle) =>
@@ -313,16 +257,13 @@ function Stock() {
     );
     setError(null);
   }
-
   function manejarTeclaBarcode(e) {
     if (e.key !== "Enter") {
       return;
     }
-
     e.preventDefault();
     manejarAgregarVariante();
   }
-
   function quitarDetalle(varianteId) {
     setDetalles((anteriores) =>
       anteriores.filter(
@@ -332,32 +273,25 @@ function Stock() {
     cantidadRefs.current.delete(String(varianteId));
     setError(null);
   }
-
   function abrirProductos() {
     window.open("/admin/productos", "_blank", "noopener,noreferrer");
   }
-
   async function manejarRegistrarIngreso(e) {
     e.preventDefault();
-
     if (guardando) {
       return;
     }
-
     if (!formIngreso.proveedorId) {
       setError("Debés seleccionar un proveedor de la lista.");
       return;
     }
-
     if (detalles.length === 0) {
       setError("El ingreso debe contener al menos una variante.");
       return;
     }
-
     setGuardando(true);
     setError(null);
     setMensajeExito("");
-
     try {
       await registrarIngresoStock({
         proveedorId: formIngreso.proveedorId,
@@ -369,7 +303,6 @@ function Stock() {
           cantidad: Number(detalle.cantidad),
         })),
       });
-
       await recargarStock();
       setModalAbierto(null);
       setFormIngreso(crearFormularioIngresoInicial());
@@ -382,19 +315,15 @@ function Stock() {
       setGuardando(false);
     }
   }
-
   const proveedorSeleccionado = proveedores.find(
     (proveedor) => String(proveedor.id) === String(formIngreso.proveedorId),
   );
-
   const proveedoresSugeridos = filtrarProveedores(
     proveedores,
     formIngreso.proveedorNombre,
   );
-
   const mostrarSugerenciasProveedor =
     Boolean(formIngreso.proveedorNombre.trim()) && !proveedorSeleccionado;
-
   return (
     <main className="estructura">
       <Contenedor>
@@ -403,17 +332,13 @@ function Stock() {
             <h1 className="estructura__titulo">Stock</h1>
           </div>
         </header>
-
         {cargando && <p>Cargando stock...</p>}
-
         {error && !modalAbierto && (
           <p className="login-admin__error">{error}</p>
         )}
-
         {mensajeExito && !modalAbierto && (
           <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
         )}
-
         {!cargando && (
           <>
             <section className="estructura__resumen" aria-label="Resumen de stock">
@@ -427,18 +352,15 @@ function Stock() {
                 </article>
               ))}
             </section>
-
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado">
                 <h2>Listado de stock</h2>
-
                 <div className="estructura__panel-acciones">
                   <Boton variante="admin" onClick={abrirModalIngreso}>
                     Nuevo ingreso stock
                   </Boton>
                 </div>
               </div>
-
               <div className="estructura__tabla">
                 <div className="estructura__tabla-cabecera admin-stock__cabecera">
                   <span>Barcode</span>
@@ -450,9 +372,7 @@ function Stock() {
                   <span>Estado</span>
                   <span>Último ingreso</span>
                 </div>
-
                 {stock.length === 0 && <p>No hay variantes para mostrar.</p>}
-
                 {stock.map((item) => (
                   <article
                     className={`estructura__tabla-fila admin-stock__fila ${item.color}`}
@@ -462,37 +382,30 @@ function Stock() {
                       <span className="estructura__tabla-etiqueta">Barcode</span>
                       <strong>{item.barcode || "—"}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Producto</span>
                       <span>{item.producto}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Variante</span>
                       <span>{item.variante}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Stock</span>
                       <strong>{item.stock}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Reservado</span>
                       <strong>{item.reservado}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Disponible</span>
                       <strong>{item.disponible}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Estado</span>
                       <span>{item.estado}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Último ingreso
@@ -506,7 +419,6 @@ function Stock() {
           </>
         )}
       </Contenedor>
-
       {modalAbierto === "ingreso" && (
         <ModalAdmin
           titulo="Nuevo ingreso stock"
@@ -519,11 +431,9 @@ function Stock() {
             onSubmit={manejarRegistrarIngreso}
           >
             {error && <p className="login-admin__error">{error}</p>}
-
             {mensajeExito && (
               <p className="estructura__tarjeta fondo-verde">{mensajeExito}</p>
             )}
-
             <div className="estructura__campo">
               <label htmlFor="stock-proveedor">Proveedor</label>
               <input
@@ -538,9 +448,7 @@ function Stock() {
                 required
                 autoFocus
               />
-
               {cargandoProveedores && <p>Cargando proveedores...</p>}
-
               {mostrarSugerenciasProveedor &&
                 proveedoresSugeridos.map((proveedor) => (
                   <div className="estructura__lista-item" key={proveedor.id}>
@@ -555,14 +463,12 @@ function Stock() {
                     <span>CUIT: {proveedor.cuit}</span>
                   </div>
                 ))}
-
               <div className="estructura__panel-acciones">
                 <Boton variante="admin" type="button" onClick={abrirModalProveedor}>
                   Nuevo proveedor
                 </Boton>
               </div>
             </div>
-
             {proveedorSeleccionado && (
               <div className="estructura__tarjeta fondo-verde">
                 <strong>{proveedorSeleccionado.nombre}</strong>
@@ -572,7 +478,6 @@ function Stock() {
                 </span>
               </div>
             )}
-
             <div className="estructura__campo">
               <label htmlFor="stock-comprobante">Factura / comprobante</label>
               <input
@@ -586,7 +491,6 @@ function Stock() {
                 required
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="stock-fecha">Fecha</label>
               <input
@@ -599,7 +503,6 @@ function Stock() {
                 required
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="stock-barcode">Barcode</label>
               <input
@@ -615,7 +518,6 @@ function Stock() {
                 autoComplete="off"
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="stock-cantidad">Cantidad</label>
               <input
@@ -629,7 +531,6 @@ function Stock() {
                 step="1"
               />
             </div>
-
             <div className="estructura__panel-acciones">
               <Boton
                 variante="admin"
@@ -639,28 +540,24 @@ function Stock() {
               >
                 {buscandoBarcode ? "Buscando..." : "Agregar variante"}
               </Boton>
-
               {barcodeNoEncontrado && (
                 <Boton variante="admin" type="button" onClick={abrirProductos}>
                   Crear en Productos
                 </Boton>
               )}
             </div>
-
             {detalles.length > 0 && (
               <div className="estructura__tabla">
                 {detalles.map((detalle) => {
                   const cantidad = Number(detalle.cantidad);
                   const cantidadValida =
                     Number.isInteger(cantidad) && cantidad >= 1 && cantidad <= 9999;
-
                   return (
                     <article className="estructura__lista-item" key={detalle.id}>
                       <strong>{detalle.producto}</strong>
                       <span>{detalle.variante}</span>
                       <span>Barcode: {detalle.barcode}</span>
                       <span>Stock actual: {detalle.stock}</span>
-
                       <div className="estructura__campo">
                         <label htmlFor={`stock-detalle-cantidad-${detalle.id}`}>
                           Cantidad ingresada
@@ -683,12 +580,10 @@ function Stock() {
                           required
                         />
                       </div>
-
                       <span>
                         Stock resultante:{" "}
                         {cantidadValida ? detalle.stock + cantidad : "—"}
                       </span>
-
                       <div className="estructura__panel-acciones">
                         <Boton
                           variante="admin"
@@ -703,7 +598,6 @@ function Stock() {
                 })}
               </div>
             )}
-
             <div className="estructura__campo">
               <label htmlFor="stock-observaciones">Observaciones</label>
               <textarea
@@ -715,12 +609,10 @@ function Stock() {
               />
               <span>{formIngreso.observaciones.length}/100</span>
             </div>
-
             {guardando && <p>Guardando ingreso...</p>}
           </form>
         </ModalAdmin>
       )}
-
       {modalAbierto === "proveedor" && (
         <ModalAdmin
           titulo="Nuevo proveedor"
@@ -733,7 +625,6 @@ function Stock() {
             onSubmit={manejarCrearProveedor}
           >
             {error && <p className="login-admin__error">{error}</p>}
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-nombre">Nombre</label>
               <input
@@ -748,7 +639,6 @@ function Stock() {
                 autoFocus
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-cuit">CUIT</label>
               <input
@@ -759,11 +649,10 @@ function Stock() {
                 onChange={manejarCampoProveedor}
                 maxLength="13"
                 inputMode="numeric"
-                placeholder="20-12345678-3"
+                placeholder="20123456786"
                 required
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-telefono">Teléfono</label>
               <input
@@ -772,10 +661,10 @@ function Stock() {
                 type="tel"
                 value={formProveedor.telefono}
                 onChange={manejarCampoProveedor}
-                maxLength="30"
+                maxLength="15"
+                inputMode="numeric"
               />
             </div>
-
             {guardandoProveedor && <p>Guardando proveedor...</p>}
           </form>
         </ModalAdmin>
@@ -783,5 +672,4 @@ function Stock() {
     </main>
   );
 }
-
 export default Stock;
