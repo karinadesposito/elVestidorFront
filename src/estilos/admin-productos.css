@@ -32,16 +32,11 @@
   grid-column: 1 / -1;
   grid-row: 5;
 }
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(1),
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(2),
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(3),
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(4),
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(6) {
+.admin-productos__fila > .estructura__tabla-dato:nth-child(1),
+.admin-productos__fila > .estructura__tabla-dato:nth-child(2),
+.admin-productos__fila > .estructura__tabla-dato:nth-child(3),
+.admin-productos__fila > .estructura__tabla-dato:nth-child(4),
+.admin-productos__fila > .estructura__tabla-dato:nth-child(6) {
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
 }
@@ -66,9 +61,7 @@
   > .estructura__tabla-etiqueta {
   display: none;
 }
-.admin-productos__fila
-  > .estructura__tabla-dato:nth-child(5)
-  .boton {
+.admin-productos__fila > .estructura__tabla-dato:nth-child(5) .boton {
   width: 100%;
 }
 .admin-productos__agregar-variante-mobile {
@@ -79,17 +72,20 @@
 .admin-productos__fila + .estructura__tabla {
   padding: var(--espacio-2);
 }
-.admin-productos__fila
-  + .estructura__tabla
-  .estructura__tabla-fila {
+.admin-productos__fila + .estructura__tabla .estructura__tabla-fila {
   grid-template-columns: 1fr;
   border-bottom: 1px solid var(--color-borde-suave);
 }
-.admin-productos__fila
-  + .estructura__tabla
-  .estructura__tabla-dato {
+.admin-productos__fila + .estructura__tabla .estructura__tabla-dato {
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
+}
+.admin-productos__fila
+  + .estructura__tabla
+  .admin-productos__variante-fila
+  > .estructura__tabla-dato:nth-child(4) {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
 }
 .admin-productos__variante-fila {
   position: relative;
@@ -97,12 +93,10 @@
   border: 1px solid var(--color-borde-suave);
   border-radius: var(--radio-md);
 }
-.admin-productos__variante-fila
-  > .estructura__tabla-dato:first-child {
+.admin-productos__variante-fila > .estructura__tabla-dato:first-child {
   padding-inline-end: 2.75rem;
 }
-.admin-productos__variante-fila
-  > .estructura__tabla-dato:last-child {
+.admin-productos__variante-fila > .estructura__tabla-dato:last-child {
   position: absolute;
   inset-block-start: 0;
   inset-inline-end: 0;
@@ -267,19 +261,14 @@
     grid-row: auto;
     grid-template-columns: minmax(0, 1fr);
   }
-  .admin-productos__fila
-    > .estructura__tabla-dato:nth-child(1) {
+  .admin-productos__fila > .estructura__tabla-dato:nth-child(1) {
     padding-inline-end: 0;
   }
   .admin-productos__fila + .estructura__tabla {
     padding: var(--espacio-2);
   }
-  .admin-productos__fila
-    + .estructura__tabla
-    .estructura__tabla-cabecera,
-  .admin-productos__fila
-    + .estructura__tabla
-    .estructura__tabla-fila {
+  .admin-productos__fila + .estructura__tabla .estructura__tabla-cabecera,
+  .admin-productos__fila + .estructura__tabla .estructura__tabla-fila {
     --estructura-tabla-ancho-minimo: 100%;
     --estructura-tabla-columnas:
       minmax(7rem, 1fr)
@@ -289,14 +278,10 @@
       minmax(4rem, 0.5fr)
       minmax(10rem, 1fr);
   }
-  .admin-productos__fila
-    + .estructura__tabla
-    .estructura__tabla-fila {
+  .admin-productos__fila + .estructura__tabla .estructura__tabla-fila {
     grid-template-columns: var(--estructura-tabla-columnas);
   }
-  .admin-productos__fila
-    + .estructura__tabla
-    .estructura__tabla-dato {
+  .admin-productos__fila + .estructura__tabla .estructura__tabla-dato {
     grid-template-columns: minmax(0, 1fr);
   }
   .admin-productos__fila
@@ -305,12 +290,10 @@
     > span:last-child {
     text-align: right;
   }
-  .admin-productos__variante-fila
-    > .estructura__tabla-dato:first-child {
+  .admin-productos__variante-fila > .estructura__tabla-dato:first-child {
     padding-inline-end: 0;
   }
-  .admin-productos__variante-fila
-    > .estructura__tabla-dato:last-child {
+  .admin-productos__variante-fila > .estructura__tabla-dato:last-child {
     position: static;
   }
   .admin-productos__acciones-mobile {
@@ -336,8 +319,7 @@
     font-size: var(--estructura-texto-xs);
     white-space: nowrap;
   }
-  .admin-productos__acciones-desktop
-    .admin-productos__accion-peligrosa {
+  .admin-productos__acciones-desktop .admin-productos__accion-peligrosa {
     background: var(--color-fondo-rojo);
   }
 }
