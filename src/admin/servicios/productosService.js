@@ -451,6 +451,17 @@ function mapearVariante(variante, productoId) {
     sku: variante.sku || "—",
     precio: variante.priceWithTax ?? 0,
     precioFormateado: formatearPrecio(variante.priceWithTax),
+    precioSinIva: variante.price ?? null,
+    precioSinIvaFormateado:
+      variante.price != null ? formatearPrecio(variante.price) : "—",
+    iva:
+      variante.price != null && variante.priceWithTax != null
+        ? variante.priceWithTax - variante.price
+        : null,
+    ivaFormateado:
+      variante.price != null && variante.priceWithTax != null
+        ? formatearPrecio(variante.priceWithTax - variante.price)
+        : "—",
     activo: variante.enabled,
     stock: variante.stockOnHand ?? 0,
     color: obtenerOpcionColor(opciones),

@@ -48,7 +48,13 @@ function VariantesProducto({ variantes = [], onEditar, onCambiarEstado }) {
 
           <div className="estructura__tabla-dato">
             <span className="estructura__tabla-etiqueta">Precio</span>
-            <span>{variante.precioFormateado || "—"}</span>
+            <span>
+              Sin IVA: {variante.precioSinIvaFormateado || "—"}
+              <br />
+              IVA: {variante.ivaFormateado || "—"}
+              <br />
+              <strong>Final: {variante.precioFormateado || "—"}</strong>
+            </span>
           </div>
 
           <div className="estructura__tabla-dato">
