@@ -41,6 +41,16 @@ const OBTENER_PRODUCTOS = gql`
         name
         description
         enabled
+        featuredAsset {
+          id
+          preview
+          width
+          height
+        }
+        assets {
+          id
+          preview
+        }
         facetValues {
           id
           name
@@ -59,6 +69,16 @@ const OBTENER_PRODUCTOS = gql`
           price
           priceWithTax
           stockOnHand
+          featuredAsset {
+            id
+            preview
+            width
+            height
+          }
+          assets {
+            id
+            preview
+          }
           options {
             id
             name
@@ -107,6 +127,16 @@ const OBTENER_PRODUCTO = gql`
       name
       description
       enabled
+      featuredAsset {
+        id
+        preview
+        width
+        height
+      }
+      assets {
+        id
+        preview
+      }
       facetValues {
         id
         name
@@ -136,6 +166,16 @@ const OBTENER_PRODUCTO = gql`
         price
         priceWithTax
         stockOnHand
+        featuredAsset {
+          id
+          preview
+          width
+          height
+        }
+        assets {
+          id
+          preview
+        }
         options {
           id
           name
@@ -176,6 +216,10 @@ const CREAR_PRODUCTO = gql`
       name
       description
       enabled
+      featuredAsset {
+        id
+        preview
+      }
       facetValues {
         id
         name
@@ -197,6 +241,14 @@ const ACTUALIZAR_PRODUCTO = gql`
       name
       description
       enabled
+      featuredAsset {
+        id
+        preview
+      }
+      assets {
+        id
+        preview
+      }
       facetValues {
         id
         name
@@ -305,6 +357,10 @@ const CREAR_VARIANTE = gql`
       enabled
       price
       stockOnHand
+      featuredAsset {
+        id
+        preview
+      }
       options {
         id
         name
@@ -338,6 +394,14 @@ const ACTUALIZAR_VARIANTE = gql`
       enabled
       price
       stockOnHand
+      featuredAsset {
+        id
+        preview
+      }
+      assets {
+        id
+        preview
+      }
       options {
         id
         name
@@ -405,6 +469,150 @@ function formatearPrecio(precioEnCentavos = 0) {
   }).format(precioEnCentavos / 100);
 }
 
+const TAMANIO_MAXIMO_IMAGEN = 20 * 1024 * 1024;
+
+function obtenerTokenAdmin() {
+  try {
+    const sesion = JSON.parse(localStorage.getItem("admin_sesion"));
+    return sesion?.token || null;
+  } catch {
+    return null;
+  }
+}
+
+function mapearImagen(asset) {
+  if (!asset?.preview) {
+    return null;
+  }
+
+  return {
+    id: asset.id,
+    url: asset.preview,
+    ancho: asset.width ?? 0,
+    alto: asset.height ?? 0,
+  };
+}
+
+/**
+ * Sube el archivo al AssetServerPlugin de Vendure.
+ *
+ * El upload va por fetch crudo y no por Apollo porque la mutation createAssets
+ * usa el scalar Upload, que requiere un POST multipart. Apollo Client 4 no
+ * arma ese multipart solo, así que se replica el mismo token que usa
+ * apolloClient.js.
+ */
+export async function subirArchivoAAssets(archivo) {
+  if (!archivo) {
+    throw new Error("No se seleccionó ningún archivo.");
+  }
+
+  if (!archivo.type?.startsWith("image/")) {
+    throw new Error("El archivo debe ser una imagen (JPG, PNG, WebP o AVIF).");
+  }
+
+  if (archivo.size > TAMANIO_MAXIMO_IMAGEN) {
+    throw new Error("La imagen supera el máximo de 20 MB.");
+  }
+
+  const formulario = new FormData();
+
+  formulario.append(
+    "operations",
+    JSON.stringify({
+      query: `
+        mutation SubirArchivo($input: [CreateAssetInput!]!) {
+          createAssets(input: $input) {
+            ...on Asset { id preview source width height }
+            ...on MimeTypeError { errorCode message }
+          }
+        }
+      `,
+      variables: { input: [{ file: "variables.input.0.file" }] },
+    }),
+  );
+
+  formulario.append(
+    "map",
+    JSON.stringify({
+      "variables.input.0.file": ["variables.input.0.file"],
+    }),
+  );
+
+  formulario.append("variables.input.0.file", archivo, archivo.name);
+
+  const token = obtenerTokenAdmin();
+
+  const respuesta = await fetch("/admin-api", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formulario,
+  });
+
+  const datos = await respuesta.json().catch(() => null);
+
+  if (datos?.errors?.length) {
+    throw new Error(datos.errors[0].message);
+  }
+
+  if (!respuesta.ok) {
+    throw new Error(
+      "No se pudo conectar con el servidor para subir la imagen.",
+    );
+  }
+
+  const asset = datos?.data?.createAssets?.[0];
+
+  if (!asset) {
+    throw new Error("Vendure no devolvió la imagen.");
+  }
+
+  if (asset.errorCode) {
+    throw new Error(
+      asset.message || "Vendure rechazó el archivo por su formato.",
+    );
+  }
+
+  return mapearImagen(asset);
+}
+
+/**
+ * Quitar la imagen de una entidad solo la desvincula; el archivo queda en la
+ * biblioteca de assets.
+ */
+/**
+ * Decide qué IDs de asset van en el input de create/update.
+ *
+ * Devuelve null cuando no hay que tocar las imágenes, para que el input se
+ * arme sin esos campos y no se borren las imágenes que ya tenía la entidad.
+ * Si hay un archivo nuevo se sube primero y se usa su id.
+ */
+async function resolverIdsImagen({ archivo, imagenActual, quitarImagen }) {
+  if (archivo) {
+    const imagen = await subirArchivoAAssets(archivo);
+
+    return {
+      featuredAssetId: imagen.id,
+      assetIds: [imagen.id],
+    };
+  }
+
+  if (quitarImagen) {
+    return {
+      featuredAssetId: null,
+      assetIds: [],
+    };
+  }
+
+  if (imagenActual?.id) {
+    return {
+      featuredAssetId: imagenActual.id,
+      assetIds: [imagenActual.id],
+    };
+  }
+
+  return null;
+}
+
 function obtenerValorFaceta(valoresFaceta, codigoFaceta) {
   return (
     valoresFaceta?.find((valor) => valor.facet?.code === codigoFaceta)?.name ||
@@ -453,6 +661,7 @@ function mapearVariante(variante, productoId) {
     precioFormateado: formatearPrecio(variante.priceWithTax),
     activo: variante.enabled,
     stock: variante.stockOnHand ?? 0,
+    imagen: mapearImagen(variante.featuredAsset),
     color: obtenerOpcionColor(opciones),
     talle: obtenerOpcionTalle(opciones),
     opciones: opciones.map((opcion) => ({
@@ -475,6 +684,7 @@ function mapearProducto(producto) {
     nombre: producto.name,
     descripcion: producto.description || "",
     activo: producto.enabled,
+    imagen: mapearImagen(producto.featuredAsset),
     marca: obtenerValorFaceta(valoresFaceta, FACETAS.marca.codigo),
     genero: obtenerValorFaceta(valoresFaceta, FACETAS.genero.codigo),
     tipoProducto: obtenerValorFaceta(
@@ -765,13 +975,56 @@ export async function obtenerOpcionesProducto(productId) {
   };
 }
 
-export async function obtenerProductos({ pagina = 1, take = 50 } = {}) {
+/**
+ * Arma el filtro de `products` combinando la búsqueda por texto con los filtros
+ * de faceta. La búsqueda por texto y cada faceta son condiciones independientes
+ * que se combinan con AND; dentro de una misma faceta se usa `in` para que
+ * marcar varias opciones devuelva la unión.
+ */
+function componerFiltroProductos({
+  termino = "",
+  marcas = [],
+  tiposProducto = [],
+} = {}) {
+  const condiciones = [];
+  const texto = String(termino || "").trim();
+
+  if (texto) {
+    condiciones.push({
+      _or: [{ name: { contains: texto } }, { sku: { contains: texto } }],
+    });
+  }
+
+  if (marcas.length > 0) {
+    condiciones.push({ facetValueId: { in: marcas.map(String) } });
+  }
+
+  if (tiposProducto.length > 0) {
+    condiciones.push({ facetValueId: { in: tiposProducto.map(String) } });
+  }
+
+  if (condiciones.length === 0) {
+    return null;
+  }
+
+  return condiciones.length === 1 ? condiciones[0] : { _and: condiciones };
+}
+
+async function consultarProductos({
+  pagina = 1,
+  take = 50,
+  termino = "",
+  marcas = [],
+  tiposProducto = [],
+} = {}) {
+  const filtro = componerFiltroProductos({ termino, marcas, tiposProducto });
   const { data } = await client.query({
     query: OBTENER_PRODUCTOS,
     variables: {
       options: {
         skip: (pagina - 1) * take,
         take,
+        ...(filtro ? { filter: filtro } : {}),
       },
     },
     fetchPolicy: "network-only",
@@ -782,38 +1035,26 @@ export async function obtenerProductos({ pagina = 1, take = 50 } = {}) {
   };
 }
 
-export async function buscarProductos(termino) {
-  const terminoBuscado = String(termino || "").trim();
-  if (!terminoBuscado) {
-    return obtenerProductos();
-  }
-  const { data } = await client.query({
-    query: OBTENER_PRODUCTOS,
-    variables: {
-      options: {
-        filter: {
-          _or: [
-            {
-              name: {
-                contains: terminoBuscado,
-              },
-            },
-            {
-              sku: {
-                contains: terminoBuscado,
-              },
-            },
-          ],
-        },
-        take: 50,
-      },
-    },
-    fetchPolicy: "network-only",
+export async function obtenerProductos({
+  pagina = 1,
+  take = 50,
+  marcas = [],
+  tiposProducto = [],
+} = {}) {
+  return consultarProductos({ pagina, take, marcas, tiposProducto });
+}
+
+export async function buscarProductos(
+  termino,
+  { pagina = 1, take = 50, marcas = [], tiposProducto = [] } = {},
+) {
+  return consultarProductos({
+    pagina,
+    take,
+    termino,
+    marcas,
+    tiposProducto,
   });
-  return {
-    productos: data.products.items.map(mapearProducto),
-    total: data.products.totalItems,
-  };
 }
 
 export async function buscarProductosPorNombre(nombre) {
@@ -897,6 +1138,7 @@ export async function crearProducto({
   marca,
   genero,
   tipoProducto,
+  imagenArchivo,
 }) {
   const nombreProducto = String(nombre || "").trim();
   if (!nombreProducto) {
@@ -936,12 +1178,19 @@ export async function crearProducto({
       facetValueIds.push(facetValueId);
     }
   }
+  const imagen = await resolverIdsImagen({ archivo: imagenArchivo });
   const { data } = await client.mutate({
     mutation: CREAR_PRODUCTO,
     variables: {
       input: {
         enabled: Boolean(activo),
         facetValueIds,
+        ...(imagen
+          ? {
+              featuredAssetId: imagen.featuredAssetId,
+              assetIds: imagen.assetIds,
+            }
+          : {}),
         translations: [
           {
             languageCode: IDIOMA,
@@ -964,6 +1213,9 @@ export async function actualizarProducto({
   marca,
   genero,
   tipoProducto,
+  imagenArchivo,
+  imagenActual,
+  quitarImagen,
 }) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1018,6 +1270,11 @@ export async function actualizarProducto({
       facetValueIds.push(facetValueId);
     }
   }
+  const imagen = await resolverIdsImagen({
+    archivo: imagenArchivo,
+    imagenActual,
+    quitarImagen,
+  });
   const { data } = await client.mutate({
     mutation: ACTUALIZAR_PRODUCTO,
     variables: {
@@ -1025,6 +1282,12 @@ export async function actualizarProducto({
         id: productId,
         enabled: Boolean(activo),
         facetValueIds,
+        ...(imagen
+          ? {
+              featuredAssetId: imagen.featuredAssetId,
+              assetIds: imagen.assetIds,
+            }
+          : {}),
         translations: [
           {
             languageCode: IDIOMA,
@@ -1081,6 +1344,7 @@ export async function crearVariante({
   sku,
   precio,
   activo,
+  imagenArchivo,
 }) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1146,6 +1410,7 @@ export async function crearVariante({
   const nombreVariante = [opcionColor.name, opcionTalle?.name]
     .filter(Boolean)
     .join(" / ");
+  const imagen = await resolverIdsImagen({ archivo: imagenArchivo });
   const { data } = await client.mutate({
     mutation: CREAR_VARIANTE,
     variables: {
@@ -1156,6 +1421,12 @@ export async function crearVariante({
         price: pesosACentavos(precio),
         optionIds,
         facetValueIds: colorFacetValueId ? [colorFacetValueId] : [],
+        ...(imagen
+          ? {
+              featuredAssetId: imagen.featuredAssetId,
+              assetIds: imagen.assetIds,
+            }
+          : {}),
         translations: [
           {
             languageCode: IDIOMA,
@@ -1177,7 +1448,10 @@ export async function actualizarVariante({
   sku,
   precio,
   activo,
-  optionIds=[],
+  optionIds = [],
+  imagenArchivo,
+  imagenActual,
+  quitarImagen,
 }) {
   if (!variantId) {
     throw new Error("Debés seleccionar una variante.");
@@ -1186,6 +1460,11 @@ export async function actualizarVariante({
   if (!codigoSku) {
     throw new Error("El barcode o SKU es obligatorio.");
   }
+  const imagen = await resolverIdsImagen({
+    archivo: imagenArchivo,
+    imagenActual,
+    quitarImagen,
+  });
   const { data } = await client.mutate({
     mutation: ACTUALIZAR_VARIANTE,
     variables: {
@@ -1195,6 +1474,12 @@ export async function actualizarVariante({
         price: pesosACentavos(precio),
         enabled: Boolean(activo),
         optionIds,
+        ...(imagen
+          ? {
+              featuredAssetId: imagen.featuredAssetId,
+              assetIds: imagen.assetIds,
+            }
+          : {}),
       },
     },
   });
@@ -1208,7 +1493,7 @@ export async function actualizarVariante({
 export async function obtenerResumenProductos() {
   const take = 50;
   let skip = 0;
-  let totalProductos = 0;
+  let totalProductos;
   let totalVariantes = 0;
   do {
     const { data } = await client.query({

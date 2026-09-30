@@ -21,6 +21,7 @@ function VariantesProducto({ variantes = [], onEditar, onCambiarEstado }) {
         <span>Color</span>
         <span>Talle</span>
         <span>Barcode/SKU</span>
+        <span>Imagen</span>
         <span>Precio</span>
         <span>Activo</span>
         <span>Acciones</span>
@@ -44,6 +45,23 @@ function VariantesProducto({ variantes = [], onEditar, onCambiarEstado }) {
           <div className="estructura__tabla-dato">
             <span className="estructura__tabla-etiqueta">Barcode/SKU</span>
             <span>{variante.sku || "—"}</span>
+          </div>
+
+          <div className="estructura__tabla-dato">
+            <span className="estructura__tabla-etiqueta">Imagen</span>
+
+            {variante.imagen ? (
+              <img
+                className="admin-productos__miniatura"
+                src={variante.imagen.url}
+                alt={`Imagen de la variante ${variante.color || ""} ${
+                  variante.talle || ""
+                }`.trim()}
+                loading="lazy"
+              />
+            ) : (
+              <span>—</span>
+            )}
           </div>
 
           <div className="estructura__tabla-dato">
