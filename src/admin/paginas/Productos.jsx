@@ -5,6 +5,7 @@ import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
 import VariantesProducto from "../componentes/VariantesProducto";
+import SelectorImagen from "../componentes/SelectorImagen";
 
 import {
   obtenerProductos,
@@ -162,6 +163,10 @@ function obtenerValorCanonico(valores, valorIngresado) {
   return valorIngresado;
 }
 
+const IMAGEN_VACIA = { archivo: null, actual: null, quitar: false };
+
+const TAMANIO_PAGINA = 50;
+
 function Productos() {
   const [productos, setProductos] = useState([]);
   const [resumenProductos, setResumenProductos] = useState([]);
@@ -187,51 +192,118 @@ function Productos() {
   const [advertenciasNombre, setAdvertenciasNombre] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [buscando, setBuscando] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [totalProductos, setTotalProductos] = useState(0);
+  const [filtroMarca, setFiltroMarca] = useState("");
+  const [filtroTipoProducto, setFiltroTipoProducto] = useState("");
   const [menuAccionesAbiertoId, setMenuAccionesAbiertoId] = useState(null);
 
   const [formProducto, setFormProducto] = useState(FORM_PRODUCTO_INICIAL);
   const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
   const [varianteEditandoId, setVarianteEditandoId] = useState(null);
 
+  const [imagenProducto, setImagenProducto] = useState(IMAGEN_VACIA);
+  const [imagenVariante, setImagenVariante] = useState(IMAGEN_VACIA);
+
   const [productoVariantesAbiertoId, setProductoVariantesAbiertoId] =
     useState(null);
 
   const [colorSeleccionado, setColorSeleccionado] = useState(false);
-  const primeraBusqueda = useRef(true);
+  const primeraCargaListado = useRef(true);
+  const cargarDatosRef = useRef(null);
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(totalProductos / TAMANIO_PAGINA),
+  );
 
+  function cambiarPagina(paginaNueva) {
+    if (paginaNueva < 1 || paginaNueva > totalPaginas) {
+      return;
+    }
+
+    setPagina(paginaNueva);
+    setCargando(true);
+    cargarDatos(busqueda, false, paginaNueva, {
+      marca: filtroMarca,
+      tipoProducto: filtroTipoProducto,
+    });
+  }
+
+  // La búsqueda y los filtros se resuelven en un solo efecto para que un cambio
+  // en cualquiera de los tres dispare exactamente una consulta y vuelva a la
+  // primera página: con efectos separados cada cambio cruzaba referencias del
+  // otro y se duplicaba el pedido.
   useEffect(() => {
-    if (primeraBusqueda.current) {
-      primeraBusqueda.current = false;
+    if (primeraCargaListado.current) {
+      primeraCargaListado.current = false;
       return;
     }
 
     const temporizador = setTimeout(async () => {
       setBuscando(true);
-      await cargarDatos(busqueda, false);
+      setPagina(1);
+      await cargarDatosRef.current(busqueda, false, 1, {
+        marca: filtroMarca,
+        tipoProducto: filtroTipoProducto,
+      });
       setBuscando(false);
     }, 350);
 
     return () => clearTimeout(temporizador);
-  }, [busqueda]);
+  }, [busqueda, filtroMarca, filtroTipoProducto]);
 
-  async function cargarDatos(terminoBusqueda = "", actualizarResumen = true) {
+  useEffect(() => {
+    cargarDatos();
+    // La carga inicial ya se resuelve con los valores por defecto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function cargarDatos(
+    terminoBusqueda = "",
+    actualizarResumen = true,
+    paginaActual = pagina,
+    filtros = { marca: filtroMarca, tipoProducto: filtroTipoProducto },
+  ) {
     setError(null);
+
+    const marcas = filtros.marca ? [filtros.marca] : [];
+    const tiposProducto = filtros.tipoProducto ? [filtros.tipoProducto] : [];
 
     try {
       const [respuestaProductos, respuestaCatalogosProducto, nuevoResumen] =
         await Promise.all([
-          terminoBusqueda.trim()
-            ? buscarProductos(terminoBusqueda.trim())
-            : obtenerProductos(),
+          consultarProductosListado({
+            pagina: paginaActual,
+            termino: terminoBusqueda,
+            marcas,
+            tiposProducto,
+          }),
           obtenerCatalogosProducto(),
           actualizarResumen ? obtenerResumenProductos() : Promise.resolve(null),
         ]);
 
       setProductos(respuestaProductos.productos);
+      setTotalProductos(respuestaProductos.total);
+
+      // Si la página quedó vacía y no es la primera, retrocedemos hasta
+      // encontrar una con contenido (pasa al borrar el último de una página).
+      const ultimaPagina = Math.max(
+        1,
+        Math.ceil(respuestaProductos.total / TAMANIO_PAGINA),
+      );
+
+      if (paginaActual > ultimaPagina && ultimaPagina > 0) {
+        setPagina(ultimaPagina);
+        await cargarDatos(
+          terminoBusqueda,
+          actualizarResumen,
+          ultimaPagina,
+          filtros,
+        );
+        return;
+      }
+
       if (nuevoResumen) {
         setResumenProductos(nuevoResumen);
       }
@@ -242,6 +314,29 @@ function Productos() {
       setCargando(false);
     }
   }
+
+  function consultarProductosListado({
+    pagina: paginaPedida,
+    termino,
+    marcas,
+    tiposProducto,
+  }) {
+    return termino.trim()
+      ? buscarProductos(termino.trim(), {
+          pagina: paginaPedida,
+          take: TAMANIO_PAGINA,
+          marcas,
+          tiposProducto,
+        })
+      : obtenerProductos({
+          pagina: paginaPedida,
+          take: TAMANIO_PAGINA,
+          marcas,
+          tiposProducto,
+        });
+  }
+
+  cargarDatosRef.current = cargarDatos;
 
   async function cargarOpcionesProducto(productoId) {
     if (!productoId) {
@@ -314,6 +409,22 @@ function Productos() {
     setColorSeleccionado(true);
   }
 
+  function manejarArchivoProducto(archivo) {
+    setImagenProducto((anterior) => ({
+      archivo,
+      actual: archivo ? anterior.actual : null,
+      quitar: archivo ? false : Boolean(anterior.actual?.id),
+    }));
+  }
+
+  function manejarArchivoVariante(archivo) {
+    setImagenVariante((anterior) => ({
+      archivo,
+      actual: archivo ? anterior.actual : null,
+      quitar: archivo ? false : Boolean(anterior.actual?.id),
+    }));
+  }
+
   function seleccionarTalle(talle) {
     setFormVariante((anterior) => ({
       ...anterior,
@@ -337,6 +448,7 @@ function Productos() {
     setMensajeExito("");
     setAdvertenciasNombre([]);
     setFormProducto(FORM_PRODUCTO_INICIAL);
+    setImagenProducto(IMAGEN_VACIA);
     setModalAbierto("producto");
   }
 
@@ -355,6 +467,12 @@ function Productos() {
       activo: Boolean(producto.activo),
     });
 
+    setImagenProducto({
+      archivo: null,
+      actual: producto.imagen || null,
+      quitar: false,
+    });
+
     setModalAbierto("producto");
   }
 
@@ -363,6 +481,7 @@ function Productos() {
     setError(null);
     setMensajeExito("");
     setColorSeleccionado(false);
+    setImagenVariante(IMAGEN_VACIA);
 
     setFormVariante({
       ...FORM_VARIANTE_INICIAL,
@@ -398,6 +517,12 @@ function Productos() {
       activo: Boolean(variante.activo),
     });
 
+    setImagenVariante({
+      archivo: null,
+      actual: variante.imagen || null,
+      quitar: false,
+    });
+
     setOpcionesProducto({
       color: null,
       talle: null,
@@ -419,6 +544,8 @@ function Productos() {
     setMensajeExito("");
     setAdvertenciasNombre([]);
     setColorSeleccionado(false);
+    setImagenProducto(IMAGEN_VACIA);
+    setImagenVariante(IMAGEN_VACIA);
 
     setOpcionesProducto({
       color: null,
@@ -443,6 +570,9 @@ function Productos() {
           tipoProducto: formProducto.tipoProducto,
           descripcion: formProducto.descripcion,
           activo: formProducto.activo,
+          imagenArchivo: imagenProducto.archivo,
+          imagenActual: imagenProducto.actual,
+          quitarImagen: imagenProducto.quitar,
         });
 
         setMensajeExito("Producto actualizado correctamente.");
@@ -454,6 +584,7 @@ function Productos() {
           tipoProducto: formProducto.tipoProducto,
           descripcion: formProducto.descripcion,
           activo: formProducto.activo,
+          imagenArchivo: imagenProducto.archivo,
         });
 
         setMensajeExito("Producto creado correctamente.");
@@ -462,6 +593,7 @@ function Productos() {
       setFormProducto(FORM_PRODUCTO_INICIAL);
       setProductoEditandoId(null);
       setAdvertenciasNombre([]);
+      setImagenProducto(IMAGEN_VACIA);
 
       await cargarDatos(busqueda);
 
@@ -633,6 +765,9 @@ function Productos() {
           precio: formVariante.precio,
           activo: formVariante.activo,
           optionIds: opcionIds,
+          imagenArchivo: imagenVariante.archivo,
+          imagenActual: imagenVariante.actual,
+          quitarImagen: imagenVariante.quitar,
         });
         setMensajeExito("Variante actualizada correctamente.");
       } else {
@@ -643,12 +778,14 @@ function Productos() {
           sku: formVariante.barcode,
           precio: formVariante.precio,
           activo: formVariante.activo,
+          imagenArchivo: imagenVariante.archivo,
         });
         setMensajeExito("Variante guardada correctamente.");
       }
       setFormVariante(FORM_VARIANTE_INICIAL);
       setVarianteEditandoId(null);
       setColorSeleccionado(false);
+      setImagenVariante(IMAGEN_VACIA);
       setOpcionesProducto({ color: null, talle: null });
       await cargarDatos(busqueda);
       setTimeout(() => {
@@ -856,9 +993,60 @@ function Productos() {
                 {buscando && <span>Buscando...</span>}
               </div>
 
+              <div className="admin-productos__filtros">
+                <div className="admin-productos__filtro">
+                  <label htmlFor="filtro-marca">Marca</label>
+
+                  <select
+                    id="filtro-marca"
+                    value={filtroMarca}
+                    onChange={(e) => setFiltroMarca(e.target.value)}
+                  >
+                    <option value="">Todas las marcas</option>
+
+                    {catalogosProducto?.marcas.map((marca) => (
+                      <option key={marca.id} value={marca.id}>
+                        {marca.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="admin-productos__filtro">
+                  <label htmlFor="filtro-tipo-producto">Tipo de producto</label>
+
+                  <select
+                    id="filtro-tipo-producto"
+                    value={filtroTipoProducto}
+                    onChange={(e) => setFiltroTipoProducto(e.target.value)}
+                  >
+                    <option value="">Todos los tipos</option>
+
+                    {catalogosProducto?.tiposProducto.map((tipoProducto) => (
+                      <option key={tipoProducto.id} value={tipoProducto.id}>
+                        {tipoProducto.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {(filtroMarca || filtroTipoProducto) && (
+                  <Boton
+                    variante="admin"
+                    onClick={() => {
+                      setFiltroMarca("");
+                      setFiltroTipoProducto("");
+                    }}
+                  >
+                    Limpiar filtros
+                  </Boton>
+                )}
+              </div>
+
               <div className="estructura__tabla">
                 <div className="estructura__tabla-cabecera admin-productos__cabecera">
                   <span>Nombre</span>
+                  <span>Imagen</span>
                   <span>Marca</span>
                   <span>Género</span>
                   <span>Tipo de producto</span>
@@ -869,8 +1057,8 @@ function Productos() {
 
                 {productos.length === 0 && (
                   <p>
-                    {busqueda
-                      ? "No se encontraron productos."
+                    {busqueda || filtroMarca || filtroTipoProducto
+                      ? "No se encontraron productos con los filtros aplicados."
                       : "No hay productos para mostrar."}
                   </p>
                 )}
@@ -884,6 +1072,23 @@ function Productos() {
                         </span>
 
                         <span>{producto.nombre}</span>
+                      </div>
+
+                      <div className="estructura__tabla-dato">
+                        <span className="estructura__tabla-etiqueta">
+                          Imagen
+                        </span>
+
+                        {producto.imagen ? (
+                          <img
+                            className="admin-productos__miniatura"
+                            src={producto.imagen.url}
+                            alt={`Imagen de ${producto.nombre}`}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span>—</span>
+                        )}
                       </div>
 
                       <div className="estructura__tabla-dato">
@@ -1050,6 +1255,45 @@ function Productos() {
                   </Fragment>
                 ))}
               </div>
+
+              {totalPaginas > 1 && (
+                <nav
+                  className="admin-productos__paginacion"
+                  aria-label="Paginación de productos"
+                >
+                  <span className="admin-productos__paginacion-conteo">
+                    Mostrando{" "}
+                    <strong>
+                      {(pagina - 1) * TAMANIO_PAGINA + 1}–
+                      {Math.min(pagina * TAMANIO_PAGINA, totalProductos)}
+                    </strong>{" "}
+                    de <strong>{totalProductos}</strong>{" "}
+                    {totalProductos === 1 ? "producto" : "productos"}
+                  </span>
+
+                  <div className="admin-productos__paginacion-controles">
+                    <Boton
+                      variante="admin"
+                      disabled={pagina <= 1 || cargando}
+                      onClick={() => cambiarPagina(pagina - 1)}
+                    >
+                      Anterior
+                    </Boton>
+
+                    <span className="admin-productos__paginacion-actual">
+                      Página {pagina} de {totalPaginas}
+                    </span>
+
+                    <Boton
+                      variante="admin"
+                      disabled={pagina >= totalPaginas || cargando}
+                      onClick={() => cambiarPagina(pagina + 1)}
+                    >
+                      Siguiente
+                    </Boton>
+                  </div>
+                </nav>
+              )}
             </section>
           </>
         )}
@@ -1164,6 +1408,14 @@ function Productos() {
                 onChange={manejarCampoProducto}
               />
             </div>
+
+            <SelectorImagen
+              etiqueta="Imagen del producto"
+              imagenActual={imagenProducto.actual}
+              archivo={imagenProducto.archivo}
+              onSeleccionarArchivo={manejarArchivoProducto}
+              deshabilitado={guardando}
+            />
 
             <div className="estructura__campo">
               <label htmlFor="producto-activo">Activo</label>
@@ -1381,6 +1633,14 @@ function Productos() {
                 required
               />
             </div>
+
+            <SelectorImagen
+              etiqueta="Imagen de la variante"
+              imagenActual={imagenVariante.actual}
+              archivo={imagenVariante.archivo}
+              onSeleccionarArchivo={manejarArchivoVariante}
+              deshabilitado={guardando}
+            />
 
             <div className="estructura__campo">
               <label htmlFor="variante-activo">Activo</label>
