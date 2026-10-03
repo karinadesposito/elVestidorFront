@@ -1,8 +1,6 @@
 import client from "../../servicios/apolloClient";
 import { gql } from "@apollo/client";
-
 const IDIOMA = "es";
-
 const FACETAS = {
   marca: {
     codigo: "marca",
@@ -21,7 +19,6 @@ const FACETAS = {
     nombre: "Color",
   },
 };
-
 const TIPOS_GRUPO = {
   color: {
     codigo: "color",
@@ -32,7 +29,6 @@ const TIPOS_GRUPO = {
     nombre: "Talle",
   },
 };
-
 const OBTENER_PRODUCTOS = gql`
   query ObtenerProductos($options: ProductListOptions) {
     products(options: $options) {
@@ -41,16 +37,6 @@ const OBTENER_PRODUCTOS = gql`
         name
         description
         enabled
-        featuredAsset {
-          id
-          preview
-          width
-          height
-        }
-        assets {
-          id
-          preview
-        }
         facetValues {
           id
           name
@@ -105,7 +91,6 @@ const OBTENER_PRODUCTOS = gql`
     }
   }
 `;
-
 const OBTENER_RESUMEN_PRODUCTOS = gql`
   query ObtenerResumenProductos($options: ProductListOptions) {
     products(options: $options) {
@@ -119,7 +104,6 @@ const OBTENER_RESUMEN_PRODUCTOS = gql`
     }
   }
 `;
-
 const OBTENER_PRODUCTO = gql`
   query ObtenerProducto($id: ID!) {
     product(id: $id) {
@@ -127,16 +111,6 @@ const OBTENER_PRODUCTO = gql`
       name
       description
       enabled
-      featuredAsset {
-        id
-        preview
-        width
-        height
-      }
-      assets {
-        id
-        preview
-      }
       facetValues {
         id
         name
@@ -190,7 +164,6 @@ const OBTENER_PRODUCTO = gql`
     }
   }
 `;
-
 const OBTENER_FACETAS = gql`
   query ObtenerFacetas($options: FacetListOptions) {
     facets(options: $options) {
@@ -208,7 +181,6 @@ const OBTENER_FACETAS = gql`
     }
   }
 `;
-
 const CREAR_PRODUCTO = gql`
   mutation CrearProducto($input: CreateProductInput!) {
     createProduct(input: $input) {
@@ -216,10 +188,6 @@ const CREAR_PRODUCTO = gql`
       name
       description
       enabled
-      featuredAsset {
-        id
-        preview
-      }
       facetValues {
         id
         name
@@ -233,7 +201,6 @@ const CREAR_PRODUCTO = gql`
     }
   }
 `;
-
 const ACTUALIZAR_PRODUCTO = gql`
   mutation ActualizarProducto($input: UpdateProductInput!) {
     updateProduct(input: $input) {
@@ -241,14 +208,6 @@ const ACTUALIZAR_PRODUCTO = gql`
       name
       description
       enabled
-      featuredAsset {
-        id
-        preview
-      }
-      assets {
-        id
-        preview
-      }
       facetValues {
         id
         name
@@ -262,7 +221,6 @@ const ACTUALIZAR_PRODUCTO = gql`
     }
   }
 `;
-
 const ELIMINAR_PRODUCTO = gql`
   mutation EliminarProducto($id: ID!) {
     deleteProduct(id: $id) {
@@ -271,7 +229,6 @@ const ELIMINAR_PRODUCTO = gql`
     }
   }
 `;
-
 const CREAR_FACETA = gql`
   mutation CrearFaceta($input: CreateFacetInput!) {
     createFacet(input: $input) {
@@ -286,7 +243,6 @@ const CREAR_FACETA = gql`
     }
   }
 `;
-
 const CREAR_VALOR_FACETA = gql`
   mutation CrearValorFaceta($input: CreateFacetValueInput!) {
     createFacetValue(input: $input) {
@@ -297,7 +253,6 @@ const CREAR_VALOR_FACETA = gql`
     }
   }
 `;
-
 const CREAR_GRUPO_OPCIONES = gql`
   mutation CrearGrupoOpciones($input: CreateProductOptionGroupInput!) {
     createProductOptionGroup(input: $input) {
@@ -313,7 +268,6 @@ const CREAR_GRUPO_OPCIONES = gql`
     }
   }
 `;
-
 const CREAR_OPCION_PRODUCTO = gql`
   mutation CrearOpcionProducto($input: CreateProductOptionInput!) {
     createProductOption(input: $input) {
@@ -324,7 +278,6 @@ const CREAR_OPCION_PRODUCTO = gql`
     }
   }
 `;
-
 const AGREGAR_GRUPO_AL_PRODUCTO = gql`
   mutation AgregarGrupoAlProducto($productId: ID!, $optionGroupId: ID!) {
     addOptionGroupToProduct(
@@ -347,7 +300,6 @@ const AGREGAR_GRUPO_AL_PRODUCTO = gql`
     }
   }
 `;
-
 const CREAR_VARIANTE = gql`
   mutation CrearVariante($input: CreateProductVariantInput!) {
     crearVariante(input: $input) {
@@ -384,7 +336,6 @@ const CREAR_VARIANTE = gql`
     }
   }
 `;
-
 const ACTUALIZAR_VARIANTE = gql`
   mutation ActualizarVariante($input: UpdateProductVariantInput!) {
     updateProductVariant(input: $input) {
@@ -425,7 +376,6 @@ const ACTUALIZAR_VARIANTE = gql`
     }
   }
 `;
-
 function generarCodigo(valor) {
   return String(valor || "")
     .trim()
@@ -437,11 +387,9 @@ function generarCodigo(valor) {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 }
-
 function generarSlug(nombre) {
   return generarCodigo(nombre);
 }
-
 function normalizarTexto(valor) {
   return String(valor || "")
     .trim()
@@ -449,7 +397,6 @@ function normalizarTexto(valor) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
-
 function pesosACentavos(precio) {
   const valorNormalizado = String(precio ?? "")
     .trim()
@@ -461,16 +408,13 @@ function pesosACentavos(precio) {
   }
   return Math.round(numero * 100);
 }
-
 function formatearPrecio(precioEnCentavos = 0) {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency: "ARS",
   }).format(precioEnCentavos / 100);
 }
-
 const TAMANIO_MAXIMO_IMAGEN = 20 * 1024 * 1024;
-
 function obtenerTokenAdmin() {
   try {
     const sesion = JSON.parse(localStorage.getItem("admin_sesion"));
@@ -479,12 +423,10 @@ function obtenerTokenAdmin() {
     return null;
   }
 }
-
 function mapearImagen(asset) {
   if (!asset?.preview) {
     return null;
   }
-
   return {
     id: asset.id,
     url: asset.preview,
@@ -492,7 +434,6 @@ function mapearImagen(asset) {
     alto: asset.height ?? 0,
   };
 }
-
 /**
  * Sube el archivo al AssetServerPlugin de Vendure.
  *
@@ -505,17 +446,13 @@ export async function subirArchivoAAssets(archivo) {
   if (!archivo) {
     throw new Error("No se seleccionó ningún archivo.");
   }
-
   if (!archivo.type?.startsWith("image/")) {
     throw new Error("El archivo debe ser una imagen (JPG, PNG, WebP o AVIF).");
   }
-
   if (archivo.size > TAMANIO_MAXIMO_IMAGEN) {
     throw new Error("La imagen supera el máximo de 20 MB.");
   }
-
   const formulario = new FormData();
-
   formulario.append(
     "operations",
     JSON.stringify({
@@ -530,51 +467,39 @@ export async function subirArchivoAAssets(archivo) {
       variables: { input: [{ file: "variables.input.0.file" }] },
     }),
   );
-
   formulario.append(
     "map",
     JSON.stringify({
       "variables.input.0.file": ["variables.input.0.file"],
     }),
   );
-
   formulario.append("variables.input.0.file", archivo, archivo.name);
-
   const token = obtenerTokenAdmin();
-
   const respuesta = await fetch("/admin-api", {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formulario,
   });
-
   const datos = await respuesta.json().catch(() => null);
-
   if (datos?.errors?.length) {
     throw new Error(datos.errors[0].message);
   }
-
   if (!respuesta.ok) {
     throw new Error(
       "No se pudo conectar con el servidor para subir la imagen.",
     );
   }
-
   const asset = datos?.data?.createAssets?.[0];
-
   if (!asset) {
     throw new Error("Vendure no devolvió la imagen.");
   }
-
   if (asset.errorCode) {
     throw new Error(
       asset.message || "Vendure rechazó el archivo por su formato.",
     );
   }
-
   return mapearImagen(asset);
 }
-
 /**
  * Quitar la imagen de una entidad solo la desvincula; el archivo queda en la
  * biblioteca de assets.
@@ -589,37 +514,31 @@ export async function subirArchivoAAssets(archivo) {
 async function resolverIdsImagen({ archivo, imagenActual, quitarImagen }) {
   if (archivo) {
     const imagen = await subirArchivoAAssets(archivo);
-
     return {
       featuredAssetId: imagen.id,
       assetIds: [imagen.id],
     };
   }
-
   if (quitarImagen) {
     return {
       featuredAssetId: null,
       assetIds: [],
     };
   }
-
   if (imagenActual?.id) {
     return {
       featuredAssetId: imagenActual.id,
       assetIds: [imagenActual.id],
     };
   }
-
   return null;
 }
-
 function obtenerValorFaceta(valoresFaceta, codigoFaceta) {
   return (
     valoresFaceta?.find((valor) => valor.facet?.code === codigoFaceta)?.name ||
     ""
   );
 }
-
 function esGrupoColor(grupo) {
   const codigo = normalizarTexto(grupo?.code);
   const nombre = normalizarTexto(grupo?.name);
@@ -627,7 +546,6 @@ function esGrupoColor(grupo) {
     nombre === "color" || codigo === "color" || codigo.startsWith("color-")
   );
 }
-
 function esGrupoTalle(grupo) {
   const codigo = normalizarTexto(grupo?.code);
   const nombre = normalizarTexto(grupo?.name);
@@ -638,15 +556,12 @@ function esGrupoTalle(grupo) {
     codigo.startsWith("talle-")
   );
 }
-
 function obtenerOpcionColor(opciones = []) {
   return opciones.find((opcion) => esGrupoColor(opcion.group))?.name || "";
 }
-
 function obtenerOpcionTalle(opciones = []) {
   return opciones.find((opcion) => esGrupoTalle(opcion.group))?.name || "";
 }
-
 function mapearVariante(variante, productoId) {
   const opciones = variante.options || [];
   return {
@@ -684,7 +599,6 @@ function mapearVariante(variante, productoId) {
     })),
   };
 }
-
 function mapearProducto(producto) {
   const valoresFaceta = producto.facetValues || [];
   const variantes = (producto.variants || []).map((variante) =>
@@ -695,7 +609,6 @@ function mapearProducto(producto) {
     nombre: producto.name,
     descripcion: producto.description || "",
     activo: producto.enabled,
-    imagen: mapearImagen(producto.featuredAsset),
     marca: obtenerValorFaceta(valoresFaceta, FACETAS.marca.codigo),
     genero: obtenerValorFaceta(valoresFaceta, FACETAS.genero.codigo),
     tipoProducto: obtenerValorFaceta(
@@ -706,7 +619,6 @@ function mapearProducto(producto) {
     cantidadVariantes: variantes.length,
   };
 }
-
 function mapearGrupoProducto(grupo) {
   return {
     id: grupo.id,
@@ -720,7 +632,6 @@ function mapearGrupoProducto(grupo) {
     })),
   };
 }
-
 async function obtenerProductoPorId(productId) {
   const { data } = await client.query({
     query: OBTENER_PRODUCTO,
@@ -734,7 +645,6 @@ async function obtenerProductoPorId(productId) {
   }
   return data.product;
 }
-
 async function obtenerFacetas() {
   const { data } = await client.query({
     query: OBTENER_FACETAS,
@@ -747,7 +657,6 @@ async function obtenerFacetas() {
   });
   return data.facets.items;
 }
-
 async function obtenerOCrearFaceta(configuracion, facetas) {
   const facetaExistente = facetas.find(
     (faceta) => faceta.code === configuracion.codigo,
@@ -772,7 +681,6 @@ async function obtenerOCrearFaceta(configuracion, facetas) {
   });
   return data.createFacet;
 }
-
 async function obtenerOCrearValorFaceta({
   configuracionFaceta,
   valor,
@@ -807,7 +715,6 @@ async function obtenerOCrearValorFaceta({
   });
   return data.createFacetValue.id;
 }
-
 function obtenerGruposSemanticos(producto) {
   const grupos = producto.optionGroups || [];
   const gruposColor = grupos.filter(esGrupoColor);
@@ -827,7 +734,6 @@ function obtenerGruposSemanticos(producto) {
     talle: gruposTalle[0] || null,
   };
 }
-
 function validarGrupoPropioProducto(grupo, tipoGrupo) {
   if (!grupo) {
     return;
@@ -838,7 +744,6 @@ function validarGrupoPropioProducto(grupo, tipoGrupo) {
     );
   }
 }
-
 async function crearGrupoProducto({ productId, tipoGrupo }) {
   const codigoGrupo = `${tipoGrupo.codigo}-${productId}`;
   const { data } = await client.mutate({
@@ -869,7 +774,6 @@ async function crearGrupoProducto({ productId, tipoGrupo }) {
     options: grupoCreado.options || [],
   };
 }
-
 async function obtenerOCrearGrupoProducto({
   producto,
   tipoGrupo,
@@ -889,14 +793,12 @@ async function obtenerOCrearGrupoProducto({
     tipoGrupo,
   });
 }
-
 function buscarOpcionPorNombre(grupo, nombreOpcion) {
   const codigo = generarCodigo(nombreOpcion);
   return grupo.options?.find(
     (opcion) => opcion.code === codigo || generarCodigo(opcion.name) === codigo,
   );
 }
-
 async function crearOpcionEnGrupo({ grupo, nombre }) {
   const nombreOpcion = String(nombre || "").trim();
   if (!nombreOpcion) {
@@ -920,7 +822,6 @@ async function crearOpcionEnGrupo({ grupo, nombre }) {
   });
   return data.createProductOption;
 }
-
 async function obtenerOCrearOpcionGrupo({ grupo, nombre }) {
   const nombreOpcion = String(nombre || "").trim();
   const opcionExistente = buscarOpcionPorNombre(grupo, nombreOpcion);
@@ -932,7 +833,6 @@ async function obtenerOCrearOpcionGrupo({ grupo, nombre }) {
     nombre: nombreOpcion,
   });
 }
-
 export async function obtenerCatalogosProducto() {
   const facetas = await obtenerFacetas();
   const facetaMarca = facetas.find(
@@ -970,7 +870,6 @@ export async function obtenerCatalogosProducto() {
     })),
   };
 }
-
 export async function obtenerOpcionesProducto(productId) {
   if (!productId) {
     return {
@@ -985,7 +884,6 @@ export async function obtenerOpcionesProducto(productId) {
     talle: grupos.talle ? mapearGrupoProducto(grupos.talle) : null,
   };
 }
-
 /**
  * Arma el filtro de `products` combinando la búsqueda por texto con los filtros
  * de faceta. La búsqueda por texto y cada faceta son condiciones independientes
@@ -999,28 +897,22 @@ function componerFiltroProductos({
 } = {}) {
   const condiciones = [];
   const texto = String(termino || "").trim();
-
   if (texto) {
     condiciones.push({
       _or: [{ name: { contains: texto } }, { sku: { contains: texto } }],
     });
   }
-
   if (marcas.length > 0) {
     condiciones.push({ facetValueId: { in: marcas.map(String) } });
   }
-
   if (tiposProducto.length > 0) {
     condiciones.push({ facetValueId: { in: tiposProducto.map(String) } });
   }
-
   if (condiciones.length === 0) {
     return null;
   }
-
   return condiciones.length === 1 ? condiciones[0] : { _and: condiciones };
 }
-
 async function consultarProductos({
   pagina = 1,
   take = 50,
@@ -1045,7 +937,6 @@ async function consultarProductos({
     total: data.products.totalItems,
   };
 }
-
 export async function obtenerProductos({
   pagina = 1,
   take = 50,
@@ -1054,7 +945,6 @@ export async function obtenerProductos({
 } = {}) {
   return consultarProductos({ pagina, take, marcas, tiposProducto });
 }
-
 export async function buscarProductos(
   termino,
   { pagina = 1, take = 50, marcas = [], tiposProducto = [] } = {},
@@ -1067,7 +957,6 @@ export async function buscarProductos(
     tiposProducto,
   });
 }
-
 export async function buscarProductosPorNombre(nombre) {
   const nombreBuscado = String(nombre || "").trim();
   if (!nombreBuscado) {
@@ -1097,7 +986,6 @@ export async function buscarProductosPorNombre(nombre) {
   });
   return data.products.items.map(mapearProducto);
 }
-
 function normalizarNombreParaComparacion(nombre) {
   return String(nombre || "")
     .trim()
@@ -1108,7 +996,6 @@ function normalizarNombreParaComparacion(nombre) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
 export function analizarCoincidenciasNombre(nombre, productos) {
   const nombreNormalizado = normalizarNombreParaComparacion(nombre);
   if (!nombreNormalizado) {
@@ -1141,7 +1028,6 @@ export function analizarCoincidenciasNombre(nombre, productos) {
     })
     .filter(Boolean);
 }
-
 export async function crearProducto({
   nombre,
   descripcion,
@@ -1149,7 +1035,6 @@ export async function crearProducto({
   marca,
   genero,
   tipoProducto,
-  imagenArchivo,
 }) {
   const nombreProducto = String(nombre || "").trim();
   if (!nombreProducto) {
@@ -1189,19 +1074,12 @@ export async function crearProducto({
       facetValueIds.push(facetValueId);
     }
   }
-  const imagen = await resolverIdsImagen({ archivo: imagenArchivo });
   const { data } = await client.mutate({
     mutation: CREAR_PRODUCTO,
     variables: {
       input: {
         enabled: Boolean(activo),
         facetValueIds,
-        ...(imagen
-          ? {
-              featuredAssetId: imagen.featuredAssetId,
-              assetIds: imagen.assetIds,
-            }
-          : {}),
         translations: [
           {
             languageCode: IDIOMA,
@@ -1215,7 +1093,6 @@ export async function crearProducto({
   });
   return data.createProduct;
 }
-
 export async function actualizarProducto({
   productId,
   nombre,
@@ -1224,9 +1101,6 @@ export async function actualizarProducto({
   marca,
   genero,
   tipoProducto,
-  imagenArchivo,
-  imagenActual,
-  quitarImagen,
 }) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1281,11 +1155,6 @@ export async function actualizarProducto({
       facetValueIds.push(facetValueId);
     }
   }
-  const imagen = await resolverIdsImagen({
-    archivo: imagenArchivo,
-    imagenActual,
-    quitarImagen,
-  });
   const { data } = await client.mutate({
     mutation: ACTUALIZAR_PRODUCTO,
     variables: {
@@ -1293,12 +1162,6 @@ export async function actualizarProducto({
         id: productId,
         enabled: Boolean(activo),
         facetValueIds,
-        ...(imagen
-          ? {
-              featuredAssetId: imagen.featuredAssetId,
-              assetIds: imagen.assetIds,
-            }
-          : {}),
         translations: [
           {
             languageCode: IDIOMA,
@@ -1312,7 +1175,6 @@ export async function actualizarProducto({
   });
   return data.updateProduct;
 }
-
 export async function cambiarEstadoProducto({ productId, activo }) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1328,7 +1190,6 @@ export async function cambiarEstadoProducto({ productId, activo }) {
   });
   return data.updateProduct;
 }
-
 export async function eliminarProducto(productId) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1347,7 +1208,6 @@ export async function eliminarProducto(productId) {
   }
   return respuesta;
 }
-
 export async function crearVariante({
   productId,
   color,
@@ -1453,7 +1313,6 @@ export async function crearVariante({
   }
   return varianteCreada;
 }
-
 export async function actualizarVariante({
   variantId,
   sku,
@@ -1500,7 +1359,6 @@ export async function actualizarVariante({
   }
   return varianteActualizada;
 }
-
 export async function obtenerResumenProductos() {
   const take = 50;
   let skip = 0;
