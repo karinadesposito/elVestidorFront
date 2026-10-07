@@ -886,7 +886,7 @@ export async function obtenerOpcionesProducto(productId) {
 }
 /**
  * Arma el filtro de `products` combinando la búsqueda por texto con los filtros
- * de faceta. La búsqueda por texto y cada faceta son condiciones independientes
+ * de faceta. La búsqueda por nombre y cada faceta son condiciones independientes
  * que se combinan con AND; dentro de una misma faceta se usa `in` para que
  * marcar varias opciones devuelva la unión.
  */
@@ -899,7 +899,7 @@ function componerFiltroProductos({
   const texto = String(termino || "").trim();
   if (texto) {
     condiciones.push({
-      _or: [{ name: { contains: texto } }, { sku: { contains: texto } }],
+      name: { contains: texto },
     });
   }
   if (marcas.length > 0) {
@@ -1393,4 +1393,96 @@ export async function obtenerResumenProductos() {
       cantidad: totalVariantes,
     },
   ];
+}
+
+
+const BUSCAR_VARIANTES_LISTADO = gql`
+  query BuscarVariantesListado($options: ProductVariantListOptions) {
+    productVariants(options: $options) {
+      totalItems
+      items {
+        id
+        name
+        sku
+        enabled
+        price
+        priceWithTax
+        stockOnHand
+        featuredAsset { id preview width height }
+        options {
+          id name code
+          group { id name code }
+        }
+        product {
+          id name description enabled
+          facetValues {
+            id name code
+            facet { id name code }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function buscarVariantes(
+  termino,
+  { pagina = 1, take = 50, marcas = [], tiposProducto = [] } = {},
+) {
+  const texto = String(termino || "").trim();
+  if (!texto) return { variantes: [], productos: [], total: 0 };
+
+  const filter = {
+    _or: [{ name: { contains: texto } }, { sku: { contains: texto } }],
+  };
+  const filtrarPorFacetas = marcas.length > 0 || tiposProducto.length > 0;
+  const variantesEncontradas = [];
+  let total = 0;
+  let skip = filtrarPorFacetas ? 0 : (pagina - 1) * take;
+
+  do {
+    const { data } = await client.query({
+      query: BUSCAR_VARIANTES_LISTADO,
+      variables: {
+        options: { filter, skip, take: filtrarPorFacetas ? 100 : take },
+      },
+      fetchPolicy: "network-only",
+    });
+    const resultado = data.productVariants;
+    total = resultado.totalItems;
+    if (resultado.items.length === 0 && skip < total) {
+      throw new Error("No se pudo completar la búsqueda de variantes.");
+    }
+    variantesEncontradas.push(...resultado.items.filter((variante) => {
+      const ids = new Set((variante.product?.facetValues || []).map((valor) => String(valor.id)));
+      return (!marcas.length || marcas.some((id) => ids.has(String(id)))) &&
+        (!tiposProducto.length || tiposProducto.some((id) => ids.has(String(id))));
+    }));
+    skip += resultado.items.length;
+    if (!filtrarPorFacetas || resultado.items.length === 0) break;
+  } while (skip < total);
+
+  const variantesPagina = filtrarPorFacetas
+    ? variantesEncontradas.slice((pagina - 1) * take, pagina * take)
+    : variantesEncontradas;
+  if (filtrarPorFacetas) total = variantesEncontradas.length;
+
+  const productosPorId = new Map();
+  variantesPagina.forEach((variante) => {
+    const producto = variante.product;
+    if (!producto) return;
+    const id = String(producto.id);
+    if (!productosPorId.has(id)) {
+      productosPorId.set(id, mapearProducto({ ...producto, variants: [] }));
+    }
+    const padre = productosPorId.get(id);
+    padre.variantes.push(mapearVariante(variante, producto.id));
+    padre.cantidadVariantes = padre.variantes.length;
+  });
+  const productos = Array.from(productosPorId.values());
+  return {
+    productos,
+    variantes: productos.flatMap((producto) => producto.variantes),
+    total,
+  };
 }

@@ -17,6 +17,7 @@ import {
   crearVariante,
   actualizarVariante,
   buscarProductos,
+  buscarVariantes,
   buscarProductosPorNombre,
   analizarCoincidenciasNombre,
 } from "../servicios/productosService";
@@ -159,9 +160,11 @@ function Productos() {
   const [procesandoProductoId, setProcesandoProductoId] = useState(null);
   const [advertenciasNombre, setAdvertenciasNombre] = useState([]);
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaVariantes, setBusquedaVariantes] = useState("");
+  const modoVariantes = Boolean(busquedaVariantes.trim());
   const [buscando, setBuscando] = useState(false);
   const [pagina, setPagina] = useState(1);
-  const [totalProductos, setTotalProductos] = useState(0);
+  const [totalResultados, setTotalProductos] = useState(0);
   const [filtroMarca, setFiltroMarca] = useState("");
   const [filtroTipoProducto, setFiltroTipoProducto] = useState("");
   const [menuAccionesAbiertoId, setMenuAccionesAbiertoId] = useState(null);
@@ -173,42 +176,40 @@ function Productos() {
     useState(null);
   const [colorSeleccionado, setColorSeleccionado] = useState(false);
   const primeraCargaListado = useRef(true);
+  const solicitudListadoRef = useRef(0);
   const cargarDatosRef = useRef(null);
   const totalPaginas = Math.max(
     1,
-    Math.ceil(totalProductos / TAMANIO_PAGINA),
+    Math.ceil(totalResultados / TAMANIO_PAGINA),
   );
   function cambiarPagina(paginaNueva) {
     if (paginaNueva < 1 || paginaNueva > totalPaginas) {
       return;
     }
     setPagina(paginaNueva);
-    setCargando(true);
+    setBuscando(true);
     cargarDatos(busqueda, false, paginaNueva, {
       marca: filtroMarca,
       tipoProducto: filtroTipoProducto,
     });
   }
-  // La búsqueda y los filtros se resuelven en un solo efecto para que un cambio
-  // en cualquiera de los tres dispare exactamente una consulta y vuelva a la
-  // primera página: con efectos separados cada cambio cruzaba referencias del
-  // otro y se duplicaba el pedido.
+  // Las dos búsquedas y los filtros usan una sola consulta por cambio.
   useEffect(() => {
     if (primeraCargaListado.current) {
       primeraCargaListado.current = false;
       return;
     }
-    const temporizador = setTimeout(async () => {
-      setBuscando(true);
+    solicitudListadoRef.current += 1;
+    setBuscando(true);
+    const temporizador = setTimeout(() => {
       setPagina(1);
-      await cargarDatosRef.current(busqueda, false, 1, {
+      cargarDatosRef.current(busqueda, false, 1, {
         marca: filtroMarca,
         tipoProducto: filtroTipoProducto,
       });
-      setBuscando(false);
     }, 350);
     return () => clearTimeout(temporizador);
-  }, [busqueda, filtroMarca, filtroTipoProducto]);
+  }, [busqueda, busquedaVariantes, filtroMarca, filtroTipoProducto]);
   useEffect(() => {
     cargarDatos();
     // La carga inicial ya se resuelve con los valores por defecto.
@@ -220,6 +221,7 @@ function Productos() {
     paginaActual = pagina,
     filtros = { marca: filtroMarca, tipoProducto: filtroTipoProducto },
   ) {
+    const solicitud = ++solicitudListadoRef.current;
     setError(null);
     const marcas = filtros.marca ? [filtros.marca] : [];
     const tiposProducto = filtros.tipoProducto ? [filtros.tipoProducto] : [];
@@ -235,6 +237,7 @@ function Productos() {
           obtenerCatalogosProducto(),
           actualizarResumen ? obtenerResumenProductos() : Promise.resolve(null),
         ]);
+      if (solicitud !== solicitudListadoRef.current) return;
       setProductos(respuestaProductos.productos);
       setTotalProductos(respuestaProductos.total);
       // Si la página quedó vacía y no es la primera, retrocedemos hasta
@@ -258,9 +261,12 @@ function Productos() {
       }
       setCatalogosProducto(respuestaCatalogosProducto);
     } catch (err) {
-      setError(err.message);
+      if (solicitud === solicitudListadoRef.current) setError(err.message);
     } finally {
-      setCargando(false);
+      if (solicitud === solicitudListadoRef.current) {
+        setCargando(false);
+        setBuscando(false);
+      }
     }
   }
   function consultarProductosListado({
@@ -269,6 +275,14 @@ function Productos() {
     marcas,
     tiposProducto,
   }) {
+    if (modoVariantes) {
+      return buscarVariantes(busquedaVariantes.trim(), {
+        pagina: paginaPedida,
+        take: TAMANIO_PAGINA,
+        marcas,
+        tiposProducto,
+      });
+    }
     return termino.trim()
       ? buscarProductos(termino.trim(), {
           pagina: paginaPedida,
@@ -794,7 +808,7 @@ function Productos() {
             </section>
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado">
-                <h2>Listado de productos</h2>
+                <h2>{modoVariantes ? "Resultados de variantes" : "Listado de productos"}</h2>
                 <div className="estructura__panel-acciones">
                   <Boton variante="admin" onClick={abrirModalProducto}>
                     Nuevo producto
@@ -804,6 +818,7 @@ function Productos() {
                   </Boton>
                 </div>
               </div>
+              <div className="admin-productos__filtros">
               <div className="admin-productos__buscador">
                 <label htmlFor="buscar-productos">Buscar productos</label>
                 <div className="admin-productos__buscador-control">
@@ -812,23 +827,66 @@ function Productos() {
                     id="buscar-productos"
                     type="text"
                     value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    placeholder="Buscar por nombre o barcode"
+                    onChange={(e) => {
+                      solicitudListadoRef.current += 1;
+                      setBuscando(true);
+                      setBusqueda(e.target.value);
+                      setBusquedaVariantes("");
+                      setProductoVariantesAbiertoId(null);
+                    }}
+                    placeholder="Nombre del producto"
                     autoComplete="off"
                   />
                   {busqueda && (
                     <button
                       type="button"
-                      onClick={() => setBusqueda("")}
-                      aria-label="Limpiar búsqueda"
+                      onClick={() => {
+                        solicitudListadoRef.current += 1;
+                        setBuscando(true);
+                        setBusqueda("");
+                        document.getElementById("buscar-productos")?.focus();
+                      }}
+                      aria-label="Limpiar búsqueda de productos"
                     >
                       <FiX aria-hidden="true" />
                     </button>
                   )}
                 </div>
-                {buscando && <span>Buscando...</span>}
               </div>
-              <div className="admin-productos__filtros">
+              <div className="admin-productos__buscador">
+                <label htmlFor="buscar-variantes">Buscar variantes</label>
+                <div className="admin-productos__buscador-control">
+                  <FiSearch aria-hidden="true" />
+                  <input
+                    id="buscar-variantes"
+                    type="text"
+                    value={busquedaVariantes}
+                    onChange={(e) => {
+                      solicitudListadoRef.current += 1;
+                      setBuscando(true);
+                      setBusquedaVariantes(e.target.value);
+                      setBusqueda("");
+                      setProductoVariantesAbiertoId(null);
+                    }}
+                    placeholder="Nombre o barcode"
+                    autoComplete="off"
+                  />
+                  {busquedaVariantes && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        solicitudListadoRef.current += 1;
+                        setBuscando(true);
+                        setBusquedaVariantes("");
+                        document.getElementById("buscar-variantes")?.focus();
+                      }}
+                      aria-label="Limpiar búsqueda de variantes"
+                    >
+                      <FiX aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
                 <div className="estructura__campo">
                   <label htmlFor="filtro-marca">Marca</label>
                   <select
@@ -871,6 +929,26 @@ function Productos() {
                   </Boton>
                 )}
               </div>
+              {buscando && <p role="status">Buscando...</p>}
+              {!buscando && modoVariantes && (
+                <div className="estructura__tabla">
+                  {productos.length === 0 && (
+                    <p role="status">No se encontraron variantes con la búsqueda y los filtros aplicados.</p>
+                  )}
+                  {productos.map((producto) => (
+                    <section className="estructura__lista-item" key={producto.id}>
+                      <strong>{producto.nombre}</strong>
+                      <span>{producto.marca || "—"} · {producto.tipoProducto || "—"}</span>
+                      <VariantesProducto
+                        variantes={producto.variantes}
+                        onEditar={abrirModalEditarVariante}
+                        onCambiarEstado={manejarCambiarEstadoVariante}
+                      />
+                    </section>
+                  ))}
+                </div>
+              )}
+              {!buscando && !modoVariantes && (
               <div className="estructura__tabla">
                 <div className="estructura__tabla-cabecera admin-productos__cabecera">
                   <span>Nombre</span>
@@ -1041,24 +1119,27 @@ function Productos() {
                   </Fragment>
                 ))}
               </div>
-              {totalPaginas > 1 && (
+              )}
+              {!buscando && totalPaginas > 1 && (
                 <nav
                   className="admin-productos__paginacion"
-                  aria-label="Paginación de productos"
+                  aria-label={modoVariantes ? "Paginación de variantes" : "Paginación de productos"}
                 >
                   <span>
                     Mostrando{" "}
                     <strong>
                       {(pagina - 1) * TAMANIO_PAGINA + 1}–
-                      {Math.min(pagina * TAMANIO_PAGINA, totalProductos)}
+                      {Math.min(pagina * TAMANIO_PAGINA, totalResultados)}
                     </strong>{" "}
-                    de <strong>{totalProductos}</strong>{" "}
-                    {totalProductos === 1 ? "producto" : "productos"}
+                    de <strong>{totalResultados}</strong>{" "}
+                    {modoVariantes
+                      ? (totalResultados === 1 ? "variante" : "variantes")
+                      : (totalResultados === 1 ? "producto" : "productos")}
                   </span>
                   <div className="estructura__panel-acciones">
                     <Boton
                       variante="admin"
-                      disabled={pagina <= 1 || cargando}
+                      disabled={pagina <= 1 || cargando || buscando}
                       onClick={() => cambiarPagina(pagina - 1)}
                     >
                       Anterior
@@ -1068,7 +1149,7 @@ function Productos() {
                     </span>
                     <Boton
                       variante="admin"
-                      disabled={pagina >= totalPaginas || cargando}
+                      disabled={pagina >= totalPaginas || cargando || buscando}
                       onClick={() => cambiarPagina(pagina + 1)}
                     >
                       Siguiente
