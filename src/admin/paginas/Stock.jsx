@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FiSearch, FiX } from "react-icons/fi";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
@@ -7,10 +8,13 @@ import {
   contarStock,
   crearProveedor,
   filtrarProveedores,
+  filtrarStock,
   obtenerDatosStock,
   obtenerProveedores,
   registrarIngresoStock,
 } from "../servicios/stockService";
+import { obtenerCatalogosProducto } from "../servicios/productosService";
+import "../../estilos/admin-productos.css";
 import "../../estilos/admin-stock.css";
 function obtenerFechaActual() {
   const fecha = new Date();
@@ -39,6 +43,13 @@ const FORM_DETALLE_INICIAL = {
 };
 function Stock() {
   const [stock, setStock] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroMarca, setFiltroMarca] = useState("");
+  const [filtroTipoProducto, setFiltroTipoProducto] = useState("");
+  const [catalogosProducto, setCatalogosProducto] = useState({
+    marcas: [],
+    tiposProducto: [],
+  });
   const [categoriasStock, setCategoriasStock] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -61,10 +72,12 @@ function Stock() {
       setCargando(true);
       setError(null);
       try {
-        const [datosStock, datosProveedores] = await Promise.all([
+        const [datosStock, datosProveedores, catalogos] = await Promise.all([
           obtenerDatosStock(),
           obtenerProveedores(),
+          obtenerCatalogosProducto(),
         ]);
+        setCatalogosProducto(catalogos);
         setStock(datosStock.stock);
         setCategoriasStock(contarStock(datosStock.stock));
         setProveedores(datosProveedores);
@@ -315,6 +328,12 @@ function Stock() {
       setGuardando(false);
     }
   }
+  const stockFiltrado = filtrarStock(stock, {
+    busqueda,
+    marcaId: filtroMarca,
+    tipoProductoId: filtroTipoProducto,
+  });
+
   const proveedorSeleccionado = proveedores.find(
     (proveedor) => String(proveedor.id) === String(formIngreso.proveedorId),
   );
@@ -341,7 +360,7 @@ function Stock() {
         )}
         {!cargando && (
           <>
-            <section className="estructura__resumen" aria-label="Resumen de stock">
+            <section id="resumen-stock" className="estructura__resumen" aria-label="Resumen de stock">
               {categoriasStock.map((categoria) => (
                 <article
                   className={`estructura__tarjeta ${categoria.color}`}
@@ -361,19 +380,100 @@ function Stock() {
                   </Boton>
                 </div>
               </div>
-              <div className="estructura__tabla">
+              <div id="stock-controles">
+                <div className="admin-productos__buscador">
+                  <label htmlFor="buscar-stock">Buscar variantes</label>
+                  <div className="admin-productos__buscador-control">
+                    <FiSearch aria-hidden="true" />
+                    <input
+                      id="buscar-stock"
+                      type="text"
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      placeholder="Buscar por nombre o barcode"
+                      autoComplete="off"
+                      aria-controls="listado-stock"
+                    />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBusqueda("");
+                          document.getElementById("buscar-stock")?.focus();
+                        }}
+                        aria-label="Limpiar búsqueda"
+                      >
+                        <FiX aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="admin-productos__filtros">
+                  <div className="estructura__campo">
+                    <label htmlFor="stock-filtro-marca">Marca</label>
+                    <select
+                      id="stock-filtro-marca"
+                      value={filtroMarca}
+                      onChange={(e) => setFiltroMarca(e.target.value)}
+                      aria-controls="listado-stock"
+                    >
+                      <option value="">Todas las marcas</option>
+                      {catalogosProducto.marcas.map((marca) => (
+                        <option key={marca.id} value={marca.id}>
+                          {marca.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="estructura__campo">
+                    <label htmlFor="stock-filtro-tipo">Tipo Prod.</label>
+                    <select
+                      id="stock-filtro-tipo"
+                      value={filtroTipoProducto}
+                      onChange={(e) => setFiltroTipoProducto(e.target.value)}
+                      aria-controls="listado-stock"
+                    >
+                      <option value="">Todos los tipos</option>
+                      {catalogosProducto.tiposProducto.map((tipoProducto) => (
+                        <option key={tipoProducto.id} value={tipoProducto.id}>
+                          {tipoProducto.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {(filtroMarca || filtroTipoProducto) && (
+                    <Boton
+                      variante="admin"
+                      type="button"
+                      onClick={() => {
+                        setFiltroMarca("");
+                        setFiltroTipoProducto("");
+                      }}
+                    >
+                      Limpiar filtros
+                    </Boton>
+                  )}
+                </div>
+              </div>
+              <div className="estructura__tabla" id="listado-stock">
                 <div className="estructura__tabla-cabecera admin-stock__cabecera">
                   <span>Barcode</span>
                   <span>Producto</span>
                   <span>Variante</span>
                   <span>Stock</span>
-                  <span>Reservado</span>
-                  <span>Disponible</span>
+                  <span>Marca</span>
+                  <span>Tipo Prod.</span>
                   <span>Estado</span>
                   <span>Último ingreso</span>
                 </div>
-                {stock.length === 0 && <p>No hay variantes para mostrar.</p>}
-                {stock.map((item) => (
+                {stockFiltrado.length === 0 && (
+                  <p role="status">
+                    {stock.length === 0
+                      ? "No hay variantes para mostrar."
+                      : "No hay variantes que coincidan con la búsqueda y los filtros."}
+                  </p>
+                )}
+                {stockFiltrado.map((item) => (
                   <article
                     className={`estructura__tabla-fila admin-stock__fila ${item.color}`}
                     key={item.id}
@@ -395,12 +495,12 @@ function Stock() {
                       <strong>{item.stock}</strong>
                     </div>
                     <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Reservado</span>
-                      <strong>{item.reservado}</strong>
+                      <span className="estructura__tabla-etiqueta">Marca</span>
+                      <span>{item.marca || "—"}</span>
                     </div>
                     <div className="estructura__tabla-dato">
-                      <span className="estructura__tabla-etiqueta">Disponible</span>
-                      <strong>{item.disponible}</strong>
+                      <span className="estructura__tabla-etiqueta">Tipo Prod.</span>
+                      <span>{item.tipoProducto || "—"}</span>
                     </div>
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">Estado</span>

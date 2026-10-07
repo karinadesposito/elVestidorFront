@@ -12,6 +12,13 @@ const OBTENER_VARIANTES_STOCK = gql`
         product {
           id
           name
+          facetValues {
+            id
+            name
+            facet {
+              code
+            }
+          }
         }
         options {
           id
@@ -283,6 +290,11 @@ function formatearFecha(fecha) {
   return `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]}`
 }
 function mapearVarianteStock(variante, ultimoIngresoPorBarcode) {
+  const valoresFaceta = variante.product?.facetValues || []
+  const marca = valoresFaceta.find((valor) => valor.facet?.code === 'marca')
+  const tipoProducto = valoresFaceta.find(
+    (valor) => valor.facet?.code === 'tipo-producto',
+  )
   const totales = sumarNivelesStock(variante.stockLevels)
   const disponible = totales.stock - totales.reservado
   const estado = obtenerEstadoStock(disponible)
@@ -290,6 +302,10 @@ function mapearVarianteStock(variante, ultimoIngresoPorBarcode) {
     id: variante.id,
     barcode: variante.sku,
     producto: variante.product?.name || 'Sin producto',
+    marcaId: marca ? String(marca.id) : '',
+    marca: marca?.name || '',
+    tipoProductoId: tipoProducto ? String(tipoProducto.id) : '',
+    tipoProducto: tipoProducto?.name || '',
     variante:
       variante.options?.map((opcion) => opcion.name).join(' / ') ||
       variante.name ||
@@ -462,31 +478,21 @@ export function filtrarProveedores(proveedores, busqueda) {
 }
 export function contarStock(stock) {
   const categorias = {
-    disponibles: 0,
-    reservadas: 0,
     stockBajo: 0,
     sinStock: 0,
   }
   stock.forEach((item) => {
-    categorias.reservadas += item.reservado
-    if (item.disponible > 5) {
-      categorias.disponibles += 1
-    } else if (item.disponible > 0) {
+    if (item.disponible > 0 && item.disponible <= 5) {
       categorias.stockBajo += 1
-    } else {
+    } else if (item.disponible <= 0) {
       categorias.sinStock += 1
     }
   })
   return [
     {
-      nombre: 'Disponibles',
-      cantidad: categorias.disponibles,
+      nombre: 'Total de variantes',
+      cantidad: stock.length,
       color: 'fondo-verde',
-    },
-    {
-      nombre: 'Unidades reservadas',
-      cantidad: categorias.reservadas,
-      color: 'fondo-violeta',
     },
     {
       nombre: 'Stock bajo',
@@ -499,4 +505,21 @@ export function contarStock(stock) {
       color: 'fondo-rojo',
     },
   ]
+}
+
+export function filtrarStock(stock, {
+  busqueda = '',
+  marcaId = '',
+  tipoProductoId = '',
+} = {}) {
+  const termino = normalizarBusqueda(busqueda)
+  return stock.filter((item) => {
+    const coincideTexto = !termino ||
+      normalizarBusqueda(item.barcode).includes(termino) ||
+      normalizarBusqueda(item.producto).includes(termino)
+    const coincideMarca = !marcaId || String(item.marcaId) === String(marcaId)
+    const coincideTipo = !tipoProductoId ||
+      String(item.tipoProductoId) === String(tipoProductoId)
+    return coincideTexto && coincideMarca && coincideTipo
+  })
 }
