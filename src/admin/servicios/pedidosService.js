@@ -37,19 +37,17 @@ const TRANSICIONAR_ESTADO = gql`
 `
 
 const ESTADO_MAP = {
-  Added: 'Nuevo',
-  ArrangingPayment: 'Pendiente de pago',
-  PaymentSettled: 'En preparación',
+  PaymentSettled: 'Pago confirmado',
+  EnPreparacion: 'En preparación',
   Shipped: 'Enviado',
-  Delivered: 'Finalizado',
+  Delivered: 'Entregado',
   Cancelled: 'Cancelado',
 }
 
 const COLOR_MAP = {
-  Added: 'fondo-azul',
-  ArrangingPayment: 'fondo-amarillo',
-  PaymentSettled: 'fondo-violeta',
-  Shipped: 'fondo-violeta',
+  PaymentSettled: 'fondo-azul',
+  EnPreparacion: 'fondo-violeta',
+  Shipped: 'fondo-amarillo',
   Delivered: 'fondo-verde',
   Cancelled: 'fondo-gris',
 }
@@ -95,36 +93,62 @@ export async function obtenerPedidos({ pagina = 1, take = 20 } = {}) {
 
 export function contarPorEstado(pedidos) {
   const contadores = {
-    Nuevos: 0,
-    'Pendientes de pago': 0,
+    'Pago confirmado': 0,
     'En preparación': 0,
-    Finalizados: 0,
+    Enviados: 0,
+    Entregados: 0,
   }
 
   pedidos.forEach((p) => {
-    if (p.estado === 'Nuevo') contadores.Nuevos++
-    else if (p.estado === 'Pendiente de pago') contadores['Pendientes de pago']++
-    else if (p.estado === 'En preparación') contadores['En preparación']++
-    else if (p.estado === 'Finalizado') contadores.Finalizados++
+    if (p.estado === 'Pago confirmado') {
+      contadores['Pago confirmado']++
+    } else if (p.estado === 'En preparación') {
+      contadores['En preparación']++
+    } else if (p.estado === 'Enviado') {
+      contadores.Enviados++
+    } else if (p.estado === 'Entregado') {
+      contadores.Entregados++
+    }
   })
 
   return [
-    { nombre: 'Nuevos', cantidad: contadores.Nuevos, color: 'fondo-azul' },
-    { nombre: 'Pendientes de pago', cantidad: contadores['Pendientes de pago'], color: 'fondo-amarillo' },
-    { nombre: 'En preparación', cantidad: contadores['En preparación'], color: 'fondo-violeta' },
-    { nombre: 'Finalizados', cantidad: contadores.Finalizados, color: 'fondo-verde' },
+    {
+      nombre: 'Pago confirmado',
+      cantidad: contadores['Pago confirmado'],
+      color: 'fondo-azul',
+    },
+    {
+      nombre: 'En preparación',
+      cantidad: contadores['En preparación'],
+      color: 'fondo-violeta',
+    },
+    {
+      nombre: 'Enviados',
+      cantidad: contadores.Enviados,
+      color: 'fondo-amarillo',
+    },
+    {
+      nombre: 'Entregados',
+      cantidad: contadores.Entregados,
+      color: 'fondo-verde',
+    },
   ]
 }
 
 export async function transicionarEstado(orderId, nuevoEstado) {
   const { data } = await client.mutate({
     mutation: TRANSICIONAR_ESTADO,
-    variables: { orderId, state: nuevoEstado },
+    variables: {
+      orderId,
+      state: nuevoEstado,
+    },
   })
 
   const result = data.transitionOrderToState
+
   if (result.errorCode) {
     throw new Error(result.message)
   }
+
   return result
 }
