@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { FiSearch, FiX } from "react-icons/fi";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -22,18 +23,21 @@ const PESTANIAS = [
 ];
 
 function Pedidos() {
+  const location = useLocation();
+  const anterior = location.state?.listadoPedidos || {};
+  const restaurando = useRef(Boolean(location.state?.listadoPedidos));
   const [pedidos, setPedidos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [metodosEnvio, setMetodosEnvio] = useState([]);
-  const [pagina, setPagina] = useState(1);
+  const [pagina, setPagina] = useState(anterior.pagina ?? 1);
   const [totalPedidos, setTotalPedidos] = useState(0);
-  const [busqueda, setBusqueda] = useState("");
-  const [busquedaAplicada, setBusquedaAplicada] = useState("");
-  const [pestania, setPestania] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState("");
-  const [envioFiltro, setEnvioFiltro] = useState("");
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
+  const [busqueda, setBusqueda] = useState(anterior.busqueda ?? "");
+  const [busquedaAplicada, setBusquedaAplicada] = useState(anterior.busquedaAplicada ?? "");
+  const [pestania, setPestania] = useState(anterior.pestania ?? "");
+  const [estadoFiltro, setEstadoFiltro] = useState(anterior.estadoFiltro ?? "");
+  const [envioFiltro, setEnvioFiltro] = useState(anterior.envioFiltro ?? "");
+  const [fechaDesde, setFechaDesde] = useState(anterior.fechaDesde ?? "");
+  const [fechaHasta, setFechaHasta] = useState(anterior.fechaHasta ?? "");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,6 +47,10 @@ function Pedidos() {
   const totalPaginas = Math.max(1, Math.ceil(totalPedidos / TAMANIO_PAGINA));
 
   useEffect(() => {
+    if (restaurando.current) {
+      restaurando.current = false;
+      return;
+    }
     const temporizador = setTimeout(() => {
       setPagina(1);
       setBusquedaAplicada(busqueda.trim());
@@ -112,6 +120,11 @@ function Pedidos() {
     cargar();
     return () => { activo = false; };
   }, [pagina, busquedaAplicada, estadoAplicado, envioFiltro, fechaDesde, fechaHasta, fechasInvalidas]);
+
+  const estadoListado = {
+    pagina, busqueda, busquedaAplicada, pestania,
+    estadoFiltro, envioFiltro, fechaDesde, fechaHasta,
+  };
 
   function cambiarPagina(nuevaPagina) {
     if (cargando || nuevaPagina < 1 || nuevaPagina > totalPaginas || nuevaPagina === pagina) return;
@@ -240,7 +253,7 @@ function Pedidos() {
                 )}
                 {pedidos.map(pedido => (
                   <article className={`estructura__tabla-fila admin-pedidos__fila ${pedido.color}`} key={pedido.id}>
-                    <div className="estructura__tabla-dato"><span className="estructura__tabla-etiqueta">Pedido</span><strong>#{pedido.codigo || pedido.id}</strong></div>
+                    <div className="estructura__tabla-dato"><span className="estructura__tabla-etiqueta">Pedido</span><strong><Link to={`/admin/pedidos/${pedido.id}`} state={{ listadoPedidos: estadoListado }}>#{pedido.codigo || pedido.id}</Link></strong></div>
                     <div className="estructura__tabla-dato"><span className="estructura__tabla-etiqueta">Cliente</span><span>{pedido.cliente}</span></div>
                     <div className="estructura__tabla-dato"><span className="estructura__tabla-etiqueta">Estado</span><span>{pedido.estado}</span></div>
                     <div className="estructura__tabla-dato"><span className="estructura__tabla-etiqueta">Envío</span><span>{pedido.envio}</span></div>

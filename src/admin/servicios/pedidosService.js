@@ -20,6 +20,37 @@ const OBTENER_PEDIDOS = gql`
   }
 `
 
+const OBTENER_DETALLE_PEDIDO = gql`
+  query DetallePedido($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      subTotalWithTax
+      shippingWithTax
+      totalWithTax
+      discounts { description amountWithTax }
+      customer { firstName lastName emailAddress }
+      shippingAddress { streetLine1 city province postalCode phoneNumber }
+      billingAddress { streetLine1 city province postalCode phoneNumber }
+      lines {
+        id
+        quantity
+        productVariant { name product { name } }
+      }
+    }
+  }
+`
+
+export async function obtenerDetallePedido(id) {
+  const { data } = await client.query({
+    query: OBTENER_DETALLE_PEDIDO,
+    variables: { id },
+    fetchPolicy: 'network-only',
+  })
+  return data.order
+}
+
 const OBTENER_CONTADORES = gql`
   query ContadoresPedidos {
     confirmados: orders(options: { take: 1, filter: { state: { eq: "PaymentSettled" } } }) { totalItems }
