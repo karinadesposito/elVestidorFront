@@ -6,6 +6,7 @@ import BarraSuperior from './admin/componentes/BarraSuperior'
 
 import InicioPanel from './admin/paginas/InicioPanel'
 import Pedidos from './admin/paginas/Pedidos'
+import DetallePedido from './admin/paginas/DetallePedido'
 import Productos from './admin/paginas/Productos'
 import Stock from './admin/paginas/Stock'
 import Promociones from './admin/paginas/Promociones'
@@ -29,6 +30,7 @@ function App() {
           >
             <Route index element={<InicioPanel />} />
             <Route path="pedidos" element={<Pedidos />} />
+            <Route path="pedidos/:id" element={<DetallePedido />} />
             <Route path="productos" element={<Productos />} />
             <Route path="stock" element={<Stock />} />
             <Route path="promociones" element={<Promociones />} />
