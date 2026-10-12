@@ -142,13 +142,37 @@
 }
 
 .barra__accion {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: var(--espacio-3);
   height: var(--espacio-3);
+  overflow: visible;
   color: var(--color-acento-hover);
   font-size: 1.25rem;
+}
+
+.barra__accion[aria-haspopup='dialog'] > span {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding-inline: var(--espacio-1);
+  border: 1px solid var(--color-fondo-alternativo);
+  border-radius: 50%;
+  background: var(--color-accion);
+  color: var(--color-fondo-alternativo);
+  font-family: var(--fuente-interfaz);
+  font-size: 0.625rem;
+  font-weight: var(--peso-semibold);
+  line-height: 1;
+  letter-spacing: normal;
+  pointer-events: none;
 }
 
 .barra--compacta .barra__beneficio {
@@ -266,5 +290,170 @@
 
   .barra--compacta .barra__logo {
     width: 175px;
+  }
+}
+
+/* Catálogo: móvil como base. */
+
+.barra--catalogo {
+  border-block-end: thin solid var(--color-borde-suave);
+  background: var(--color-fondo-alternativo);
+}
+
+.barra--catalogo .barra__contenedor {
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  justify-items: stretch;
+  gap: var(--espacio-1);
+  min-height: 3.75rem;
+  padding-block: var(--espacio-2);
+}
+
+.barra--catalogo .barra__hamburguesa {
+  position: static;
+  inset-inline-start: auto;
+  inset-block-start: auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: var(--espacio-0);
+  border: var(--espacio-0);
+  border-radius: var(--radio-sm);
+  background: transparent;
+  font-size: 1.375rem;
+  transform: none;
+}
+
+.barra--catalogo .barra__marca {
+  justify-self: center;
+  min-width: 0;
+  flex-direction: row;
+  gap: var(--espacio-2);
+}
+
+.barra--catalogo .barra__simbolo {
+  flex-shrink: 0;
+  height: 1.5rem;
+}
+
+.barra--catalogo .barra__logo {
+  width: clamp(6.5rem, 32vw, 9rem);
+  max-width: 100%;
+  height: auto;
+}
+
+.barra--catalogo .barra__acciones {
+  position: static;
+  inset-inline-end: auto;
+  inset-block-start: auto;
+  justify-self: end;
+  gap: var(--espacio-0);
+  transform: none;
+}
+
+.barra--catalogo .barra__accion {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: var(--espacio-0);
+  color: var(--color-texto-fuerte);
+  font-size: 1.375rem;
+}
+
+.barra--catalogo .barra__accion[aria-haspopup='dialog'] > span {
+  top: 0.125rem;
+  right: 0.125rem;
+}
+
+.barra--catalogo .barra__hamburguesa:focus-visible,
+.barra--catalogo .barra__accion:focus-visible,
+.barra--catalogo .barra__boton-menu:focus-visible {
+  outline: 2px solid var(--color-accion);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.barra--catalogo .barra__dropdown {
+  top: 100%;
+  background: var(--color-fondo-alternativo);
+}
+
+/* Tablet: marca y acciones arriba; navegación debajo. */
+
+@media (min-width: 48rem) {
+  .barra--catalogo .barra__contenedor {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--espacio-1) var(--espacio-3);
+    min-height: 0;
+  }
+
+  .barra--catalogo .barra__marca {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .barra--catalogo .barra__logo {
+    width: 9rem;
+  }
+
+  .barra--catalogo .barra__acciones {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .barra--catalogo .barra__nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .barra--catalogo .barra__lista {
+    gap: var(--espacio-4);
+  }
+
+  .barra--catalogo .barra__item {
+    font-size: 0.8125rem;
+  }
+
+  .barra--catalogo .barra__boton-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+}
+
+/* Desktop: una sola fila. */
+
+@media (min-width: 64rem) {
+  .barra--catalogo .barra__contenedor {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--espacio-3);
+    min-height: 4rem;
+  }
+
+  .barra--catalogo .barra__simbolo {
+    height: 1.75rem;
+  }
+
+  .barra--catalogo .barra__logo {
+    width: 10rem;
+  }
+
+  .barra--catalogo .barra__nav {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .barra--catalogo .barra__lista {
+    gap: var(--espacio-5);
+  }
+
+  .barra--catalogo .barra__acciones {
+    grid-column: 3;
+    grid-row: 1;
   }
 }
