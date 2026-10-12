@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
-import { obtenerDetallePedido } from "../servicios/pedidosService";
+import { obtenerDetallePedido, transicionarEstado } from "../servicios/pedidosService";
 import "../../estilos/admin-productos.css";
 import "../../estilos/admin-pedidos.css";
 
@@ -15,6 +15,21 @@ function mostrarImporte(centavos) {
   return typeof centavos === "number"
     ? formatoPesos.format(centavos / 100)
     : "No informado";
+}
+
+const ESTADOS_PAGO = {
+  Created: "Pendiente de confirmación",
+  Authorized: "Autorizado",
+  Settled: "Confirmado",
+  Declined: "Rechazado",
+  Cancelled: "Cancelado",
+  Error: "Error en el pago",
+};
+
+function mostrarMetodoPago(metodo) {
+  if (!metodo) return "No informado";
+  if (metodo === "mercado-pago-checkout-pro") return "Mercado Pago";
+  return metodo;
 }
 
 function DireccionPedido({ titulo, direccion }) {
@@ -49,6 +64,8 @@ function DetallePedido() {
   const [pedido, setPedido] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [errorTransicion, setErrorTransicion] = useState("");
+  const [transicionando, setTransicionando] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -68,6 +85,21 @@ function DetallePedido() {
     cargar();
     return () => { activo = false; };
   }, [id]);
+
+  async function pasarAPreparacion() {
+    if (!pedido || pedido.state !== "PaymentSettled" || transicionando) return;
+    setTransicionando(true);
+    setErrorTransicion("");
+    try {
+      await transicionarEstado(pedido.id, "EnPreparacion");
+      const actualizado = await obtenerDetallePedido(id);
+      setPedido(actualizado);
+    } catch (err) {
+      setErrorTransicion(err.message || "No se pudo actualizar el estado del pedido.");
+    } finally {
+      setTransicionando(false);
+    }
+  }
 
   function volver() {
     navigate("/admin/pedidos", { state: location.state });
@@ -89,7 +121,13 @@ function DetallePedido() {
           <>
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado"><h2>Pedido #{pedido.code}</h2></div>
-              <p><strong>Estado:</strong> {pedido.state}</p>
+              <p><strong>Estado:</strong> {{ PaymentSettled: "Pago confirmado", EnPreparacion: "En preparación", Shipped: "Enviado", Delivered: "Entregado", Cancelled: "Cancelado" }[pedido.state] || pedido.state}</p>
+              {pedido.state === "PaymentSettled" && (
+                <Boton onClick={pasarAPreparacion} disabled={transicionando}>
+                  {transicionando ? "Actualizando..." : "Pasar a En preparación"}
+                </Boton>
+              )}
+              {errorTransicion && <p role="alert" className="login-admin__error">{errorTransicion}</p>}
             </section>
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado"><h2>Cliente</h2></div>
@@ -128,6 +166,23 @@ function DetallePedido() {
               )}
               <p><strong>Envío:</strong> {mostrarImporte(pedido.shippingWithTax)}</p>
               <p><strong>Total del pedido:</strong> {mostrarImporte(pedido.totalWithTax)}</p>
+            </section>
+            <section className="estructura__panel">
+              <div className="estructura__panel-encabezado"><h2>Pagos del pedido</h2></div>
+              {pedido.payments?.length ? (
+                <div>
+                  {pedido.payments.map((pago, indice) => (
+                    <article className="estructura__lista-item" key={`${pago.transactionId || "pago"}-${indice}`}>
+                      <p><strong>Método de pago:</strong> {mostrarMetodoPago(pago.method)}</p>
+                      <p><strong>Importe:</strong> {mostrarImporte(pago.amount)}</p>
+                      <p><strong>Estado:</strong> {ESTADOS_PAGO[pago.state] || pago.state || "No informado"}</p>
+                      <p><strong>ID de transacción:</strong> {pago.transactionId || "No informado"}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p>Este pedido todavía no tiene pagos registrados.</p>
+              )}
             </section>
           </>
         )}

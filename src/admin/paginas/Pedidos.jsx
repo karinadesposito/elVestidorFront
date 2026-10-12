@@ -7,6 +7,7 @@ import {
   obtenerPedidos,
   obtenerContadoresPedidos,
   obtenerMetodosEnvioPedidos,
+  obtenerPedidosParaExportar,
 } from "../servicios/pedidosService";
 
 import "../../estilos/admin-productos.css";
@@ -40,6 +41,8 @@ function Pedidos() {
   const [fechaHasta, setFechaHasta] = useState(anterior.fechaHasta ?? "");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [exportando, setExportando] = useState(false);
+  const [errorExportacion, setErrorExportacion] = useState(null);
 
   const estadoAplicado = estadoFiltro || pestania;
   const filtrosActivos = Boolean(busqueda || estadoFiltro || envioFiltro || fechaDesde || fechaHasta);
@@ -125,6 +128,53 @@ function Pedidos() {
     pagina, busqueda, busquedaAplicada, pestania,
     estadoFiltro, envioFiltro, fechaDesde, fechaHasta,
   };
+
+  async function exportarPedidos() {
+    if (cargando || exportando || fechasInvalidas) return;
+    setExportando(true);
+    setErrorExportacion(null);
+    try {
+      const resultados = await obtenerPedidosParaExportar({
+        busqueda: busquedaAplicada,
+        estado: estadoAplicado,
+        envio: envioFiltro,
+        fechaDesde,
+        fechaHasta,
+      });
+      if (resultados.length === 0) {
+        setErrorExportacion("No hay pedidos para exportar con los filtros actuales.");
+        return;
+      }
+      const columnas = ["Numero de pedido", "Cliente", "Correo", "Estado", "Envio", "Metodo de pago", "Estado del pago", "Total (ARS)", "Fecha"];
+      // El apóstrofe inicial evita que Excel ejecute fórmulas provenientes de datos externos.
+      const celda = valor => {
+        let texto = String(valor ?? "").replace(/[\u00A0\u202F]/g, " ").replace(/[\r\n\t]/g, " ");
+        if (/^[\s]*[=+@-]/.test(texto)) texto = "'" + texto;
+        return '"' + texto.replace(/"/g, '""') + '"';
+      };
+      const filas = resultados.map(pedido => [
+        pedido.codigo, pedido.cliente, pedido.correo, pedido.estado,
+        pedido.envio, pedido.metodoPago || "Sin método", pedido.pago,
+        pedido.total, pedido.fecha,
+      ]);
+      // CSV con separador regional de Excel, caracteres UTF-8 y BOM explícito.
+      const contenido = "sep=;\r\n" + [columnas, ...filas].map(fila => fila.map(celda).join(";")).join("\r\n");
+      const bytes = new TextEncoder().encode(contenido);
+      const archivo = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), bytes], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(archivo);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setErrorExportacion(err.message || "No se pudieron exportar los pedidos.");
+    } finally {
+      setExportando(false);
+    }
+  }
 
   function cambiarPagina(nuevaPagina) {
     if (cargando || nuevaPagina < 1 || nuevaPagina > totalPaginas || nuevaPagina === pagina) return;
@@ -235,8 +285,12 @@ function Pedidos() {
               <input id="hasta-pedidos" type="date" value={fechaHasta} onChange={e => { setFechaHasta(e.target.value); setPagina(1); }} />
             </div>
             {filtrosActivos && <Boton variante="admin" onClick={limpiarFiltros}>Limpiar filtros</Boton>}
+            <Boton variante="admin" onClick={exportarPedidos} disabled={cargando || exportando || fechasInvalidas || totalPedidos === 0 || busqueda !== busquedaAplicada}>
+              {exportando ? "Exportando..." : "Exportar pedidos (Excel)"}
+            </Boton>
           </div>
 
+          {errorExportacion && <p className="login-admin__error" role="alert">{errorExportacion}</p>}
           {fechasInvalidas && <p role="alert">La fecha inicial no puede ser posterior a la fecha final.</p>}
           {cargando && !fechasInvalidas && <p>Cargando pedidos...</p>}
           {error && <p className="login-admin__error" role="alert">{error}</p>}

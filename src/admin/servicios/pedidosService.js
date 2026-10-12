@@ -30,6 +30,7 @@ const OBTENER_DETALLE_PEDIDO = gql`
       shippingWithTax
       totalWithTax
       discounts { description amountWithTax }
+      payments { method amount state transactionId }
       customer { firstName lastName emailAddress }
       shippingAddress { streetLine1 city province postalCode phoneNumber }
       billingAddress { streetLine1 city province postalCode phoneNumber }
@@ -61,8 +62,8 @@ const OBTENER_CONTADORES = gql`
 `
 
 const TRANSICIONAR_ESTADO = gql`
-  mutation TransitionOrderToState($id: ID!, $state: String!) {
-    transitionOrderToState(id: $id, state: $state) {
+  mutation AvanzarEstadoPedido($id: ID!, $estado: String!) {
+    avanzarEstadoPedido(id: $id, estado: $estado) {
       ... on Order { id state }
       ... on ErrorResult { errorCode message }
     }
@@ -284,9 +285,30 @@ export function contarPorEstado(pedidos) {
 export async function transicionarEstado(orderId, nuevoEstado) {
   const { data } = await client.mutate({
     mutation: TRANSICIONAR_ESTADO,
-    variables: { id: orderId, state: nuevoEstado },
+    variables: { id: orderId, estado: nuevoEstado },
   })
-  const result = data.transitionOrderToState
+  const result = data.avanzarEstadoPedido
   if (result.errorCode) throw new Error(result.message)
   return result
+}
+
+// Exportación: se recorren todas las páginas de Vendure antes de aplicar
+// los mismos filtros locales que utiliza el listado.
+export async function obtenerPedidosParaExportar({
+  busqueda = '', estado = '', envio = '', fechaDesde = '', fechaHasta = '',
+} = {}) {
+  const termino = normalizarBusqueda(busqueda)
+  const coincidencias = []
+  let skip = 0
+  let total = 0
+  do {
+    const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, estado)
+    total = resultado.totalItems
+    coincidencias.push(...resultado.items.filter(pedido => coincideFiltros(pedido, {
+      termino, envio, fechaDesde, fechaHasta,
+    })).map(transformarPedido))
+    skip += resultado.items.length
+    if (resultado.items.length === 0) break
+  } while (skip < total)
+  return coincidencias
 }
