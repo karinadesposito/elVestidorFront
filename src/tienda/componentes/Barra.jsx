@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, matchPath, useLocation } from 'react-router-dom'
 import { FiMenu, FiSearch, FiShoppingCart } from 'react-icons/fi'
+
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
 import Boton from '../../componentesReuse/Boton'
@@ -19,19 +20,47 @@ const promos = [
   'Cambios simples',
 ]
 
-function Barra() {
+function Barra({
+  alAbrirCarrito,
+  cantidadCarrito = 0,
+}) {
+  const { pathname } = useLocation()
+
+  const esCatalogo = Boolean(
+    matchPath(
+      { path: '/:genero', end: true },
+      pathname,
+    ) ||
+    matchPath(
+      { path: '/:genero/:categoria', end: true },
+      pathname,
+    ),
+  )
+
   const [compacta, setCompacta] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(null)
   const [menuMobileAbierto, setMenuMobileAbierto] = useState(false)
 
   useEffect(() => {
-    const manejarScroll = () => setCompacta(window.scrollY > 0)
+    if (esCatalogo) {
+      return
+    }
 
-    window.addEventListener('scroll', manejarScroll, { passive: true })
+    const manejarScroll = () =>
+      setCompacta(window.scrollY > 0)
+
+    window.addEventListener(
+      'scroll',
+      manejarScroll,
+      { passive: true },
+    )
+
     manejarScroll()
 
-    return () => window.removeEventListener('scroll', manejarScroll)
-  }, [])
+    return () => {
+      window.removeEventListener('scroll', manejarScroll)
+    }
+  }, [esCatalogo])
 
   useEffect(() => {
     function manejarClickFuera(evento) {
@@ -43,39 +72,65 @@ function Barra() {
     document.addEventListener('mousedown', manejarClickFuera)
 
     return () => {
-      document.removeEventListener('mousedown', manejarClickFuera)
+      document.removeEventListener(
+        'mousedown',
+        manejarClickFuera,
+      )
     }
   }, [])
 
   function alternarMenu(menu) {
-    setMenuAbierto((actual) => (actual === menu ? null : menu))
+    setMenuAbierto(actual =>
+      actual === menu ? null : menu,
+    )
   }
 
   function cerrarMenu() {
     setMenuAbierto(null)
   }
 
+  function abrirCarrito() {
+    setMenuAbierto(null)
+    setMenuMobileAbierto(false)
+    alAbrirCarrito?.()
+  }
+
+  const claseBarra = esCatalogo
+    ? 'barra barra--catalogo'
+    : `barra${compacta ? ' barra--compacta' : ''}`
+
+  const etiquetaCarrito = cantidadCarrito > 0
+    ? `Abrir carrito, ${cantidadCarrito} ${
+        cantidadCarrito === 1 ? 'unidad' : 'unidades'
+      }`
+    : 'Abrir carrito, vacío'
+
   return (
     <>
-      <header className={`barra${compacta ? ' barra--compacta' : ''}`}>
-        <div className="barra__beneficio">
-          <div className="barra__cinta">
-            {Array.from({ length: 8 }, () => promos)
-              .flat()
-              .map((texto, i) => (
-                <Fragment key={i}>
-                  <span className="barra__promo">{texto}</span>
-                  <img
-                    className="barra__divisor"
-                    src={logoSimbolo}
-                    alt=""
-                    width="512"
-                    height="512"
-                  />
-                </Fragment>
-              ))}
+      <header className={claseBarra}>
+        {!esCatalogo && (
+          <div className="barra__beneficio">
+            <div className="barra__cinta">
+              {Array.from({ length: 8 }, () => promos)
+                .flat()
+                .map((texto, i) => (
+                  <Fragment key={i}>
+                    <span className="barra__promo">
+                      {texto}
+                    </span>
+
+                    <img
+                      className="barra__divisor"
+                      src={logoSimbolo}
+                      alt=""
+                      width="512"
+                      height="512"
+                    />
+                  </Fragment>
+                ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <Contenedor className="barra__contenedor">
           <button
@@ -83,21 +138,34 @@ function Barra() {
             className="barra__hamburguesa"
             onClick={() => setMenuMobileAbierto(true)}
             aria-label="Abrir menú"
+            aria-expanded={menuMobileAbierto}
           >
             <FiMenu />
           </button>
 
-          <Link to="/" className="barra__marca" aria-label="Volver al inicio">
+          <Link
+            to="/"
+            className="barra__marca"
+            aria-label="Volver al inicio"
+          >
             <img
               aria-hidden="true"
               className="barra__simbolo"
               src={logoSimbolo}
               alt=""
             />
-            <img className="barra__logo" src={logoMarca} alt="El Vestidor" />
+
+            <img
+              className="barra__logo"
+              src={logoMarca}
+              alt="El Vestidor"
+            />
           </Link>
 
-          <nav className="barra__nav" aria-label="Navegación principal">
+          <nav
+            className="barra__nav"
+            aria-label="Navegación principal"
+          >
             <ul className="barra__lista">
               <ItemMenu
                 titulo="MUJER"
@@ -115,7 +183,9 @@ function Barra() {
                 alCerrar={cerrarMenu}
               />
 
-              <li className="barra__item">SEASONS</li>
+              <li className="barra__item">
+                SEASONS
+              </li>
 
               <ItemMenu
                 titulo="SALE"
@@ -138,11 +208,19 @@ function Barra() {
             </Boton>
 
             <Boton
-              aria-label="Carrito"
+              aria-label={etiquetaCarrito}
+              aria-haspopup="dialog"
               className="barra__accion"
               variante="icono"
+              onClick={abrirCarrito}
             >
-              <FiShoppingCart />
+              <FiShoppingCart aria-hidden="true" />
+
+              {cantidadCarrito > 0 && (
+                <span aria-hidden="true">
+                  {cantidadCarrito}
+                </span>
+              )}
             </Boton>
           </div>
         </Contenedor>

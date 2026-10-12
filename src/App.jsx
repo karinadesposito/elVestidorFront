@@ -13,7 +13,8 @@ import Promociones from './admin/paginas/Promociones'
 
 import TiendaLayout from './tienda/componentes/TiendaLayout'
 import Inicio from './tienda/paginas/Inicio'
-import Categoria from './pages/Categoria'
+import Catalogo from './tienda/paginas/Catalogo'
+import FinalizarCompra from './tienda/paginas/FinalizarCompra'
 
 function App() {
   return (
@@ -30,17 +31,30 @@ function App() {
           >
             <Route index element={<InicioPanel />} />
             <Route path="pedidos" element={<Pedidos />} />
-            <Route path="pedidos/:id" element={<DetallePedido />} />
+            <Route
+              path="pedidos/:id"
+              element={<DetallePedido />}
+            />
             <Route path="productos" element={<Productos />} />
             <Route path="stock" element={<Stock />} />
-            <Route path="promociones" element={<Promociones />} />
+            <Route
+              path="promociones"
+              element={<Promociones />}
+            />
           </Route>
         </Route>
 
         <Route element={<TiendaLayout />}>
           <Route index element={<Inicio />} />
-          <Route path=":genero" element={<Categoria />} />
-          <Route path=":genero/:categoria" element={<Categoria />} />
+          <Route
+            path="checkout"
+            element={<FinalizarCompra />}
+          />
+          <Route path=":genero" element={<Catalogo />} />
+          <Route
+            path=":genero/:categoria"
+            element={<Catalogo />}
+          />
         </Route>
       </Routes>
     </AuthProvider>
