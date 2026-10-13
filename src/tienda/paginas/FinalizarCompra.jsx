@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import Contenedor from '../../componentesReuse/Contenedor'
 import Boton from '../../componentesReuse/Boton'
@@ -11,6 +11,8 @@ import {
   seleccionarMetodoEntrega,
   obtenerMetodosPago,
   iniciarPagoMercadoPago,
+  obtenerCompraRealizada,
+  olvidarCodigoPedidoPago,
 } from '../../servicios/checkoutService'
 
 import '../../estilos/FinalizarCompra.css'
@@ -45,7 +47,49 @@ function opcionesVariante(variante) {
     .join(' · ')
 }
 
+function compraConfirmada(pedido) {
+  if (!pedido || pedido.totalWithTax <= 0) {
+    return false
+  }
+
+  const importeAcreditado = (pedido.payments || [])
+    .filter(
+      pago =>
+        pago.method === CODIGO_MERCADO_PAGO &&
+        pago.state === 'Settled',
+    )
+    .reduce((total, pago) => total + pago.amount, 0)
+
+  return (
+    !pedido.active &&
+    importeAcreditado >= pedido.totalWithTax
+  )
+}
+
+function pagoCerradoSinAcreditacion(pedido) {
+  const pagos = (pedido?.payments || []).filter(
+    pago => pago.method === CODIGO_MERCADO_PAGO,
+  )
+
+  return (
+    pedido?.state === 'Cancelled' ||
+    (
+      pagos.length > 0 &&
+      pagos.every(
+        pago =>
+          pago.state === 'Declined' ||
+          pago.state === 'Cancelled' ||
+          pago.state === 'Error',
+      )
+    )
+  )
+}
+
 function FinalizarCompra() {
+  const ubicacion = useLocation()
+  const parametros = new URLSearchParams(ubicacion.search)
+  const esRetornoPago = parametros.has('retornoPago')
+
   const [pedido, setPedido] = useState(null)
   const [comprador, setComprador] = useState(COMPRADOR_INICIAL)
   const [direccion, setDireccion] = useState(DIRECCION_INICIAL)
@@ -56,11 +100,17 @@ function FinalizarCompra() {
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
   const [error, setError] = useState('')
+  const [revision, setRevision] = useState(0)
+  const [verificacionAgotada, setVerificacionAgotada] = useState(false)
 
   const solicitudEnCurso = useRef(false)
 
-  const editable = pedido?.state === 'AddingItems'
+  const editable =
+    !esRetornoPago && pedido?.state === 'AddingItems'
+
   const esperandoPago = pedido?.state === 'ArrangingPayment'
+  const confirmado = compraConfirmada(pedido)
+  const pagoCerrado = pagoCerradoSinAcreditacion(pedido)
   const ocupado = cargando || procesando
   const tieneProductos = Boolean(pedido?.totalQuantity > 0)
 
@@ -124,10 +174,7 @@ function FinalizarCompra() {
 
   async function consultarOpciones(resultado) {
     if (!resultado?.totalQuantity) {
-      return {
-        entregas: [],
-        pago: null,
-      }
+      return { entregas: [], pago: null }
     }
 
     const puedeConsultarEntregas =
@@ -152,16 +199,51 @@ function FinalizarCompra() {
 
   useEffect(() => {
     let activo = true
+    let temporizador
+    let consultas = 0
+
+    setCargando(true)
+    setError('')
+    setPedido(null)
+    setVerificacionAgotada(false)
 
     async function cargarCheckout() {
+      consultas += 1
+
       try {
-        const resultado = await obtenerPedidoCheckout()
+        // El parámetro del retorno nunca acredita el pago.
+        // Consultamos el pedido guardado usando la sesión de tienda.
+        const resultado = esRetornoPago
+          ? await obtenerCompraRealizada()
+          : await obtenerPedidoCheckout()
 
         if (!activo) {
           return
         }
 
         aplicarDatosPedido(resultado)
+
+        if (esRetornoPago) {
+          setMetodosEntrega([])
+          setMetodoPago(null)
+
+          const termino =
+            compraConfirmada(resultado) ||
+            pagoCerradoSinAcreditacion(resultado)
+
+          if (!termino) {
+            if (consultas < 20) {
+              temporizador = window.setTimeout(
+                cargarCheckout,
+                3000,
+              )
+            } else {
+              setVerificacionAgotada(true)
+            }
+          }
+
+          return
+        }
 
         const opciones = await consultarOpciones(resultado)
 
@@ -186,8 +268,9 @@ function FinalizarCompra() {
 
     return () => {
       activo = false
+      window.clearTimeout(temporizador)
     }
-  }, [])
+  }, [esRetornoPago, revision])
 
   function invalidarDatosGuardados() {
     setDatosGuardados(false)
@@ -286,6 +369,7 @@ function FinalizarCompra() {
 
     try {
       const resultado = await seleccionarMetodoEntrega(id)
+
       setPedido(resultado)
       setEntregaSeleccionada(id)
 
@@ -309,7 +393,12 @@ function FinalizarCompra() {
   }
 
   async function actualizarResumen() {
-    if (solicitudEnCurso.current) {
+    if (solicitudEnCurso.current || ocupado) {
+      return
+    }
+
+    if (esRetornoPago) {
+      setRevision(actual => actual + 1)
       return
     }
 
@@ -319,9 +408,11 @@ function FinalizarCompra() {
 
     try {
       const resultado = await obtenerPedidoCheckout()
+
       aplicarDatosPedido(resultado)
 
       const opciones = await consultarOpciones(resultado)
+
       setMetodosEntrega(opciones.entregas)
       setMetodoPago(opciones.pago)
 
@@ -355,6 +446,7 @@ function FinalizarCompra() {
   )
 
   const puedePagar =
+    !esRetornoPago &&
     tieneProductos &&
     (editable || esperandoPago) &&
     datosGuardados &&
@@ -388,8 +480,6 @@ function FinalizarCompra() {
         fallo.message || 'No pudimos iniciar el pago.',
       )
 
-      // Actualizamos el estado si el pedido ya pasó a pago.
-      // Conservamos los datos escritos en el formulario.
       try {
         const actualizado = await obtenerPedidoCheckout()
 
@@ -405,12 +495,31 @@ function FinalizarCompra() {
     }
   }
 
+  function seguirComprando() {
+    if (confirmado) {
+      olvidarCodigoPedidoPago()
+    }
+  }
+
   return (
     <main className="finalizar-compra seccion">
       <Contenedor>
         <header className="finalizar-compra__encabezado">
-          <h1>Finalizar compra</h1>
-          <p>Completá tus datos y elegí cómo recibir tu pedido.</p>
+          <h1>
+            {esRetornoPago
+              ? confirmado
+                ? 'Compra confirmada'
+                : 'Estado de tu compra'
+              : 'Finalizar compra'}
+          </h1>
+
+          <p>
+            {esRetornoPago
+              ? confirmado
+                ? 'Recibimos tu pago. Estos son los datos de tu compra.'
+                : 'Consultamos el estado de tu pedido para verificar el pago.'
+              : 'Completá tus datos y elegí cómo recibir tu pedido.'}
+          </p>
         </header>
 
         {error && (
@@ -423,7 +532,28 @@ function FinalizarCompra() {
         )}
 
         {cargando ? (
-          <p role="status">Cargando tu compra...</p>
+          <p role="status">
+            {esRetornoPago
+              ? 'Consultando el estado de tu compra...'
+              : 'Cargando tu compra...'}
+          </p>
+        ) : esRetornoPago && !pedido ? (
+          <section className="finalizar-compra__vacio">
+            <h2>No pudimos recuperar tu compra</h2>
+            <p>
+              No vuelvas a pagar. Podés reintentar la consulta
+              con la misma sesión de tienda.
+            </p>
+
+            <Boton
+              onClick={actualizarResumen}
+              disabled={ocupado}
+            >
+              Consultar de nuevo
+            </Boton>
+
+            <Link to="/">Volver a la tienda</Link>
+          </section>
         ) : !tieneProductos ? (
           <section className="finalizar-compra__vacio">
             <h2>No hay productos en tu carrito</h2>
@@ -432,6 +562,32 @@ function FinalizarCompra() {
         ) : (
           <div className="finalizar-compra__grilla">
             <div className="finalizar-compra__datos">
+              {esRetornoPago && (
+                <section
+                  className="finalizar-compra__panel"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <h2>
+                    {confirmado
+                      ? 'Tu pago está confirmado'
+                      : pagoCerrado
+                        ? 'El pago no quedó acreditado'
+                        : 'Estamos verificando tu pago'}
+                  </h2>
+
+                  <p>
+                    {confirmado
+                      ? 'Tu pedido quedó registrado correctamente.'
+                      : pagoCerrado
+                        ? 'Vendure informa que el pago o el pedido se cerró sin acreditación. Consultá el pedido antes de iniciar otro pago.'
+                        : verificacionAgotada
+                          ? 'Todavía no recibimos la confirmación. No vuelvas a pagar; usá Actualizar estado para consultar de nuevo.'
+                          : 'La confirmación puede tardar unos momentos. Estamos actualizando el estado automáticamente; no vuelvas a pagar.'}
+                  </p>
+                </section>
+              )}
+
               {editable ? (
                 <form onSubmit={guardarDatos}>
                   <fieldset disabled={ocupado}>
@@ -596,14 +752,24 @@ function FinalizarCompra() {
                   </p>
                   <p>{comprador.email}</p>
                   <p>{direccion.calle}</p>
+
                   {direccion.departamento && (
                     <p>{direccion.departamento}</p>
                   )}
+
                   <p>
                     {direccion.ciudad}, {direccion.provincia}
                   </p>
 
-                  {esperandoPago ? (
+                  {esRetornoPago ? (
+                    <p>
+                      Entrega:{' '}
+                      {pedido.shippingLines
+                        ?.map(linea => linea.shippingMethod?.name)
+                        .filter(Boolean)
+                        .join(' · ') || 'Sin método informado'}
+                    </p>
+                  ) : esperandoPago ? (
                     <p>Tu pedido está preparado para el pago.</p>
                   ) : (
                     <p>
@@ -668,11 +834,9 @@ function FinalizarCompra() {
                 {pedido.lines.map(linea => (
                   <li key={linea.id}>
                     <h3>{linea.productVariant.product.name}</h3>
-
                     <p>
                       {opcionesVariante(linea.productVariant)}
                     </p>
-
                     <p>
                       {linea.quantity}{' '}
                       {linea.quantity === 1
@@ -683,7 +847,6 @@ function FinalizarCompra() {
                         linea.discountedUnitPriceWithTax,
                       )}
                     </p>
-
                     <strong>
                       {mostrarPrecio(
                         linea.discountedLinePriceWithTax,
@@ -704,7 +867,7 @@ function FinalizarCompra() {
                 <div>
                   <dt>Entrega</dt>
                   <dd>
-                    {entregaSeleccionada
+                    {esRetornoPago || entregaSeleccionada
                       ? mostrarPrecio(pedido.shippingWithTax)
                       : 'A seleccionar'}
                   </dd>
@@ -712,52 +875,82 @@ function FinalizarCompra() {
 
                 <div>
                   <dt>
-                    {entregaSeleccionada
-                      ? 'Total'
-                      : 'Total sin entrega'}
+                    {esRetornoPago
+                      ? confirmado
+                        ? 'Total pagado'
+                        : 'Total del pedido'
+                      : entregaSeleccionada
+                        ? 'Total'
+                        : 'Total sin entrega'}
                   </dt>
-                  <dd>{mostrarPrecio(pedido.totalWithTax)}</dd>
+                  <dd>
+                    {mostrarPrecio(pedido.totalWithTax)}
+                  </dd>
                 </div>
               </dl>
 
-              {!datosGuardados && editable && (
-                <p>Guardá tus datos para continuar.</p>
+              {esRetornoPago ? (
+                <>
+                  {!confirmado && (
+                    <Boton
+                      variante="secundario"
+                      onClick={actualizarResumen}
+                      disabled={ocupado}
+                    >
+                      Actualizar estado
+                    </Boton>
+                  )}
+
+                  <Link
+                    to="/"
+                    className="boton"
+                    onClick={seguirComprando}
+                  >
+                    Seguir comprando
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {!datosGuardados && editable && (
+                    <p>Guardá tus datos para continuar.</p>
+                  )}
+
+                  {datosGuardados &&
+                    !entregaSeleccionada &&
+                    editable && (
+                      <p>Seleccioná una forma de entrega.</p>
+                    )}
+
+                  {datosGuardados &&
+                    entregaSeleccionada &&
+                    !metodoPago?.isEligible &&
+                    !pagoPendiente && (
+                      <p>
+                        Mercado Pago no está disponible para
+                        este pedido.
+                      </p>
+                    )}
+
+                  <Boton
+                    onClick={pagar}
+                    disabled={ocupado || !puedePagar}
+                  >
+                    {procesando
+                      ? 'Procesando...'
+                      : pagoPendiente
+                        ? 'Continuar pago en Mercado Pago'
+                        : 'Pagar con Mercado Pago'}
+                  </Boton>
+
+                  <Boton
+                    variante="secundario"
+                    onClick={actualizarResumen}
+                    disabled={ocupado}
+                  >
+                    Actualizar resumen
+                  </Boton>
+                </>
               )}
-
-              {datosGuardados &&
-                !entregaSeleccionada &&
-                editable && (
-                  <p>Seleccioná una forma de entrega.</p>
-                )}
-
-              {datosGuardados &&
-                entregaSeleccionada &&
-                !metodoPago?.isEligible &&
-                !pagoPendiente && (
-                  <p>
-                    Mercado Pago no está disponible para
-                    este pedido.
-                  </p>
-                )}
-
-              <Boton
-                onClick={pagar}
-                disabled={ocupado || !puedePagar}
-              >
-                {procesando
-                  ? 'Procesando...'
-                  : pagoPendiente
-                    ? 'Continuar pago en Mercado Pago'
-                    : 'Pagar con Mercado Pago'}
-              </Boton>
-
-              <Boton
-                variante="secundario"
-                onClick={actualizarResumen}
-                disabled={ocupado}
-              >
-                Actualizar resumen
-              </Boton>
             </aside>
           </div>
         )}
