@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client'
 import clienteTienda from './clienteTienda'
 
+const CLAVE_PEDIDO_PAGO = 'elvestidor-pedido-pago'
+
 const DATOS_CHECKOUT = gql`
   fragment DatosCheckoutTienda on Order {
     id
@@ -75,6 +77,15 @@ const DATOS_CHECKOUT = gql`
 const OBTENER_PEDIDO = gql`
   query ObtenerPedidoCheckout {
     activeOrder {
+      ...DatosCheckoutTienda
+    }
+  }
+  ${DATOS_CHECKOUT}
+`
+
+const OBTENER_COMPRA_REALIZADA = gql`
+  query ObtenerCompraRealizada($codigo: String!) {
+    orderByCode(code: $codigo) {
       ...DatosCheckoutTienda
     }
   }
@@ -194,6 +205,78 @@ let pagoEnCurso = false
 
 function texto(valor) {
   return String(valor ?? '').trim()
+}
+
+function guardarCodigoPedidoPago(pedido) {
+  const codigo = texto(pedido?.code)
+
+  if (!codigo) {
+    throw new Error(
+      'No pudimos identificar el pedido para consultar el pago al regresar.',
+    )
+  }
+
+  try {
+    window.sessionStorage.setItem(CLAVE_PEDIDO_PAGO, codigo)
+  } catch {
+    throw new Error(
+      'No pudimos guardar la referencia de tu compra. Permití el almacenamiento de la tienda antes de continuar.',
+    )
+  }
+}
+
+export function obtenerCodigoPedidoPago() {
+  try {
+    return texto(
+      window.sessionStorage.getItem(CLAVE_PEDIDO_PAGO),
+    )
+  } catch {
+    return ''
+  }
+}
+
+export function olvidarCodigoPedidoPago() {
+  try {
+    window.sessionStorage.removeItem(CLAVE_PEDIDO_PAGO)
+  } catch {
+    // No modifica el pedido ni la sesión de Vendure.
+  }
+}
+
+export async function obtenerCompraRealizada(
+  codigoPedido = obtenerCodigoPedidoPago(),
+) {
+  const codigo = texto(codigoPedido)
+
+  if (!codigo) {
+    throw new Error(
+      'No encontramos la referencia de esta compra. No vuelvas a pagar; consultá el estado de tu pedido.',
+    )
+  }
+
+  const { data } = await clienteTienda.query({
+    query: OBTENER_COMPRA_REALIZADA,
+    variables: { codigo },
+    fetchPolicy: 'network-only',
+  })
+
+  if (!data || !('orderByCode' in data)) {
+    throw new Error('No pudimos consultar tu compra.')
+  }
+
+  if (!data.orderByCode) {
+    throw new Error(
+      'No pudimos recuperar esta compra con tu sesión actual. No vuelvas a pagar; consultá el estado de tu pedido.',
+    )
+  }
+
+  if (data.orderByCode.code !== codigo) {
+    throw new Error(
+      'La compra consultada no coincide con el pedido iniciado.',
+    )
+  }
+
+  return data.orderByCode
 }
 
 function comprobarPedido(pedido) {
@@ -499,6 +582,8 @@ export async function iniciarPagoMercadoPago({
     )
 
     if (enlaceExistente) {
+      guardarCodigoPedidoPago(pedido)
+
       return {
         pedido,
         checkoutUrl: enlaceExistente,
@@ -525,6 +610,10 @@ export async function iniciarPagoMercadoPago({
         'El método de pago seleccionado no está disponible.',
       )
     }
+
+    // Comprobamos el almacenamiento antes de iniciar el pago.
+    // Se guarda sólo el código, nunca una confirmación de pago.
+    guardarCodigoPedidoPago(pedido)
 
     if (pedido.state === 'AddingItems') {
       pedido = await ejecutarMutacion(
@@ -571,6 +660,8 @@ export async function iniciarPagoMercadoPago({
           )
 
           if (enlace) {
+            guardarCodigoPedidoPago(actualizado)
+
             return {
               pedido: actualizado,
               checkoutUrl: enlace,
@@ -594,6 +685,8 @@ export async function iniciarPagoMercadoPago({
         'El pedido no devolvió un enlace de pago pendiente.',
       )
     }
+
+    guardarCodigoPedidoPago(pedido)
 
     return {
       pedido,
