@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
-import { obtenerDetallePedido, transicionarEstado } from "../servicios/pedidosService";
+import ModalAdmin from "../componentes/ModalAdmin";
+import { ESTADO_MAP, despacharPedido, entregarPedido, obtenerDetallePedido, transicionarEstado } from "../servicios/pedidosService";
 import "../../estilos/admin-productos.css";
 import "../../estilos/admin-pedidos.css";
 
@@ -66,6 +67,9 @@ function DetallePedido() {
   const [error, setError] = useState("");
   const [errorTransicion, setErrorTransicion] = useState("");
   const [transicionando, setTransicionando] = useState(false);
+  const [despachando, setDespachando] = useState(false);
+  const [entregando, setEntregando] = useState(false);
+  const [accionConfirmar, setAccionConfirmar] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -101,6 +105,88 @@ function DetallePedido() {
     }
   }
 
+  async function confirmarDespacho() {
+    if (!pedido || pedido.state !== "EnPreparacion" || despachando || transicionando) return;
+    setDespachando(true);
+    setErrorTransicion("");
+    try {
+      const actualizado = await despacharPedido(pedido.id);
+      setPedido(actualizado);
+    } catch (err) {
+      setErrorTransicion(err.message || "No se pudo despachar el pedido.");
+      // Reflejar un eventual fulfillment Pending creado antes del error.
+      try {
+        setPedido(await obtenerDetallePedido(id));
+      } catch {
+        // Conservamos el mensaje original para permitir un nuevo intento.
+      }
+    } finally {
+      setDespachando(false);
+    }
+  }
+
+  async function confirmarEntrega() {
+    if (!pedido || pedido.state !== "Shipped" || entregando || despachando || transicionando) return;
+    setEntregando(true);
+    setErrorTransicion("");
+    try {
+      const actualizado = await entregarPedido(pedido.id);
+      setPedido(actualizado);
+    } catch (err) {
+      setErrorTransicion(err.message || "No se pudo marcar el pedido como entregado.");
+      // Actualizamos también si algún despacho cambió antes del error.
+      try {
+        setPedido(await obtenerDetallePedido(id));
+      } catch {
+        // Conservamos el mensaje original.
+      }
+    } finally {
+      setEntregando(false);
+    }
+  }
+
+  const procesando = transicionando || despachando || entregando;
+
+  const accionesPorEstado = {
+    PaymentSettled: {
+      tipo: "preparar",
+      titulo: "Confirmar preparación",
+      mensaje: "¿Querés pasar este pedido a En preparación?",
+      boton: "Pasar a En preparación",
+    },
+    EnPreparacion: {
+      tipo: "despachar",
+      titulo: "Confirmar despacho",
+      mensaje: "¿Confirmás que el pedido fue despachado?",
+      boton: "Marcar como despachado",
+    },
+    Shipped: {
+      tipo: "entregar",
+      titulo: "Confirmar entrega",
+      mensaje: "¿Confirmás que el pedido fue entregado?",
+      boton: "Marcar como entregado",
+    },
+  };
+
+  const accionDisponible = pedido ? accionesPorEstado[pedido.state] : null;
+
+  function cerrarConfirmacion() {
+    if (!procesando) setAccionConfirmar(null);
+  }
+
+  async function ejecutarAccion(evento) {
+    evento.preventDefault();
+    if (procesando || !accionConfirmar || !accionDisponible ||
+        accionConfirmar !== accionDisponible.tipo) return;
+    const tipo = accionConfirmar;
+    // Cerrar antes de actualizar el estado, para no mostrar un modal obsoleto.
+    // La acción se ejecuta una sola vez gracias a los estados de carga.
+    setAccionConfirmar(null);
+    if (tipo === "preparar") await pasarAPreparacion();
+    if (tipo === "despachar") await confirmarDespacho();
+    if (tipo === "entregar") await confirmarEntrega();
+  }
+
   function volver() {
     navigate("/admin/pedidos", { state: location.state });
   }
@@ -121,11 +207,30 @@ function DetallePedido() {
           <>
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado"><h2>Pedido #{pedido.code}</h2></div>
-              <p><strong>Estado:</strong> {{ PaymentSettled: "Pago confirmado", EnPreparacion: "En preparación", Shipped: "Enviado", Delivered: "Entregado", Cancelled: "Cancelado" }[pedido.state] || pedido.state}</p>
-              {pedido.state === "PaymentSettled" && (
-                <Boton onClick={pasarAPreparacion} disabled={transicionando}>
-                  {transicionando ? "Actualizando..." : "Pasar a En preparación"}
+              <p><strong>Estado:</strong> {ESTADO_MAP[pedido.state] || pedido.state}</p>
+              {accionDisponible && (
+                <Boton
+                  onClick={() => {
+                    setErrorTransicion("");
+                    setAccionConfirmar(accionDisponible.tipo);
+                  }}
+                  disabled={procesando}
+                >
+                  {procesando ? "Actualizando..." : accionDisponible.boton}
                 </Boton>
+              )}
+              {pedido.fulfillments?.length > 0 && (
+                <div>
+                  <h3>Despachos registrados</h3>
+                  {pedido.fulfillments.map((despacho) => (
+                    <p key={despacho.id}>
+                      <strong>Despacho #{despacho.id}:</strong>{" "}
+                      {despacho.state === "Shipped" ? "Enviado" : despacho.state === "Pending" ? "Pendiente" : despacho.state === "Delivered" ? "Entregado" : despacho.state}
+                      {" · "}{despacho.method || "Sin método"}
+                      {despacho.trackingCode ? ` · Seguimiento: ${despacho.trackingCode}` : ""}
+                    </p>
+                  ))}
+                </div>
               )}
               {errorTransicion && <p role="alert" className="login-admin__error">{errorTransicion}</p>}
             </section>
@@ -145,6 +250,7 @@ function DetallePedido() {
                       <strong>{linea.productVariant?.product?.name || "Sin nombre"}</strong>
                       <span>Variante: {linea.productVariant?.name || "No informada"}</span>
                       <span>Cantidad: {linea.quantity}</span>
+                      <span>Unidades asociadas a despachos: {(linea.fulfillmentLines || []).reduce((total, item) => total + item.quantity, 0)}</span>
                     </article>
                   ))}
                 </div>
@@ -187,6 +293,20 @@ function DetallePedido() {
           </>
         )}
       </Contenedor>
+      {accionConfirmar && accionDisponible?.tipo === accionConfirmar && (
+        <ModalAdmin
+          titulo={accionDisponible.titulo}
+          onClose={cerrarConfirmacion}
+          formId="confirmar-accion-pedido"
+          botonConfirmar={procesando ? "Procesando..." : accionDisponible.boton}
+          botonConfirmarDeshabilitado={procesando}
+        >
+          <form id="confirmar-accion-pedido" onSubmit={ejecutarAccion}>
+            <p>{accionDisponible.mensaje}</p>
+            <p><strong>Pedido:</strong> #{pedido.code}</p>
+          </form>
+        </ModalAdmin>
+      )}
     </main>
   );
 }
