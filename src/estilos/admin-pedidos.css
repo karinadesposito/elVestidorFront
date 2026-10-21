@@ -1,4 +1,6 @@
 
+/* Listado de pedidos */
+
 @media (min-width: 48rem) {
   .admin-pedidos__cabecera,
   .admin-pedidos__fila {
@@ -11,5 +13,222 @@
       minmax(8rem, 1.2fr)
       minmax(6rem, 0.9fr)
       minmax(6rem, 0.8fr);
+  }
+}
+
+/* Filtros de pedidos en tablet */
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .estructura:has(.admin-pedidos__fila)
+  .admin-productos__filtros {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--espacio-2);
+    align-items: end;
+  }
+
+  .estructura:has(.admin-pedidos__fila)
+  .admin-productos__filtros > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .estructura:has(.admin-pedidos__fila)
+  .admin-productos__filtros input,
+  .estructura:has(.admin-pedidos__fila)
+  .admin-productos__filtros select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Detalle del pedido - Mobile First */
+
+.admin-detalle-pedido .estructura__titulo {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.admin-detalle-pedido__contenido,
+.admin-detalle-pedido__informacion,
+.admin-detalle-pedido__cliente-facturacion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  min-width: 0;
+  align-content: start;
+}
+
+.admin-detalle-pedido__contenido .estructura__panel {
+  min-width: 0;
+  align-self: start;
+  background: var(--color-fondo-suave);
+}
+
+.admin-detalle-pedido__contenido .estructura__panel h2 {
+  font-size: 0.95rem;
+  font-weight: var(--peso-semibold);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.admin-detalle-pedido__contenido
+.admin-detalle-pedido__principal h2 {
+  font-size: 1rem;
+}
+
+.admin-detalle-pedido__contenido p,
+.admin-detalle-pedido__contenido dd,
+.admin-detalle-pedido__contenido dt,
+.admin-detalle-pedido__contenido span {
+  overflow-wrap: anywhere;
+}
+
+.admin-detalle-pedido__contenido p,
+.admin-detalle-pedido__contenido dl {
+  font-size: 0.875rem;
+}
+
+.admin-detalle-pedido__contenido dd {
+  margin-left: 0;
+}
+
+/* Direcciones */
+
+.admin-detalle-pedido__direccion dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+}
+
+.admin-detalle-pedido__direccion dl > div {
+  min-width: 0;
+}
+
+/* Estado y botón */
+
+.admin-detalle-pedido__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-2);
+}
+
+.admin-detalle-pedido__estado p {
+  margin: 0;
+}
+
+.admin-detalle-pedido__estado .boton {
+  background: var(--color-fondo-alternativo);
+  color: var(--color-texto-fuerte);
+  border: 1px solid var(--color-borde-suave);
+  font-weight: var(--peso-medium);
+}
+
+.admin-detalle-pedido__estado .boton:hover:not(:disabled) {
+  background: var(--color-fondo-principal);
+  border-color: var(--color-texto-secundario);
+}
+
+.admin-detalle-pedido__estado .boton:focus-visible {
+  outline: 2px solid var(--color-texto-fuerte);
+  outline-offset: 2px;
+}
+
+/* Despachos y totales */
+
+.admin-detalle-pedido__despachos {
+  margin-top: var(--espacio-3);
+}
+
+.admin-detalle-pedido__despachos h3 {
+  font-size: 0.875rem;
+  font-weight: var(--peso-semibold);
+}
+
+.admin-detalle-pedido__despachos p {
+  margin-top: var(--espacio-1);
+}
+
+.admin-detalle-pedido__totales p {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+}
+
+.admin-detalle-pedido__total {
+  padding-top: var(--espacio-2);
+  border-top: thin solid var(--color-borde-suave);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semibold);
+}
+
+.admin-detalle-pedido__pago:last-child {
+  border-bottom: 0;
+}
+
+/* Tablet */
+
+@media (min-width: 48rem) {
+  .admin-detalle-pedido .estructura__titulo {
+    font-size: 1.5rem;
+  }
+
+  .admin-detalle-pedido__contenido .estructura__panel h2 {
+    font-size: 1.05rem;
+  }
+
+  .admin-detalle-pedido__contenido
+  .admin-detalle-pedido__principal h2 {
+    font-size: 1.15rem;
+  }
+
+  .admin-detalle-pedido__informacion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-detalle-pedido__totales {
+    grid-column: 1 / -1;
+  }
+
+  .admin-detalle-pedido__direccion dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-detalle-pedido__estado {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-detalle-pedido__pago {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Desktop */
+
+@media (min-width: 64rem) {
+  .admin-detalle-pedido__informacion {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .admin-detalle-pedido__cliente-facturacion {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    align-content: stretch;
+  }
+
+  .admin-detalle-pedido__informacion
+  .estructura__panel {
+    align-self: stretch;
+  }
+
+  .admin-detalle-pedido__totales {
+    grid-column: auto;
+  }
+
+  .admin-detalle-pedido__pago {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
