@@ -3,6 +3,7 @@ import { FiSearch, FiX } from "react-icons/fi";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+import { useAuth } from "../contexto/AuthContext";
 import {
   buscarVariantePorBarcode,
   contarStock,
@@ -11,6 +12,7 @@ import {
   filtrarStock,
   obtenerDatosStock,
   obtenerProveedores,
+  registrarBajaMostrador,
   registrarIngresoStock,
 } from "../servicios/stockService";
 import { obtenerCatalogosProducto } from "../servicios/productosService";
@@ -41,7 +43,16 @@ const FORM_DETALLE_INICIAL = {
   barcode: "",
   cantidad: "1",
 };
+const FORM_BAJA_INICIAL = {
+  barcode: "",
+  cantidad: "1",
+  motivo: "Venta mostrador",
+};
 function Stock() {
+  const { puede } = useAuth();
+  const puedeDarDeBaja = puede("AjustarStockManual");
+  const [formBaja, setFormBaja] = useState(FORM_BAJA_INICIAL);
+  const [guardandoBaja, setGuardandoBaja] = useState(false);
   const [stock, setStock] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroMarca, setFiltroMarca] = useState("");
@@ -328,6 +339,49 @@ function Stock() {
       setGuardando(false);
     }
   }
+  function abrirModalBaja() {
+    setError(null);
+    setMensajeExito("");
+    setFormBaja(FORM_BAJA_INICIAL);
+    setModalAbierto("baja");
+  }
+  function cerrarModalBaja() {
+    if (guardandoBaja) {
+      return;
+    }
+    setModalAbierto(null);
+    setError(null);
+  }
+  function manejarCampoBaja(e) {
+    const { name, value } = e.target;
+    setFormBaja((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }));
+    setError(null);
+  }
+  async function manejarRegistrarBaja(e) {
+    e.preventDefault();
+    if (guardandoBaja) {
+      return;
+    }
+    setGuardandoBaja(true);
+    setError(null);
+    setMensajeExito("");
+    try {
+      const baja = await registrarBajaMostrador(formBaja);
+      await recargarStock();
+      setModalAbierto(null);
+      setFormBaja(FORM_BAJA_INICIAL);
+      setMensajeExito(
+        `Baja registrada: ${baja.barcode} pasó de ${baja.stockAnterior} a ${baja.stockResultante} unidades.`,
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGuardandoBaja(false);
+    }
+  }
   const stockFiltrado = filtrarStock(stock, {
     busqueda,
     marcaId: filtroMarca,
@@ -378,6 +432,11 @@ function Stock() {
                   <Boton variante="admin" onClick={abrirModalIngreso}>
                     Nuevo ingreso stock
                   </Boton>
+                  {puedeDarDeBaja && (
+                    <Boton variante="admin" onClick={abrirModalBaja}>
+                      Baja por venta mostrador
+                    </Boton>
+                  )}
                 </div>
               </div>
               <div id="stock-controles">
@@ -710,6 +769,64 @@ function Stock() {
               <span>{formIngreso.observaciones.length}/100</span>
             </div>
             {guardando && <p>Guardando ingreso...</p>}
+          </form>
+        </ModalAdmin>
+      )}
+      {modalAbierto === "baja" && puedeDarDeBaja && (
+        <ModalAdmin
+          titulo="Baja por venta mostrador"
+          onClose={cerrarModalBaja}
+          formId="formulario-baja-stock"
+          botonConfirmar="Dar de baja"
+          botonConfirmarDeshabilitado={guardandoBaja}
+        >
+          <form
+            id="formulario-baja-stock"
+            className="estructura__formulario"
+            onSubmit={manejarRegistrarBaja}
+          >
+            {error && <p className="login-admin__error">{error}</p>}
+            <div className="estructura__campo">
+              <label htmlFor="baja-barcode">Barcode</label>
+              <input
+                id="baja-barcode"
+                name="barcode"
+                type="text"
+                value={formBaja.barcode}
+                onChange={manejarCampoBaja}
+                maxLength="100"
+                placeholder="Escanear o ingresar barcode"
+                autoComplete="off"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="estructura__campo">
+              <label htmlFor="baja-cantidad">Cantidad</label>
+              <input
+                id="baja-cantidad"
+                name="cantidad"
+                type="number"
+                value={formBaja.cantidad}
+                onChange={manejarCampoBaja}
+                min="1"
+                max="9999"
+                step="1"
+                required
+              />
+            </div>
+            <div className="estructura__campo">
+              <label htmlFor="baja-motivo">Motivo</label>
+              <input
+                id="baja-motivo"
+                name="motivo"
+                type="text"
+                value={formBaja.motivo}
+                onChange={manejarCampoBaja}
+                maxLength="100"
+              />
+            </div>
+            {guardandoBaja && <p>Registrando baja...</p>}
           </form>
         </ModalAdmin>
       )}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { iniciarSesion, cerrarSesion, obtenerSesion } from '../servicios/authService'
+import { iniciarSesion, cerrarSesion, obtenerSesion, tienePermiso } from '../servicios/authService'
 
 const AuthContext = createContext(null)
 
@@ -34,8 +34,10 @@ export function AuthProvider({ children }) {
     setError(null)
   }, [])
 
+  const puede = useCallback(permiso => tienePermiso(sesion, permiso), [sesion])
+
   return (
-    <AuthContext.Provider value={{ sesion, cargando, error, login, logout }}>
+    <AuthContext.Provider value={{ sesion, cargando, error, login, logout, puede }}>
       {children}
     </AuthContext.Provider>
   )
