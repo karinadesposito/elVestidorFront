@@ -1,22 +1,61 @@
+
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiChevronDown, FiX } from 'react-icons/fi'
+
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../recursos/logos/logo-marca.svg'
 
 function MenuMobile({
   abierto,
   alCerrar,
-  categoriasMujer,
-  categoriasHombre,
-  gruposSale,
+  categoriasMujer = [],
+  categoriasHombre = [],
+  gruposSale = [],
 }) {
   const [seccionAbierta, setSeccionAbierta] = useState(null)
 
   if (!abierto) return null
 
   function alternarSeccion(seccion) {
-    setSeccionAbierta((actual) => (actual === seccion ? null : seccion))
+    setSeccionAbierta(actual =>
+      actual === seccion ? null : seccion,
+    )
+  }
+
+  function cerrarMenu() {
+    setSeccionAbierta(null)
+    alCerrar()
+  }
+
+  function renderizarCategorias(categorias, prefijo = '') {
+    return categorias.map((item, indice) => {
+      const clave = `${prefijo}${item.titulo}-${indice}`
+
+      if (item.tipo === 'separador') {
+        return (
+          <li
+            key={clave}
+            className="menu-mobile__separador"
+          >
+            <span className="menu-mobile__separador-titulo">
+              {item.titulo}
+            </span>
+          </li>
+        )
+      }
+
+      return (
+        <li key={clave}>
+          <Link
+            to={item.ruta}
+            onClick={cerrarMenu}
+          >
+            {item.titulo}
+          </Link>
+        </li>
+      )
+    })
   }
 
   return (
@@ -24,32 +63,45 @@ function MenuMobile({
       <button
         type="button"
         className="menu-mobile__fondo"
-        onClick={alCerrar}
+        onClick={cerrarMenu}
         aria-label="Cerrar menú"
       />
 
       <aside className="menu-mobile__panel">
         <div className="menu-mobile__encabezado">
           <div className="menu-mobile__marca">
-            <img className="menu-mobile__simbolo" src={logoSimbolo} alt="" />
-            <img className="menu-mobile__logo" src={logoMarca} alt="El Vestidor" />
+            <img
+              className="menu-mobile__simbolo"
+              src={logoSimbolo}
+              alt=""
+            />
+
+            <img
+              className="menu-mobile__logo"
+              src={logoMarca}
+              alt="El Vestidor"
+            />
           </div>
 
           <button
             type="button"
             className="menu-mobile__cerrar"
-            onClick={alCerrar}
+            onClick={cerrarMenu}
             aria-label="Cerrar menú"
           >
             <FiX />
           </button>
         </div>
 
-        <nav className="menu-mobile__nav" aria-label="Navegación mobile">
+        <nav
+          className="menu-mobile__nav"
+          aria-label="Navegación mobile"
+        >
           <button
             type="button"
             className="menu-mobile__principal"
             onClick={() => alternarSeccion('mujer')}
+            aria-expanded={seccionAbierta === 'mujer'}
           >
             MUJER
             <FiChevronDown />
@@ -57,13 +109,10 @@ function MenuMobile({
 
           {seccionAbierta === 'mujer' && (
             <ul className="menu-mobile__sublista">
-              {categoriasMujer.map((item) => (
-                <li key={item.titulo}>
-                  <Link to={item.ruta} onClick={alCerrar}>
-                    {item.titulo}
-                  </Link>
-                </li>
-              ))}
+              {renderizarCategorias(
+                categoriasMujer,
+                'mujer-',
+              )}
             </ul>
           )}
 
@@ -71,6 +120,7 @@ function MenuMobile({
             type="button"
             className="menu-mobile__principal"
             onClick={() => alternarSeccion('hombre')}
+            aria-expanded={seccionAbierta === 'hombre'}
           >
             HOMBRE
             <FiChevronDown />
@@ -78,13 +128,10 @@ function MenuMobile({
 
           {seccionAbierta === 'hombre' && (
             <ul className="menu-mobile__sublista">
-              {categoriasHombre.map((item) => (
-                <li key={item.titulo}>
-                  <Link to={item.ruta} onClick={alCerrar}>
-                    {item.titulo}
-                  </Link>
-                </li>
-              ))}
+              {renderizarCategorias(
+                categoriasHombre,
+                'hombre-',
+              )}
             </ul>
           )}
 
@@ -92,6 +139,7 @@ function MenuMobile({
             type="button"
             className="menu-mobile__principal menu-mobile__principal--sale"
             onClick={() => alternarSeccion('sale')}
+            aria-expanded={seccionAbierta === 'sale'}
           >
             SALE
             <FiChevronDown />
@@ -99,25 +147,30 @@ function MenuMobile({
 
           {seccionAbierta === 'sale' && (
             <div className="menu-mobile__sale">
-              {gruposSale.map((grupo) => (
-                <div className="menu-mobile__grupo" key={grupo.titulo}>
-                  <p className="menu-mobile__grupo-titulo">{grupo.titulo}</p>
+              {gruposSale.map(grupo => (
+                <div
+                  className="menu-mobile__grupo"
+                  key={grupo.titulo}
+                >
+                  <p className="menu-mobile__grupo-titulo">
+                    {grupo.titulo}
+                  </p>
 
                   <ul className="menu-mobile__sublista">
-                    {grupo.items.map((item) => (
-                      <li key={`${grupo.titulo}-${item.titulo}`}>
-                        <Link to={item.ruta} onClick={alCerrar}>
-                          {item.titulo}
-                        </Link>
-                      </li>
-                    ))}
+                    {renderizarCategorias(
+                      grupo.items,
+                      `sale-${grupo.titulo}-`,
+                    )}
                   </ul>
                 </div>
               ))}
             </div>
           )}
 
-          <button type="button" className="menu-mobile__principal">
+          <button
+            type="button"
+            className="menu-mobile__principal"
+          >
             SEASONS
             <FiChevronDown />
           </button>
@@ -128,3 +181,4 @@ function MenuMobile({
 }
 
 export default MenuMobile
+

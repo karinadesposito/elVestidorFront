@@ -1,9 +1,11 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 
 import Contenedor from '../../componentesReuse/Contenedor'
 import Boton from '../../componentesReuse/Boton'
 import ProductoCard from '../componentes/ProductoCard'
+
 import {
   obtenerCatalogo,
   obtenerFiltrosCatalogo,
@@ -12,16 +14,56 @@ import {
 import '../../estilos/Categoria.css'
 
 const TIPOS_POR_CATEGORIA = {
-  jeans: ['jean', 'jeans'],
+  jeans: ['jean'],
   camperas: ['campera'],
   'sweaters-y-buzos': ['sweater', 'buzo'],
   camisas: ['camisa'],
-  remeras: ['remera'],
-  'faldas-y-vestidos': ['falda', 'vestido'],
-  'shorts-y-bermudas': ['short', 'bermuda'],
-  accesorios: ['accesorio'],
+  'camisas-y-tops': ['camisa', 'top'],
   pantalones: ['pantalon'],
+  remeras: ['remera'],
+  'remeras-y-polos': ['remera', 'polo'],
   bermudas: ['bermuda'],
+  'faldas-vestidos-y-monos': ['falda', 'vestido', 'mono'],
+  'faldas-y-vestidos': ['falda', 'vestido'],
+  'shorts-y-bermudas': ['bermuda'],
+  'cinturones-y-billeteras': ['cinturon', 'billetera'],
+  'mochilas-y-bolsos': ['mochila', 'bolso'],
+  'caps-y-gorros': ['cap', 'gorra', 'gorro'],
+  'boxers-y-medias': ['boxer', 'media'],
+  bufandas: ['bufanda'],
+  accesorios: [
+    'cinturon',
+    'billetera',
+    'mochila',
+    'bolso',
+    'cap',
+    'gorra',
+    'gorro',
+    'boxer',
+    'media',
+    'bufanda',
+  ],
+}
+
+const TITULOS_CATEGORIA = {
+  jeans: 'Jeans',
+  camperas: 'Camperas',
+  'sweaters-y-buzos': 'Sweaters y Buzos',
+  camisas: 'Camisas',
+  'camisas-y-tops': 'Camisas y Tops',
+  pantalones: 'Pantalones',
+  remeras: 'Remeras',
+  'remeras-y-polos': 'Remeras y Polos',
+  bermudas: 'Bermudas',
+  'faldas-vestidos-y-monos': 'Faldas, Vestidos y Monos',
+  'faldas-y-vestidos': 'Faldas y Vestidos',
+  'shorts-y-bermudas': 'Shorts y Bermudas',
+  'cinturones-y-billeteras': 'Cinturones y Billeteras',
+  'mochilas-y-bolsos': 'Mochilas y Bolsos',
+  'caps-y-gorros': 'Caps y Gorros',
+  'boxers-y-medias': 'Boxers y Medias',
+  bufandas: 'Bufandas',
+  accesorios: 'Accesorios',
 }
 
 function normalizarTexto(texto = '') {
@@ -39,6 +81,20 @@ function formatearTitulo(texto = '') {
     .join(' ')
 }
 
+function obtenerTitulo(genero, categoria) {
+  if (genero === 'sale') {
+    return categoria
+      ? `Sale ${TITULOS_CATEGORIA[categoria] || formatearTitulo(categoria)}`
+      : 'Sale'
+  }
+
+  if (categoria) {
+    return TITULOS_CATEGORIA[categoria] || formatearTitulo(categoria)
+  }
+
+  return formatearTitulo(genero)
+}
+
 function coincideValor(valor, nombres) {
   return nombres.some(
     nombre =>
@@ -54,10 +110,7 @@ function ContenidoCatalogo({
   cargandoCarrito,
 }) {
   const esSale = genero === 'sale'
-
-  const titulo = esSale
-    ? `Sale${categoria ? ` ${formatearTitulo(categoria)}` : ''}`
-    : formatearTitulo(categoria || genero)
+  const titulo = obtenerTitulo(genero, categoria)
 
   const [configuracion, setConfiguracion] = useState(null)
   const [marcas, setMarcas] = useState([])
@@ -450,6 +503,7 @@ function ContenidoCatalogo({
 
 function Catalogo() {
   const { genero, categoria } = useParams()
+
   const {
     agregarProductoAlCarrito,
     cargandoCarrito,
