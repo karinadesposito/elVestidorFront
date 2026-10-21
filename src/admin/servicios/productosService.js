@@ -1289,7 +1289,8 @@ export async function crearVariante({
         productId,
         enabled: Boolean(activo),
         sku: codigoSku,
-        price: pesosACentavos(precio),
+        // Sin precio (usuario sin permiso de precios) no se envía el campo.
+        ...(precio != null ? { price: pesosACentavos(precio) } : {}),
         optionIds,
         facetValueIds: colorFacetValueId ? [colorFacetValueId] : [],
         ...(imagen
@@ -1341,7 +1342,7 @@ export async function actualizarVariante({
       input: {
         id: variantId,
         sku: codigoSku,
-        price: pesosACentavos(precio),
+        ...(precio != null ? { price: pesosACentavos(precio) } : {}),
         enabled: Boolean(activo),
         optionIds,
         ...(imagen

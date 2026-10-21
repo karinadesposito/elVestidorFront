@@ -21,6 +21,7 @@ import {
   buscarProductosPorNombre,
   analizarCoincidenciasNombre,
 } from "../servicios/productosService";
+import { useAuth } from "../contexto/AuthContext";
 import "../../estilos/admin-productos.css";
 const COLORES_REFERENCIA = [
   "Negro",
@@ -141,6 +142,9 @@ function obtenerValorCanonico(valores, valorIngresado) {
 const IMAGEN_VACIA = { archivo: null, actual: null, quitar: false };
 const TAMANIO_PAGINA = 50;
 function Productos() {
+  const { puede } = useAuth();
+  const puedeModificarPrecios = puede("ModificarPrecios");
+  const puedeEliminarProductos = puede("DeleteProduct");
   const [productos, setProductos] = useState([]);
   const [resumenProductos, setResumenProductos] = useState([]);
   const [catalogosProducto, setCatalogosProducto] = useState(null);
@@ -645,7 +649,7 @@ function Productos() {
         await actualizarVariante({
           variantId: varianteEditandoId,
           sku: formVariante.barcode,
-          precio: formVariante.precio,
+          precio: puedeModificarPrecios ? formVariante.precio : null,
           activo: formVariante.activo,
           optionIds: opcionIds,
           imagenArchivo: imagenVariante.archivo,
@@ -659,11 +663,16 @@ function Productos() {
           color: colorNormalizado,
           talle: talleNormalizado,
           sku: formVariante.barcode,
-          precio: formVariante.precio,
-          activo: formVariante.activo,
+          // Sin permiso de precios la variante nace sin precio e inactiva.
+          precio: puedeModificarPrecios ? formVariante.precio : null,
+          activo: puedeModificarPrecios ? formVariante.activo : false,
           imagenArchivo: imagenVariante.archivo,
         });
-        setMensajeExito("Variante guardada correctamente.");
+        setMensajeExito(
+          puedeModificarPrecios
+            ? "Variante guardada correctamente."
+            : "Variante guardada inactiva. El administrador debe cargar el precio para activarla.",
+        );
       }
       setFormVariante(FORM_VARIANTE_INICIAL);
       setVarianteEditandoId(null);
@@ -693,7 +702,7 @@ function Productos() {
       await actualizarVariante({
         variantId: variante.id,
         sku: variante.sku,
-        precio: variante.precio / 100,
+        precio: puedeModificarPrecios ? variante.precio / 100 : null,
         activo: !variante.activo,
         optionIds: opcionIds,
       });
@@ -1063,17 +1072,19 @@ function Productos() {
                               >
                                 {producto.activo ? "Desactivar" : "Activar"}
                               </button>
-                              <button
-                                className="admin-productos__accion-peligrosa"
-                                type="button"
-                                onClick={() =>
-                                  seleccionarAccion(() =>
-                                    setProductoEliminar(producto),
-                                  )
-                                }
-                              >
-                                Eliminar
-                              </button>
+                              {puedeEliminarProductos && (
+                                <button
+                                  className="admin-productos__accion-peligrosa"
+                                  type="button"
+                                  onClick={() =>
+                                    seleccionarAccion(() =>
+                                      setProductoEliminar(producto),
+                                    )
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1098,13 +1109,15 @@ function Productos() {
                           >
                             Agregar variante
                           </Boton>
-                          <Boton
-                            className="admin-productos__accion-peligrosa"
-                            variante="admin"
-                            onClick={() => setProductoEliminar(producto)}
-                          >
-                            Eliminar
-                          </Boton>
+                          {puedeEliminarProductos && (
+                            <Boton
+                              className="admin-productos__accion-peligrosa"
+                              variante="admin"
+                              onClick={() => setProductoEliminar(producto)}
+                            >
+                              Eliminar
+                            </Boton>
+                          )}
                         </div>
                       </div>
                     </article>
@@ -1448,8 +1461,12 @@ function Productos() {
                 step="0.01"
                 value={formVariante.precio}
                 onChange={manejarCampoVariante}
-                required
+                required={puedeModificarPrecios}
+                disabled={!puedeModificarPrecios}
               />
+              {!puedeModificarPrecios && (
+                <span>Solo el administrador puede cargar o modificar precios.</span>
+              )}
             </div>
             <SelectorImagen
               etiqueta="Imagen de la variante"
@@ -1464,8 +1481,13 @@ function Productos() {
                 id="variante-activo"
                 name="activo"
                 type="checkbox"
-                checked={formVariante.activo}
+                checked={
+                  !puedeModificarPrecios && !varianteEditandoId
+                    ? false
+                    : formVariante.activo
+                }
                 onChange={manejarCampoVariante}
+                disabled={!puedeModificarPrecios && !varianteEditandoId}
               />
             </div>
             {guardando && <p>Guardando...</p>}

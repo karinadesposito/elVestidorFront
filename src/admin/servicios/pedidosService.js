@@ -70,6 +70,18 @@ const TRANSICIONAR_ESTADO = gql`
   }
 `
 
+// Avance del circuito de envío (permiso GestionarEnvios, lo tiene también el empleado).
+const AVANZAR_ESTADO = gql`
+  mutation AvanzarEstadoPedido($id: ID!, $estado: String!) {
+    avanzarEstadoPedido(id: $id, estado: $estado) {
+      ... on Order { id state }
+      ... on ErrorResult { errorCode message }
+    }
+  }
+`
+
+const ESTADOS_AVANCE_ENVIO = ['EnPreparacion', 'Shipped', 'Delivered']
+
 const ESTADO_MAP = {
   PaymentSettled: 'Pago confirmado',
   EnPreparacion: 'En preparación',
@@ -283,6 +295,17 @@ export function contarPorEstado(pedidos) {
 }
 
 export async function transicionarEstado(orderId, nuevoEstado) {
+  // Cancelar y cualquier otro cambio usan la mutación nativa (requiere UpdateOrder, solo administrador).
+  if (ESTADOS_AVANCE_ENVIO.includes(nuevoEstado)) {
+    const { data } = await client.mutate({
+      mutation: AVANZAR_ESTADO,
+      variables: { id: orderId, estado: nuevoEstado },
+    })
+    const result = data.avanzarEstadoPedido
+    if (result.errorCode) throw new Error(result.message)
+    return result
+  }
+
   const { data } = await client.mutate({
     mutation: TRANSICIONAR_ESTADO,
     variables: { id: orderId, estado: nuevoEstado },
