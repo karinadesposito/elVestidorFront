@@ -1,3 +1,4 @@
+
 import client from '../../servicios/apolloClient'
 import { gql } from '@apollo/client'
 
@@ -71,6 +72,63 @@ const TRANSICIONAR_ESTADO = gql`
     }
   }
 `
+
+const CANCELAR_PEDIDO = gql`
+  mutation CancelarPedido($input: CancelOrderInput!) {
+    cancelOrder(input: $input) {
+      ... on Order { id state }
+      ... on ErrorResult { errorCode message }
+    }
+  }
+`
+
+export async function cancelarPedido(orderId, motivo) {
+  const razon = String(motivo || '').trim()
+  if (!razon) throw new Error('Ingresá un motivo para cancelar el pedido.')
+
+  // Volvemos a consultar antes de cancelar para evitar acciones sobre estados viejos.
+  const pedido = await obtenerDetallePedido(orderId)
+  if (!pedido || !['PaymentSettled', 'EnPreparacion'].includes(pedido.state)) {
+    throw new Error('El pedido ya no está en un estado que permita cancelarlo.')
+  }
+
+  // No intentar cancelar pedidos cuyas líneas ya fueron vaciadas
+  // por una operación anterior fallida.
+  const lineasPedido = pedido.lines || []
+  if (!lineasPedido.length || lineasPedido.some(linea =>
+    !linea.id || !Number.isInteger(linea.quantity) || linea.quantity <= 0
+  )) {
+    throw new Error('El pedido tiene productos con cantidades inválidas. Revisalo antes de cancelar.')
+  }
+
+  // Evitar cancelaciones de pedidos que ya tengan unidades asociadas a despachos.
+  if (pedido.fulfillments?.some(despacho => despacho.state !== 'Cancelled') ||
+      lineasPedido.some(linea => (linea.fulfillmentLines || []).some(asignacion => asignacion.quantity > 0))) {
+    throw new Error('El pedido tiene despachos asociados. Revisalo antes de cancelar.')
+  }
+
+  const lines = lineasPedido.map(linea => ({
+    orderLineId: linea.id,
+    quantity: linea.quantity,
+  }))
+
+  const { data } = await client.mutate({
+    mutation: CANCELAR_PEDIDO,
+    variables: {
+      input: {
+        orderId,
+        lines,
+        cancelShipping: true,
+        reason: razon,
+      },
+    },
+  })
+  const resultado = data?.cancelOrder
+  if (!resultado || resultado.errorCode || resultado.state !== 'Cancelled') {
+    throw new Error(resultado?.message || 'Vendure no confirmó la cancelación del pedido.')
+  }
+  return obtenerDetallePedido(orderId)
+}
 
 const CREAR_DESPACHO = gql`
   mutation CrearDespacho($input: FulfillOrderInput!) {

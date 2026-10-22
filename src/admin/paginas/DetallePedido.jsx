@@ -5,15 +5,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
-
-import {
-  ESTADO_MAP,
-  despacharPedido,
-  entregarPedido,
-  obtenerDetallePedido,
-  transicionarEstado,
-} from "../servicios/pedidosService";
-
+import { ESTADO_MAP, cancelarPedido, despacharPedido, entregarPedido, obtenerDetallePedido, transicionarEstado } from "../servicios/pedidosService";
 import "../../estilos/admin-productos.css";
 import "../../estilos/admin-pedidos.css";
 
@@ -100,6 +92,8 @@ function DetallePedido() {
   const [transicionando, setTransicionando] = useState(false);
   const [despachando, setDespachando] = useState(false);
   const [entregando, setEntregando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
   const [accionConfirmar, setAccionConfirmar] = useState(null);
 
   useEffect(() => {
@@ -207,7 +201,37 @@ function DetallePedido() {
     }
   }
 
-  const procesando = transicionando || despachando || entregando;
+  async function confirmarCancelacion() {
+    if (!pedido || !["PaymentSettled", "EnPreparacion"].includes(pedido.state) ||
+        cancelando || despachando || entregando || transicionando) return;
+    if (!motivoCancelacion.trim()) {
+      setErrorTransicion("Ingresá un motivo para cancelar el pedido.");
+      return;
+    }
+    setCancelando(true);
+    setErrorTransicion("");
+    try {
+      const actualizado = await cancelarPedido(pedido.id, motivoCancelacion);
+      setPedido(actualizado);
+      setAccionConfirmar(null);
+      setMotivoCancelacion("");
+    } catch (err) {
+      setErrorTransicion(err.message || "No se pudo cancelar el pedido.");
+      try {
+        const actualizado = await obtenerDetallePedido(id);
+        setPedido(actualizado);
+        if (!["PaymentSettled", "EnPreparacion"].includes(actualizado?.state)) {
+          setAccionConfirmar(null);
+        }
+      } catch {
+        // Mantenemos el error original para informar al administrador.
+      }
+    } finally {
+      setCancelando(false);
+    }
+  }
+
+  const procesando = transicionando || despachando || entregando || cancelando;
 
   const accionesPorEstado = {
     PaymentSettled: {
@@ -239,19 +263,20 @@ function DetallePedido() {
     : "";
 
   function cerrarConfirmacion() {
-    if (!procesando) setAccionConfirmar(null);
+    if (!procesando) {
+      setAccionConfirmar(null);
+      setMotivoCancelacion("");
+    }
   }
 
   async function ejecutarAccion(evento) {
     evento.preventDefault();
-
-    if (
-      procesando ||
-      !accionConfirmar ||
-      !accionDisponible ||
-      accionConfirmar !== accionDisponible.tipo
-    ) return;
-
+    if (procesando || !accionConfirmar) return;
+    if (accionConfirmar === "cancelar") {
+      await confirmarCancelacion();
+      return;
+    }
+    if (!accionDisponible || accionConfirmar !== accionDisponible.tipo) return;
     const tipo = accionConfirmar;
 
     setAccionConfirmar(null);
@@ -293,35 +318,38 @@ function DetallePedido() {
         )}
 
         {!cargando && !error && pedido && (
-          <div className="admin-detalle-pedido__contenido">
-            <section
-              className={`estructura__panel admin-detalle-pedido__principal ${colorEstado}`}
-            >
-              <div className="estructura__panel-encabezado">
-                <h2>Pedido #{pedido.code}</h2>
-              </div>
-
-              <div className="admin-detalle-pedido__estado">
-                <p>
-                  <strong>Estado:</strong>{" "}
-                  {ESTADO_MAP[pedido.state] || pedido.state}
-                </p>
-
-                {accionDisponible && (
-                  <Boton
-                    onClick={() => {
-                      setErrorTransicion("");
-                      setAccionConfirmar(accionDisponible.tipo);
-                    }}
-                    disabled={procesando}
-                  >
-                    {procesando
-                      ? "Actualizando..."
-                      : accionDisponible.boton}
-                  </Boton>
-                )}
-              </div>
-
+          <>
+            <section className="estructura__panel">
+              <div className="estructura__panel-encabezado"><h2>Pedido #{pedido.code}</h2></div>
+              <p><strong>Estado:</strong> {ESTADO_MAP[pedido.state] || pedido.state}</p>
+              {accionDisponible && (
+                <Boton
+                  onClick={() => {
+                    setErrorTransicion("");
+                    setAccionConfirmar(accionDisponible.tipo);
+                  }}
+                  disabled={procesando}
+                >
+                  {procesando ? "Actualizando..." : accionDisponible.boton}
+                </Boton>
+              )}
+              {["PaymentSettled", "EnPreparacion"].includes(pedido.state) &&
+                pedido.lines?.length > 0 &&
+                pedido.lines.every(linea => Number.isInteger(linea.quantity) && linea.quantity > 0) &&
+                !pedido.fulfillments?.some(despacho => despacho.state !== "Cancelled") &&
+                !pedido.lines.some(linea => (linea.fulfillmentLines || []).some(asignacion => asignacion.quantity > 0)) && (
+                <Boton
+                  variante="admin"
+                  disabled={procesando}
+                  onClick={() => {
+                    setErrorTransicion("");
+                    setMotivoCancelacion("");
+                    setAccionConfirmar("cancelar");
+                  }}
+                >
+                  Cancelar pedido
+                </Boton>
+              )}
               {pedido.fulfillments?.length > 0 && (
                 <div className="admin-detalle-pedido__despachos">
                   <h3>Despachos registrados</h3>
@@ -508,29 +536,51 @@ function DetallePedido() {
           </div>
         )}
       </Contenedor>
-
-      {accionConfirmar &&
-        accionDisponible?.tipo === accionConfirmar && (
-          <ModalAdmin
-            titulo={accionDisponible.titulo}
-            onClose={cerrarConfirmacion}
-            formId="confirmar-accion-pedido"
-            botonConfirmar={
-              procesando ? "Procesando..." : accionDisponible.boton
-            }
-            botonConfirmarDeshabilitado={procesando}
-          >
-            <form
-              id="confirmar-accion-pedido"
-              onSubmit={ejecutarAccion}
-            >
-              <p>{accionDisponible.mensaje}</p>
-              <p>
-                <strong>Pedido:</strong> #{pedido.code}
-              </p>
-            </form>
-          </ModalAdmin>
-        )}
+      {accionConfirmar === "cancelar" && pedido &&
+        ["PaymentSettled", "EnPreparacion"].includes(pedido.state) && (
+        <ModalAdmin
+          titulo="Confirmar cancelación"
+          onClose={cerrarConfirmacion}
+          formId="confirmar-cancelacion-pedido"
+          botonConfirmar={cancelando ? "Cancelando..." : "Confirmar cancelación"}
+          botonConfirmarDeshabilitado={procesando || !motivoCancelacion.trim()}
+        >
+          <form id="confirmar-cancelacion-pedido" onSubmit={ejecutarAccion}>
+            <p>¿Querés cancelar el pedido #{pedido.code}? Esta acción no se puede deshacer.</p>
+            <p>La cancelación se procesa en Vendure y el stock se gestiona desde el backend.</p>
+            {pedido.payments?.some(pago => pago.state === "Settled") && (
+              <p><strong>Atención:</strong> el pedido tiene un pago confirmado. Cancelarlo no implica reembolsar el dinero. Los reembolsos se gestionarán por separado.</p>
+            )}
+            <label htmlFor="motivo-cancelacion-pedido"><strong>Motivo de cancelación</strong></label>
+            <textarea
+              id="motivo-cancelacion-pedido"
+              value={motivoCancelacion}
+              onChange={evento => setMotivoCancelacion(evento.target.value)}
+              required
+              maxLength={500}
+              rows={3}
+              style={{ display: "block", width: "100%", marginTop: "0.5rem" }}
+              placeholder="Indicá por qué se cancela el pedido"
+              disabled={procesando}
+            />
+            {errorTransicion && <p role="alert" className="login-admin__error">{errorTransicion}</p>}
+          </form>
+        </ModalAdmin>
+      )}
+      {accionConfirmar && accionDisponible?.tipo === accionConfirmar && (
+        <ModalAdmin
+          titulo={accionDisponible.titulo}
+          onClose={cerrarConfirmacion}
+          formId="confirmar-accion-pedido"
+          botonConfirmar={procesando ? "Procesando..." : accionDisponible.boton}
+          botonConfirmarDeshabilitado={procesando}
+        >
+          <form id="confirmar-accion-pedido" onSubmit={ejecutarAccion}>
+            <p>{accionDisponible.mensaje}</p>
+            <p><strong>Pedido:</strong> #{pedido.code}</p>
+          </form>
+        </ModalAdmin>
+      )}
     </main>
   );
 }
