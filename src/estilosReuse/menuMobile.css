@@ -1,3 +1,4 @@
+
 .menu-mobile {
   position: fixed;
   inset: 0;
@@ -84,18 +85,50 @@
 .menu-mobile__sublista {
   display: grid;
   gap: var(--espacio-1);
+  margin: 0;
   padding-block: var(--espacio-2);
   padding-inline-start: var(--espacio-2);
   border-block-end: thin solid var(--color-borde-suave);
+  list-style: none;
 }
 
-.menu-mobile__sublista button {
+.menu-mobile__sublista li {
+  margin: 0;
+  padding: 0;
+}
+
+.menu-mobile__sublista a {
+  display: block;
   width: 100%;
   padding-block: 0.45rem;
   color: var(--color-texto-principal);
   font-size: 0.8125rem;
   font-weight: var(--peso-medium);
   text-align: left;
+  text-decoration: none;
+}
+
+.menu-mobile__sublista a:hover,
+.menu-mobile__sublista a:focus-visible {
+  color: var(--color-texto-fuerte);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.menu-mobile__separador {
+  margin-block-start: var(--espacio-2) !important;
+  padding-block: var(--espacio-2) !important;
+  border-block-start: thin solid var(--color-borde-suave);
+  border-block-end: thin solid var(--color-borde-suave);
+}
+
+.menu-mobile__separador-titulo {
+  display: block;
+  color: var(--color-texto-fuerte);
+  font-size: 0.75rem;
+  font-weight: var(--peso-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .menu-mobile__sale {

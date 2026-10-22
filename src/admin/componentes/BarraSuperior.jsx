@@ -33,6 +33,7 @@ const enlaces = [
     texto: 'Promociones',
     ruta: '/admin/promociones',
     icono: FiTag,
+    permiso: 'ReadPromotion',
   },
   {
     texto: 'Stock',
@@ -48,7 +49,11 @@ function BarraSuperior() {
   const menuUsuarioRef = useRef(null)
 
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, puede } = useAuth()
+
+  const enlacesVisibles = enlaces.filter(
+    (enlace) => !enlace.permiso || puede(enlace.permiso),
+  )
 
 const fechaActual = new Date()
 
@@ -130,7 +135,7 @@ const fecha = `${fechaActual.getDate()} ${
             className="barra-admin__navegacion"
             aria-label="Navegación del administrador"
           >
-            {enlaces.map(({ texto, ruta, icono: Icono }) => (
+            {enlacesVisibles.map(({ texto, ruta, icono: Icono }) => (
               <NavLink
                 key={ruta}
                 to={ruta}
@@ -224,7 +229,7 @@ const fecha = `${fechaActual.getDate()} ${
               className="barra-admin-mobile__navegacion"
               aria-label="Navegación del administrador"
             >
-              {enlaces.map(({ texto, ruta, icono: Icono }) => (
+              {enlacesVisibles.map(({ texto, ruta, icono: Icono }) => (
                 <NavLink
                   key={ruta}
                   to={ruta}

@@ -1,4 +1,6 @@
-/* Stock reutiliza el buscador y los filtros existentes de Productos. */
+
+/* Stock reutiliza el buscador y los filtros de Productos. */
+
 #stock-controles {
   width: 100%;
   max-width: 28rem;
@@ -12,6 +14,35 @@
 @media (min-width: 48rem) {
   #resumen-stock {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Buscador y filtros en una misma fila */
+
+  #stock-controles {
+    max-width: none;
+    display: grid;
+    grid-template-columns: 2fr 2fr;
+    gap: var(--espacio-2);
+    align-items: end;
+  }
+
+  #stock-controles .admin-productos__filtros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espacio-2);
+    align-items: end;
+    min-width: 0;
+  }
+
+  #stock-controles .admin-productos__buscador,
+  #stock-controles .estructura__campo {
+    min-width: 0;
+  }
+
+  #stock-controles input,
+  #stock-controles select {
+    width: 100%;
+    min-width: 0;
   }
 
   .admin-stock__cabecera,

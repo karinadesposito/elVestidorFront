@@ -112,6 +112,19 @@ const REGISTRAR_INGRESO_STOCK = gql`
     }
   }
 `
+const REGISTRAR_BAJA_MOSTRADOR = gql`
+  mutation RegistrarBajaMostrador($input: RegistrarBajaMostradorInput!) {
+    registrarBajaMostrador(input: $input) {
+      id
+      createdAt
+      barcode
+      cantidad
+      motivo
+      stockAnterior
+      stockResultante
+    }
+  }
+`
 function normalizarTexto(valor) {
   return String(valor || '').trim().replace(/\s+/g, ' ')
 }
@@ -461,6 +474,34 @@ export async function registrarIngresoStock({
     },
   })
   return data.registrarIngresoStock
+}
+export async function registrarBajaMostrador({ barcode, cantidad, motivo }) {
+  const barcodeNormalizado = String(barcode || '').trim()
+  const cantidadNumerica = Number(cantidad)
+  if (!barcodeNormalizado) {
+    throw new Error('El barcode es obligatorio.')
+  }
+  if (barcodeNormalizado.length > 100) {
+    throw new Error('El barcode no puede superar los 100 caracteres.')
+  }
+  if (!Number.isInteger(cantidadNumerica) || cantidadNumerica < 1 || cantidadNumerica > 9999) {
+    throw new Error('La cantidad debe ser un número entero entre 1 y 9999.')
+  }
+  const motivoNormalizado = normalizarTexto(motivo)
+  if (motivoNormalizado.length > 100) {
+    throw new Error('El motivo no puede superar los 100 caracteres.')
+  }
+  const { data } = await client.mutate({
+    mutation: REGISTRAR_BAJA_MOSTRADOR,
+    variables: {
+      input: {
+        barcode: barcodeNormalizado,
+        cantidad: cantidadNumerica,
+        motivo: motivoNormalizado || null,
+      },
+    },
+  })
+  return data.registrarBajaMostrador
 }
 export function filtrarProveedores(proveedores, busqueda) {
   const termino = normalizarBusqueda(busqueda)
