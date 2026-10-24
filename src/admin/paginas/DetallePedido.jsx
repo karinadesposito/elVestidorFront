@@ -533,7 +533,7 @@ function DetallePedido() {
                 <p>Este pedido todavía no tiene pagos registrados.</p>
               )}
             </section>
-          </div>
+          </>
         )}
       </Contenedor>
       {accionConfirmar === "cancelar" && pedido &&
