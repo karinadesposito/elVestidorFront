@@ -81,6 +81,79 @@
   animation: brillo-beneficios 3.2s ease-in-out infinite;
 } */
 
+/* Formulario de El Vestidor Club */
+.beneficios__formulario {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  max-width: 20rem;
+  animation: aparecer-beneficios 400ms ease both;
+}
+
+.beneficios__campo {
+  display: grid;
+  gap: var(--espacio-1);
+  width: 100%;
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--color-texto-secundario);
+}
+
+.beneficios__campo input {
+  width: 100%;
+  border: 1px solid var(--color-borde-suave);
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  background: var(--color-fondo-alternativo);
+  color: var(--color-texto-principal);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.beneficios__campo input:focus-visible {
+  outline: 2px solid var(--color-texto-fuerte);
+  outline-offset: 2px;
+}
+
+/* Campo trampa para robots: fuera de la vista y del lector de pantalla. */
+.beneficios__trampa {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.beneficios__error {
+  margin: 0;
+  color: #9b2c2c;
+  font-size: 0.8rem;
+}
+
+.beneficios__aclaracion {
+  max-width: 18rem;
+  margin: 0;
+  color: var(--color-texto-secundario);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.beneficios__resultado {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  animation: aparecer-beneficios 500ms ease both;
+}
+
+.beneficios--pagina {
+  padding-block: var(--espacio-6);
+}
+
+.beneficios--pagina .boton--promocional {
+  text-decoration: none;
+}
+
 @keyframes aparecer-beneficios {
   from {
     opacity: 0;

@@ -15,6 +15,7 @@ import TiendaLayout from './tienda/componentes/TiendaLayout'
 import Inicio from './tienda/paginas/Inicio'
 import Catalogo from './tienda/paginas/Catalogo'
 import FinalizarCompra from './tienda/paginas/FinalizarCompra'
+import ClubConfirmado from './tienda/paginas/ClubConfirmado'
 
 function App() {
   return (
@@ -49,6 +50,10 @@ function App() {
           <Route
             path="checkout"
             element={<FinalizarCompra />}
+          />
+          <Route
+            path="club/confirmado"
+            element={<ClubConfirmado />}
           />
           <Route path=":genero" element={<Catalogo />} />
           <Route
