@@ -5,7 +5,16 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
-import { ESTADO_MAP, cancelarPedido, despacharPedido, entregarPedido, obtenerDetallePedido, transicionarEstado } from "../servicios/pedidosService";
+
+import {
+  ESTADO_MAP,
+  cancelarPedido,
+  despacharPedido,
+  entregarPedido,
+  obtenerDetallePedido,
+  transicionarEstado,
+} from "../servicios/pedidosService";
+
 import "../../estilos/admin-productos.css";
 import "../../estilos/admin-pedidos.css";
 
@@ -271,6 +280,7 @@ function DetallePedido() {
 
   async function ejecutarAccion(evento) {
     evento.preventDefault();
+
     if (procesando || !accionConfirmar) return;
     if (accionConfirmar === "cancelar") {
       await confirmarCancelacion();
@@ -318,38 +328,52 @@ function DetallePedido() {
         )}
 
         {!cargando && !error && pedido && (
-          <>
-            <section className="estructura__panel">
-              <div className="estructura__panel-encabezado"><h2>Pedido #{pedido.code}</h2></div>
-              <p><strong>Estado:</strong> {ESTADO_MAP[pedido.state] || pedido.state}</p>
-              {accionDisponible && (
-                <Boton
-                  onClick={() => {
-                    setErrorTransicion("");
-                    setAccionConfirmar(accionDisponible.tipo);
-                  }}
-                  disabled={procesando}
-                >
-                  {procesando ? "Actualizando..." : accionDisponible.boton}
-                </Boton>
-              )}
-              {["PaymentSettled", "EnPreparacion"].includes(pedido.state) &&
-                pedido.lines?.length > 0 &&
-                pedido.lines.every(linea => Number.isInteger(linea.quantity) && linea.quantity > 0) &&
-                !pedido.fulfillments?.some(despacho => despacho.state !== "Cancelled") &&
-                !pedido.lines.some(linea => (linea.fulfillmentLines || []).some(asignacion => asignacion.quantity > 0)) && (
-                <Boton
-                  variante="admin"
-                  disabled={procesando}
-                  onClick={() => {
-                    setErrorTransicion("");
-                    setMotivoCancelacion("");
-                    setAccionConfirmar("cancelar");
-                  }}
-                >
-                  Cancelar pedido
-                </Boton>
-              )}
+          <div className="admin-detalle-pedido__contenido">
+            <section
+              className={`estructura__panel admin-detalle-pedido__principal ${colorEstado}`}
+            >
+              <div className="estructura__panel-encabezado">
+                <h2>Pedido #{pedido.code}</h2>
+              </div>
+
+              <div className="admin-detalle-pedido__estado">
+                <p>
+                  <strong>Estado:</strong>{" "}
+                  {ESTADO_MAP[pedido.state] || pedido.state}
+                </p>
+
+                {accionDisponible && (
+                  <Boton
+                    onClick={() => {
+                      setErrorTransicion("");
+                      setAccionConfirmar(accionDisponible.tipo);
+                    }}
+                    disabled={procesando}
+                  >
+                    {procesando
+                      ? "Actualizando..."
+                      : accionDisponible.boton}
+                  </Boton>
+                )}
+                {["PaymentSettled", "EnPreparacion"].includes(pedido.state) &&
+                  pedido.lines?.length > 0 &&
+                  pedido.lines.every(linea => Number.isInteger(linea.quantity) && linea.quantity > 0) &&
+                  !pedido.fulfillments?.some(despacho => despacho.state !== "Cancelled") &&
+                  !pedido.lines.some(linea => (linea.fulfillmentLines || []).some(asignacion => asignacion.quantity > 0)) && (
+                    <Boton
+                      variante="admin"
+                      disabled={procesando}
+                      onClick={() => {
+                        setErrorTransicion("");
+                        setMotivoCancelacion("");
+                        setAccionConfirmar("cancelar");
+                      }}
+                    >
+                      Cancelar pedido
+                    </Boton>
+                  )}
+              </div>
+
               {pedido.fulfillments?.length > 0 && (
                 <div className="admin-detalle-pedido__despachos">
                   <h3>Despachos registrados</h3>
@@ -536,6 +560,7 @@ function DetallePedido() {
           </>
         )}
       </Contenedor>
+
       {accionConfirmar === "cancelar" && pedido &&
         ["PaymentSettled", "EnPreparacion"].includes(pedido.state) && (
         <ModalAdmin
@@ -567,20 +592,28 @@ function DetallePedido() {
           </form>
         </ModalAdmin>
       )}
-      {accionConfirmar && accionDisponible?.tipo === accionConfirmar && (
-        <ModalAdmin
-          titulo={accionDisponible.titulo}
-          onClose={cerrarConfirmacion}
-          formId="confirmar-accion-pedido"
-          botonConfirmar={procesando ? "Procesando..." : accionDisponible.boton}
-          botonConfirmarDeshabilitado={procesando}
-        >
-          <form id="confirmar-accion-pedido" onSubmit={ejecutarAccion}>
-            <p>{accionDisponible.mensaje}</p>
-            <p><strong>Pedido:</strong> #{pedido.code}</p>
-          </form>
-        </ModalAdmin>
-      )}
+      {accionConfirmar &&
+        accionDisponible?.tipo === accionConfirmar && (
+          <ModalAdmin
+            titulo={accionDisponible.titulo}
+            onClose={cerrarConfirmacion}
+            formId="confirmar-accion-pedido"
+            botonConfirmar={
+              procesando ? "Procesando..." : accionDisponible.boton
+            }
+            botonConfirmarDeshabilitado={procesando}
+          >
+            <form
+              id="confirmar-accion-pedido"
+              onSubmit={ejecutarAccion}
+            >
+              <p>{accionDisponible.mensaje}</p>
+              <p>
+                <strong>Pedido:</strong> #{pedido.code}
+              </p>
+            </form>
+          </ModalAdmin>
+        )}
     </main>
   );
 }
