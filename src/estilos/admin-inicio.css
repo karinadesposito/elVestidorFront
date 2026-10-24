@@ -1,4 +1,48 @@
+.admin-inicio__ventas {
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
+}
+
+.admin-inicio__atajo--activo {
+  background: var(--color-texto-fuerte);
+  color: var(--color-fondo-principal);
+}
+
+.admin-inicio__fechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.admin-inicio__fechas input {
+  font: inherit;
+}
+
+.admin-inicio__totales {
+  margin-bottom: 0;
+}
+
+.admin-inicio__detalle,
+.admin-inicio__aclaracion {
+  margin: 0;
+  color: var(--color-texto-secundario);
+  font-size: 0.85rem;
+}
+
+.admin-inicio__detalle strong {
+  color: var(--color-texto-fuerte);
+}
+
 @media (min-width: 48rem) {
+  .admin-inicio__estados {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-inicio__totales {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .admin-inicio__cabecera,
   .admin-inicio__fila {
     --estructura-tabla-ancho-minimo: 30rem;
@@ -7,5 +51,14 @@
       minmax(7rem, 1.4fr)
       minmax(5.5rem, 1fr)
       minmax(5.5rem, 1fr);
+  }
+
+  .admin-inicio__cabecera-estados,
+  .admin-inicio__fila-estados {
+    --estructura-tabla-ancho-minimo: 24rem;
+    --estructura-tabla-columnas:
+      minmax(7rem, 1.4fr)
+      minmax(4rem, 0.6fr)
+      minmax(6rem, 1fr);
   }
 }
