@@ -1,7 +1,6 @@
 
 .barra {
-  position: sticky;
-  top: var(--espacio-0);
+  position: relative;
   z-index: var(--z-header);
   background: var(--color-fondo-principal);
 }
@@ -9,10 +8,12 @@
 /* Beneficios */
 
 .barra__beneficio {
-  height: 50px;
+  height: 40px;
   overflow: hidden;
   border-block-end: thin solid var(--color-borde-suave);
   background: #fff;
+  opacity: 1;
+  transition: opacity 0.35s ease;
 }
 
 .barra__cinta {
@@ -30,10 +31,10 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   color: var(--color-texto-fuerte);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   cursor: pointer;
 }
 
@@ -52,7 +53,7 @@
 
 .barra__promo {
   color: var(--color-texto-fuerte);
-  font-size: 0.6875rem;
+  font-size: 0.584375rem;
   font-weight: var(--peso-semibold);
   text-align: center;
   text-transform: uppercase;
@@ -60,12 +61,12 @@
 
 .barra__divisor {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
-/* Encabezado */
+/* Encabezado mobile */
 
 .barra__contenedor {
   position: relative;
@@ -74,6 +75,12 @@
   justify-items: center;
   min-height: calc(var(--alto-barra) + var(--espacio-5));
   padding-block: var(--espacio-2);
+  transition:
+    min-height 0.4s ease,
+    padding 0.4s ease,
+    gap 0.4s ease,
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
 .barra__hamburguesa {
@@ -86,6 +93,7 @@
   color: var(--color-texto-fuerte);
   font-size: 1.75rem;
   transform: translateY(-50%);
+  transition: font-size 0.4s ease;
 }
 
 .barra__marca {
@@ -93,17 +101,24 @@
   flex-direction: column;
   align-items: center;
   gap: var(--espacio-1);
+  min-width: 0;
+  transition:
+    gap 0.4s ease,
+    transform 0.4s ease;
 }
 
 .barra__simbolo {
   width: auto;
   height: 36px;
+  transition: height 0.4s ease;
 }
 
 .barra__logo {
   width: 178px;
+  max-width: 100%;
   height: auto;
   aspect-ratio: 1571 / 177;
+  transition: width 0.4s ease;
 }
 
 .barra__nav {
@@ -115,6 +130,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--espacio-5);
+  transition: gap 0.4s ease;
 }
 
 .barra__item {
@@ -160,6 +176,9 @@
   align-items: center;
   gap: var(--espacio-2);
   transform: translateY(-50%);
+  transition:
+    gap 0.4s ease,
+    inset-block-start 0.4s ease;
 }
 
 .barra__accion {
@@ -172,6 +191,10 @@
   overflow: visible;
   color: var(--color-acento-hover);
   font-size: 1.25rem;
+  transition:
+    width 0.4s ease,
+    height 0.4s ease,
+    font-size 0.4s ease;
 }
 
 .barra__accion[aria-haspopup='dialog'] > span {
@@ -196,30 +219,59 @@
   pointer-events: none;
 }
 
-/* Compacta */
+/* Barra compacta mobile */
 
 .barra--compacta .barra__beneficio {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.barra--compacta .barra__contenedor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  min-height: 3.75rem;
+  padding-block: var(--espacio-1);
+  background: var(--color-fondo-principal);
+  border-block-end: thin solid var(--color-borde-suave);
+  box-shadow: 0 0.2rem 0.8rem rgb(0 0 0 / 0.05);
+}
+
+.barra--compacta .barra__marca {
+  gap: var(--espacio-1);
 }
 
 .barra--compacta .barra__simbolo {
-  height: 30px;
+  height: 1.5rem;
 }
 
 .barra--compacta .barra__logo {
-  width: 150px;
+  width: clamp(6.5rem, 32vw, 9rem);
+}
+
+.barra--compacta .barra__hamburguesa {
+  font-size: 1.5rem;
+}
+
+.barra--compacta .barra__accion {
+  font-size: 1.375rem;
 }
 
 /* Tablet */
 
 @media (min-width: 48rem) {
   .barra__promo {
-    font-size: 0.65rem;
+    font-size: 0.5525rem;
   }
 
   .barra__divisor {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
   }
 
   .barra__contenedor {
@@ -263,18 +315,63 @@
     font-size: 2.25rem;
   }
 
+  /* Compacta tablet */
+
   .barra--compacta .barra__contenedor {
-    min-height: calc(var(--alto-barra) + var(--espacio-3));
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    align-content: center;
+    justify-items: stretch;
     gap: var(--espacio-3);
+    min-height: 4.5rem;
     padding-block: var(--espacio-2);
+    padding-inline: var(--padding-lateral-tablet);
+  }
+
+  .barra--compacta .barra__marca {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    flex-direction: row;
+    gap: var(--espacio-2);
   }
 
   .barra--compacta .barra__simbolo {
-    height: 42px;
+    height: 1.75rem;
   }
 
   .barra--compacta .barra__logo {
-    width: 220px;
+    width: 9rem;
+  }
+
+  .barra--compacta .barra__nav {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .barra--compacta .barra__lista {
+    gap: var(--espacio-3);
+  }
+
+  .barra--compacta .barra__item {
+    font-size: 0.875rem;
+  }
+
+  .barra--compacta .barra__acciones {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    gap: var(--espacio-1);
+    transform: none;
+  }
+
+  .barra--compacta .barra__accion {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
   }
 }
 
@@ -296,18 +393,57 @@
   .barra__acciones {
     inset-inline-end: var(--padding-lateral-desktop);
   }
+
+  .barra--compacta .barra__contenedor {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--espacio-5);
+    min-height: 4.75rem;
+    padding-block: var(--espacio-2);
+    padding-inline: var(--padding-lateral-desktop);
+  }
+
+  .barra--compacta .barra__simbolo {
+    height: 2rem;
+  }
+
+  .barra--compacta .barra__logo {
+    width: 10rem;
+  }
+
+  .barra--compacta .barra__nav {
+    justify-content: flex-start;
+  }
+
+  .barra--compacta .barra__lista {
+    gap: var(--espacio-5);
+  }
+
+  .barra--compacta .barra__item {
+    font-size: 0.875rem;
+  }
+
+  .barra--compacta .barra__acciones {
+    position: static;
+    gap: var(--espacio-2);
+  }
+
+  .barra--compacta .barra__accion {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.75rem;
+  }
 }
 
 /* Pantallas pequeñas */
 
 @media (max-width: 20rem) {
   .barra__promo {
-    font-size: 0.610rem;
+    font-size: 0.5185rem;
   }
 
   .barra__divisor {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 
   .barra__simbolo {
@@ -319,17 +455,19 @@
   }
 
   .barra--compacta .barra__simbolo {
-    height: 34px;
+    height: 1.25rem;
   }
 
   .barra--compacta .barra__logo {
-    width: 175px;
+    width: 6.5rem;
   }
 }
 
-/* Catálogo: móvil */
+/* Catálogo mobile */
 
 .barra--catalogo {
+  position: sticky;
+  top: var(--espacio-0);
   border-block-end: thin solid var(--color-borde-suave);
   background: var(--color-fondo-alternativo);
 }
@@ -489,5 +627,21 @@
   .barra--catalogo .barra__acciones {
     grid-column: 3;
     grid-row: 1;
+  }
+}
+
+/* Movimiento reducido */
+
+@media (prefers-reduced-motion: reduce) {
+  .barra__beneficio,
+  .barra__contenedor,
+  .barra__hamburguesa,
+  .barra__marca,
+  .barra__simbolo,
+  .barra__logo,
+  .barra__lista,
+  .barra__acciones,
+  .barra__accion {
+    transition: none;
   }
 }

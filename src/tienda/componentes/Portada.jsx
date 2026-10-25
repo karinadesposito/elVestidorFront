@@ -1,136 +1,96 @@
-import { useEffect, useState } from 'react'
-import Contenedor from '../../componentesReuse/Contenedor'
-import montania from '../../recursos/imagenes/3montaña.webp'
-import videoChicas from '../../recursos/imagenes/videoChicas.mp4'
-import vestidor from '../../recursos/imagenes/sillonAmarillo.webp'
-import Boton from '../../componentesReuse/Boton'
-const slides = [
-  { nombre: 'Salida', imagen: montania, ancho: 1200, alto: 1600 },
-  { nombre: 'Ruta', video: videoChicas, ancho: 308, alto: 403 },
-  { nombre: 'Ciudad', imagen: vestidor, ancho: 363, alto: 453 },
-]
 
-const campanias = [
-  {
-    etiqueta: 'Especial temporada',
-    titulo: 'Compartir.',
-    texto: 'Todos tus días.',
-    accion: 'Ver selección',
-  },
-  {
-    etiqueta: 'Promo online',
-    titulo: 'Lo nuevo.',
-    texto: 'Ingresos elegidos.',
-    accion: 'Descubrir',
-  },
-  {
-    etiqueta: 'Nuevos ingresos',
-    titulo: 'Sé vos.',
-    texto: 'Pensados para moverte.',
-    accion: 'Explorar',
-  },
-]
+import { useEffect, useState } from "react";
+import Contenedor from "../../componentesReuse/Contenedor";
+import Boton from "../../componentesReuse/Boton";
 
-const tiempoSlide = 3000
+const IMAGEN = "/imagenes/carrusel/summer2027_collage.webp";
 
 function Portada() {
-  const [slideActivo, setSlideActivo] = useState(0)
-  const campaniaActiva = campanias[slideActivo]
+  const [pausado, setPausado] = useState(false);
+  const [movimientoReducido, setMovimientoReducido] = useState(false);
 
   useEffect(() => {
-    const intervalo = window.setInterval(() => {
-      setSlideActivo((slideActual) => (slideActual + 1) % slides.length)
-    }, tiempoSlide)
+    const consulta = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
 
-    return () => window.clearInterval(intervalo)
-  }, [])
+    const actualizar = () => {
+      setMovimientoReducido(consulta.matches);
+    };
+
+    actualizar();
+
+    consulta.addEventListener("change", actualizar);
+
+    return () => {
+      consulta.removeEventListener("change", actualizar);
+    };
+  }, []);
+
+  const animar = !pausado && !movimientoReducido;
 
   return (
-    <section className="portada">
+    <section
+      className="portada"
+      aria-label="Colección Summer 2027 de El Vestidor"
+    >
       <Contenedor className="portada__contenedor">
-        <div className="portada__layout">
-          <div className="portada__carrusel" aria-label="Imágenes destacadas">
-            <div className={`portada__pista portada__pista--${slideActivo}`}>
-              {slides.map((slide) => (
-                <div
-                  aria-label={slide.nombre}
-                  className="portada__slide"
-                  key={slide.nombre}
-                  role={slide.video ? undefined : "img"}
+        <div
+          className={`portada__layout ${
+            animar ? "portada__layout--animada" : ""
+          }`}
+        >
+          <div className="portada__carrusel">
+            <div className="portada__escenario">
+              <img
+                className="portada__imagen"
+                src={IMAGEN}
+                alt="Collage editorial Summer 2027 con escenas de verano, ilustraciones de comida y stickers"
+                draggable="false"
+              />
+
+              <div
+                className="portada__tarjeta portada__tarjeta--hamburguesa"
+                aria-hidden="true"
+              />
+
+              <div
+                className="portada__tarjeta portada__tarjeta--helado"
+                aria-hidden="true"
+              />
+
+              <div className="portada__contenido">
+                <Boton
+                  variante="promocional"
+                  className="portada__boton"
+                  onClick={() => {
+                    window.location.href = "/mujer";
+                  }}
                 >
-                  {slide.video ? (
-                    <video
-                      src={slide.video}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : (
-                    <img
-                      src={slide.imagen}
-                      alt=""
-                      width={slide.ancho}
-                      height={slide.alto}
-                    />
-                  )}
-                </div>
-              ))}
+                  DESCUBRÍ LA COLECCIÓN
+                  <span aria-hidden="true"> →</span>
+                </Boton>
+              </div>
+
+              <button
+                type="button"
+                className="portada__pausa"
+                aria-label={
+                  pausado
+                    ? "Reanudar animaciones"
+                    : "Pausar animaciones"
+                }
+                aria-pressed={pausado}
+                onClick={() => setPausado((actual) => !actual)}
+              >
+                {pausado ? "Reproducir" : "Pausar"}
+              </button>
             </div>
-
-            <button
-              aria-label="Imagen anterior"
-              className="portada__flecha portada__flecha--previa"
-              onClick={() =>
-                setSlideActivo(
-                  (slideActivo - 1 + slides.length) % slides.length,
-                )
-              }
-              type="button"
-            />
-
-            <button
-              aria-label="Imagen siguiente"
-              className="portada__flecha portada__flecha--siguiente"
-              onClick={() => setSlideActivo((slideActivo + 1) % slides.length)}
-              type="button"
-            />
-
-            <div className="portada__indicadores" aria-label="Elegir imagen">
-              {slides.map((slide, indice) => (
-                <button
-                  aria-label={`Ver ${slide.nombre}`}
-                  aria-current={slideActivo === indice}
-                  className={
-                    slideActivo === indice
-                      ? 'portada__indicador portada__indicador--activo'
-                      : 'portada__indicador'
-                  }
-                  key={slide.nombre}
-                  onClick={() => setSlideActivo(indice)}
-                  type="button"
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="portada__contenido">
-            <p className="texto-etiqueta portada__etiqueta">
-              {campaniaActiva.etiqueta}
-            </p>
-
-            <h1>{campaniaActiva.titulo}</h1>
-
-            <p>{campaniaActiva.texto}</p>
-
-            <button className="portada__accion" type="button">
-              {campaniaActiva.accion} →
-            </button>
           </div>
         </div>
       </Contenedor>
     </section>
-  )
+  );
 }
 
-export default Portada
+export default Portada;
