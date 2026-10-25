@@ -1,3 +1,4 @@
+
 import { gql } from '@apollo/client'
 import clienteTienda from './clienteTienda'
 
@@ -76,6 +77,34 @@ const AGREGAR_AL_CARRITO = gql`
   ${DATOS_CARRITO}
 `
 
+const ACTUALIZAR_CANTIDAD = gql`
+  mutation ActualizarCantidadCarrito(
+    $lineaId: ID!
+    $cantidad: Int!
+  ) {
+    adjustOrderLine(
+      orderLineId: $lineaId
+      quantity: $cantidad
+    ) {
+      __typename
+      ... on Order {
+        ...DatosCarritoTienda
+      }
+      ... on ErrorResult {
+        errorCode
+        message
+      }
+      ... on InsufficientStockError {
+        quantityAvailable
+        order {
+          ...DatosCarritoTienda
+        }
+      }
+    }
+  }
+  ${DATOS_CARRITO}
+`
+
 const ELIMINAR_DEL_CARRITO = gql`
   mutation EliminarLineaDelCarrito($lineaId: ID!) {
     removeOrderLine(orderLineId: $lineaId) {
@@ -92,11 +121,11 @@ const ELIMINAR_DEL_CARRITO = gql`
   ${DATOS_CARRITO}
 `
 
-function obtenerOpcion(opciones, tipo) {
+function obtenerOpcion(opciones = [], tipo) {
   return opciones.find(
     opcion =>
-      opcion.group.code === tipo ||
-      opcion.group.code.startsWith(`${tipo}-`),
+      opcion.group?.code === tipo ||
+      opcion.group?.code?.startsWith(`${tipo}-`),
   )
 }
 
@@ -121,9 +150,7 @@ function mapearLinea(linea) {
 }
 
 function mapearCarrito(pedido) {
-  if (!pedido) {
-    return null
-  }
+  if (!pedido) return null
 
   return {
     id: pedido.id,
@@ -138,19 +165,19 @@ function mapearCarrito(pedido) {
 
 function crearErrorCarrito(
   resultado,
-  mensajeInicial = 'No pudimos agregar el producto al carrito.',
+  mensajeInicial = 'No pudimos actualizar el carrito.',
 ) {
   let mensaje = mensajeInicial
 
   switch (resultado.errorCode) {
     case 'INSUFFICIENT_STOCK_ERROR':
-      mensaje =
-        'No hay stock suficiente para la cantidad solicitada.'
+      mensaje = Number.isInteger(resultado.quantityAvailable)
+        ? `Solo hay ${resultado.quantityAvailable} unidades disponibles de esta variante.`
+        : 'No hay stock suficiente para la cantidad solicitada.'
       break
 
     case 'ORDER_LIMIT_ERROR':
-      mensaje =
-        'Alcanzaste el límite de unidades permitido por pedido.'
+      mensaje = 'Alcanzaste el límite de unidades permitido por pedido.'
       break
 
     case 'NEGATIVE_QUANTITY_ERROR':
@@ -158,8 +185,7 @@ function crearErrorCarrito(
       break
 
     case 'ORDER_MODIFICATION_ERROR':
-      mensaje =
-        'Este pedido ya no permite modificar sus productos.'
+      mensaje = 'Este pedido ya está en proceso de pago y no permite modificar sus productos.'
       break
 
     default:
@@ -167,16 +193,25 @@ function crearErrorCarrito(
   }
 
   const error = new Error(mensaje)
-
   error.codigo = resultado.errorCode || resultado.__typename
 
-  // Vendure puede ajustar el pedido al stock disponible.
-  // Conservamos ese resultado para sincronizar el panel.
   if (resultado.order) {
     error.carrito = mapearCarrito(resultado.order)
   }
 
   return error
+}
+
+function procesarResultado(resultado, mensaje) {
+  if (!resultado) {
+    throw new Error('No recibimos una respuesta del carrito.')
+  }
+
+  if (resultado.__typename !== 'Order') {
+    throw crearErrorCarrito(resultado, mensaje)
+  }
+
+  return mapearCarrito(resultado)
 }
 
 export async function obtenerCarrito() {
@@ -192,10 +227,7 @@ export async function obtenerCarrito() {
   return mapearCarrito(data.activeOrder)
 }
 
-export async function agregarAlCarrito(
-  varianteId,
-  cantidad = 1,
-) {
+export async function agregarAlCarrito(varianteId, cantidad = 1) {
   const id = String(varianteId ?? '').trim()
 
   if (!id) {
@@ -208,23 +240,35 @@ export async function agregarAlCarrito(
 
   const { data } = await clienteTienda.mutate({
     mutation: AGREGAR_AL_CARRITO,
-    variables: {
-      varianteId: id,
-      cantidad,
-    },
+    variables: { varianteId: id, cantidad },
   })
 
-  const resultado = data?.addItemToOrder
+  return procesarResultado(
+    data?.addItemToOrder,
+    'No pudimos agregar el producto al carrito.',
+  )
+}
 
-  if (!resultado) {
-    throw new Error('No recibimos una respuesta del carrito.')
+export async function actualizarCantidadCarrito(lineaId, cantidad) {
+  const id = String(lineaId ?? '').trim()
+
+  if (!id) {
+    throw new Error('No pudimos identificar el producto.')
   }
 
-  if (resultado.__typename !== 'Order') {
-    throw crearErrorCarrito(resultado)
+  if (!Number.isInteger(cantidad) || cantidad < 1) {
+    throw new Error('La cantidad debe ser un entero mayor a cero.')
   }
 
-  return mapearCarrito(resultado)
+  const { data } = await clienteTienda.mutate({
+    mutation: ACTUALIZAR_CANTIDAD,
+    variables: { lineaId: id, cantidad },
+  })
+
+  return procesarResultado(
+    data?.adjustOrderLine,
+    'No pudimos modificar la cantidad.',
+  )
 }
 
 export async function eliminarDelCarrito(lineaId) {
@@ -236,23 +280,11 @@ export async function eliminarDelCarrito(lineaId) {
 
   const { data } = await clienteTienda.mutate({
     mutation: ELIMINAR_DEL_CARRITO,
-    variables: {
-      lineaId: id,
-    },
+    variables: { lineaId: id },
   })
 
-  const resultado = data?.removeOrderLine
-
-  if (!resultado) {
-    throw new Error('No recibimos una respuesta del carrito.')
-  }
-
-  if (resultado.__typename !== 'Order') {
-    throw crearErrorCarrito(
-      resultado,
-      'No pudimos eliminar el producto del carrito.',
-    )
-  }
-
-  return mapearCarrito(resultado)
+  return procesarResultado(
+    data?.removeOrderLine,
+    'No pudimos eliminar el producto del carrito.',
+  )
 }
