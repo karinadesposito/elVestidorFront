@@ -1,3 +1,4 @@
+
 import { gql } from '@apollo/client'
 import clienteTienda from './clienteTienda'
 
@@ -45,6 +46,10 @@ const OBTENER_CATALOGO = gql`
           id
           preview
         }
+        imagenes {
+          id
+          preview
+        }
         precioDesde
         precioHasta
         preciosDiferentes
@@ -64,6 +69,56 @@ const OBTENER_CATALOGO = gql`
           imagen {
             id
             preview
+          }
+        }
+      }
+    }
+  }
+`
+
+/*
+ * Consulta individual para la ficha de producto.
+ *
+ * La Shop API devuelve las variantes, sus opciones
+ * y los assets asociados a cada variante.
+ */
+const OBTENER_DETALLE_PRODUCTO = gql`
+  query ObtenerDetalleProducto($id: ID!) {
+    product(id: $id) {
+      id
+      name
+      description
+      featuredAsset {
+        id
+        preview
+      }
+      assets {
+        id
+        preview
+      }
+      variants {
+        id
+        name
+        sku
+        stockLevel
+        priceWithTax
+        currencyCode
+        featuredAsset {
+          id
+          preview
+        }
+        assets {
+          id
+          preview
+        }
+        options {
+          id
+          code
+          name
+          group {
+            id
+            code
+            name
           }
         }
       }
@@ -123,6 +178,9 @@ function mapearCard(card) {
     color: card.color,
     moneda: card.moneda,
     imagen: card.imagen?.preview?.trim() || null,
+    imagenes: (card.imagenes || [])
+      .map(asset => asset.preview?.trim())
+      .filter(Boolean),
     imagenAlt: card.color
       ? `${card.nombre} - ${card.color}`
       : card.nombre,
@@ -131,6 +189,140 @@ function mapearCard(card) {
     preciosDiferentes: card.preciosDiferentes,
     disponible: card.disponible,
     variantes: card.variantes.map(mapearVariante),
+  }
+}
+
+function obtenerOpcion(variante, tipo) {
+  return (variante.options || []).find(opcion => {
+    const codigoGrupo = String(
+      opcion.group?.code || '',
+    ).toLowerCase()
+
+    const nombreGrupo = String(
+      opcion.group?.name || '',
+    ).toLowerCase()
+
+    if (tipo === 'color') {
+      return (
+        codigoGrupo === 'color' ||
+        nombreGrupo === 'color'
+      )
+    }
+
+    return (
+      codigoGrupo.includes('talle') ||
+      nombreGrupo.includes('talle')
+    )
+  }) || null
+}
+
+function mapearImagenes(assets = []) {
+  return assets
+    .map(asset => ({
+      id: asset.id,
+      url: asset.preview?.trim() || null,
+    }))
+    .filter(asset => asset.url)
+}
+
+function mapearVarianteDetalle(variante) {
+  const opcionColor = obtenerOpcion(variante, 'color')
+  const opcionTalle = obtenerOpcion(variante, 'talle')
+
+  return {
+    id: variante.id,
+    nombre: variante.name,
+    sku: variante.sku,
+    colorId: opcionColor?.id || null,
+    color: opcionColor?.name || 'Único',
+    talleId: opcionTalle?.id || null,
+    talle: opcionTalle?.name || 'Único',
+    precio: variante.priceWithTax / 100,
+    moneda: variante.currencyCode,
+    estadoStock: variante.stockLevel,
+    disponible: variante.stockLevel !== 'OUT_OF_STOCK',
+    imagen: variante.featuredAsset?.preview?.trim() || null,
+    imagenes: mapearImagenes(variante.assets || []),
+  }
+}
+
+function agruparColores(variantes, imagenesProducto) {
+  const grupos = new Map()
+
+  for (const variante of variantes) {
+    const clave = String(variante.colorId || 'unico')
+
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        id: variante.colorId,
+        nombre: variante.color,
+        imagenes: [],
+        variantes: [],
+        disponible: false,
+      })
+    }
+
+    const grupo = grupos.get(clave)
+
+    grupo.variantes.push(variante)
+
+    if (variante.disponible) {
+      grupo.disponible = true
+    }
+
+    for (const imagen of variante.imagenes) {
+      if (!grupo.imagenes.some(item => item.id === imagen.id)) {
+        grupo.imagenes.push(imagen)
+      }
+    }
+
+    if (
+      variante.imagen &&
+      !grupo.imagenes.some(item => item.url === variante.imagen)
+    ) {
+      grupo.imagenes.unshift({
+        id: `principal-${variante.id}`,
+        url: variante.imagen,
+      })
+    }
+  }
+
+  const colores = [...grupos.values()]
+
+  /*
+   * Si el producto no tiene imágenes asignadas
+   * a sus variantes, usamos las imágenes generales.
+   */
+  if (colores.length === 1 && colores[0].imagenes.length === 0) {
+    colores[0].imagenes = imagenesProducto
+  }
+
+  return colores
+}
+
+function mapearDetalleProducto(producto) {
+  const variantes = (producto.variants || [])
+    .map(mapearVarianteDetalle)
+
+  const imagenes = mapearImagenes(producto.assets || [])
+
+  if (
+    imagenes.length === 0 &&
+    producto.featuredAsset?.preview
+  ) {
+    imagenes.push({
+      id: producto.featuredAsset.id,
+      url: producto.featuredAsset.preview,
+    })
+  }
+
+  return {
+    id: producto.id,
+    nombre: producto.name,
+    descripcion: producto.description || '',
+    imagenes,
+    variantes,
+    colores: agruparColores(variantes, imagenes),
   }
 }
 
@@ -220,4 +412,24 @@ export async function obtenerCatalogo({
       resultado.siguienteDesplazamiento,
     hayMas: resultado.hayMas,
   }
+}
+
+export async function obtenerDetalleProducto(productoId) {
+  const id = String(productoId ?? '').trim()
+
+  if (!id) {
+    throw new Error('No pudimos identificar el producto.')
+  }
+
+  const { data } = await clienteTienda.query({
+    query: OBTENER_DETALLE_PRODUCTO,
+    variables: { id },
+    fetchPolicy: 'network-only',
+  })
+
+  if (!data?.product) {
+    throw new Error('El producto no está disponible.')
+  }
+
+  return mapearDetalleProducto(data.product)
 }

@@ -176,6 +176,7 @@ function Productos() {
   const [formVariante, setFormVariante] = useState(FORM_VARIANTE_INICIAL);
   const [varianteEditandoId, setVarianteEditandoId] = useState(null);
   const [imagenVariante, setImagenVariante] = useState(IMAGEN_VACIA);
+  const [galeria, setGaleria] = useState({ actuales: [], archivos: [], modificada: false });
   const [productoVariantesAbiertoId, setProductoVariantesAbiertoId] =
     useState(null);
   const [colorSeleccionado, setColorSeleccionado] = useState(false);
@@ -358,6 +359,11 @@ function Productos() {
       color,
     }));
     setColorSeleccionado(true);
+    if (!varianteEditandoId) {
+      const variantes = productos.find((p) => String(p.id) === String(formVariante.productoId))?.variantes || [];
+      const existente = variantes.find((v) => normalizarBusqueda(v.color) === normalizarBusqueda(color) && v.galeria?.length);
+      setGaleria({ actuales: existente?.galeria || [], archivos: [], modificada: false });
+    }
   }
   function manejarArchivoVariante(archivo) {
     setImagenVariante((anterior) => ({
@@ -410,6 +416,7 @@ function Productos() {
     setMensajeExito("");
     setColorSeleccionado(false);
     setImagenVariante(IMAGEN_VACIA);
+    setGaleria({ actuales: [], archivos: [], modificada: false });
     setFormVariante({
       ...FORM_VARIANTE_INICIAL,
       productoId,
@@ -438,11 +445,12 @@ function Productos() {
       precio: variante.precio != null ? variante.precio / 100 : "",
       activo: Boolean(variante.activo),
     });
-    setImagenVariante({
-      archivo: null,
-      actual: variante.imagen || null,
-      quitar: false,
-    });
+    setImagenVariante({ archivo: null, actual: variante.imagen || null, quitar: false });
+    const otras = productos.find((p) => String(p.id) === String(variante.productoId))?.variantes || [];
+    const galeriaColor = otras.find((v) =>
+      normalizarBusqueda(v.color) === normalizarBusqueda(variante.color) && v.galeria?.length
+    )?.galeria || variante.galeria || [];
+    setGaleria({ actuales: galeriaColor, archivos: [], modificada: false });
     setOpcionesProducto({
       color: null,
       talle: null,
@@ -462,6 +470,7 @@ function Productos() {
     setAdvertenciasNombre([]);
     setColorSeleccionado(false);
     setImagenVariante(IMAGEN_VACIA);
+    setGaleria({ actuales: [], archivos: [], modificada: false });
     setOpcionesProducto({
       color: null,
       talle: null,
@@ -655,6 +664,11 @@ function Productos() {
           imagenArchivo: imagenVariante.archivo,
           imagenActual: imagenVariante.actual,
           quitarImagen: imagenVariante.quitar,
+          productId: formVariante.productoId,
+          color: colorNormalizado,
+          imagenesActuales: galeria.actuales,
+          imagenesArchivos: galeria.archivos,
+          galeriaModificada: galeria.modificada,
         });
         setMensajeExito("Variante actualizada correctamente.");
       } else {
@@ -667,6 +681,8 @@ function Productos() {
           precio: puedeModificarPrecios ? formVariante.precio : null,
           activo: puedeModificarPrecios ? formVariante.activo : false,
           imagenArchivo: imagenVariante.archivo,
+          imagenesActuales: galeria.actuales,
+          imagenesArchivos: galeria.archivos,
         });
         setMensajeExito(
           puedeModificarPrecios
@@ -678,6 +694,7 @@ function Productos() {
       setVarianteEditandoId(null);
       setColorSeleccionado(false);
       setImagenVariante(IMAGEN_VACIA);
+    setGaleria({ actuales: [], archivos: [], modificada: false });
       setOpcionesProducto({ color: null, talle: null });
       await cargarDatos(busqueda);
       setTimeout(() => {
@@ -1469,7 +1486,10 @@ function Productos() {
               )}
             </div>
             <SelectorImagen
-              etiqueta="Imagen de la variante"
+              etiqueta="Fotografías del color"
+              imagenesActuales={galeria.actuales}
+              archivos={galeria.archivos}
+              onCambiarGaleria={(actuales, archivos) => setGaleria({ actuales, archivos, modificada: true })}
               imagenActual={imagenVariante.actual}
               archivo={imagenVariante.archivo}
               onSeleccionarArchivo={manejarArchivoVariante}

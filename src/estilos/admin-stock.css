@@ -11,6 +11,181 @@
   box-sizing: border-box;
 }
 
+/* Nuevo ingreso de stock */
+
+#formulario-ingreso-stock {
+  min-width: 0;
+}
+
+#formulario-ingreso-stock .estructura__panel {
+  min-width: 0;
+}
+
+/* Variantes del producto seleccionado */
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.75rem 0.5rem;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--color-borde, #ded8d0);
+}
+
+/* Encabezado del listado */
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item:first-child {
+  display: block;
+  padding: 0.5rem 0 0.75rem;
+}
+
+/* Información de cada variante */
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item
+  > strong {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item
+  > span {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+
+/* Cantidad recibida */
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item
+  > .estructura__campo {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  min-width: 0;
+  margin: 0;
+}
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item
+  > .estructura__campo label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item
+  > .estructura__campo input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.55rem 0.35rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/*
+  Variante encontrada por barcode.
+
+  Stock.jsx aplica un outline de 2px a la variante.
+  Lo sustituimos visualmente por un resaltado con espacio
+  interior, fondo suave y línea lateral.
+*/
+
+#formulario-ingreso-stock
+  .estructura__tarjeta
+  > .estructura__tabla
+  > .estructura__lista-item[style*="outline"] {
+  outline: none !important;
+  border: 1px solid #b8b2a9;
+  border-left: 4px solid #45413c;
+  border-radius: 0.5rem;
+  background-color: #f5f3ef;
+  padding: 0.9rem 0.75rem;
+  margin: 0.4rem 0;
+  gap: 0.45rem 0.75rem;
+}
+
+/* Mercadería preparada */
+
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-borde, #ded8d0);
+}
+
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item
+  > strong,
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item
+  > span {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item
+  > .estructura__campo {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  min-width: 0;
+  margin: 0;
+}
+
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item
+  > .estructura__campo input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+#formulario-ingreso-stock
+  > .estructura__panel:nth-of-type(2)
+  .estructura__lista-item
+  > .estructura__panel-acciones {
+  grid-column: 1 / -1;
+}
+
+/* Tablet y desktop */
+
 @media (min-width: 48rem) {
   #resumen-stock {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -59,5 +234,20 @@
       minmax(5.5rem, 0.85fr);
 
     font-size: var(--estructura-texto-sm);
+  }
+
+  /* Más espacio para la información en pantallas grandes */
+
+  #formulario-ingreso-stock
+    .estructura__tarjeta
+    > .estructura__tabla
+    > .estructura__lista-item {
+    grid-template-columns: minmax(0, 1fr) 8rem;
+  }
+
+  #formulario-ingreso-stock
+    > .estructura__panel:nth-of-type(2)
+    .estructura__lista-item {
+    grid-template-columns: minmax(0, 1fr) 8rem;
   }
 }

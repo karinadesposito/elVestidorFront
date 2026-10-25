@@ -41,6 +41,9 @@ function SelectorImagen({
   archivo = null,
   onSeleccionarArchivo,
   deshabilitado = false,
+  imagenesActuales = [],
+  archivos = [],
+  onCambiarGaleria = null,
 }) {
   const [errorArchivo, setErrorArchivo] = useState("");
   const inputRef = useRef(null);
@@ -60,10 +63,25 @@ function SelectorImagen({
     [vistaPrevia],
   );
 
+  const [previews, setPreviews] = useState([]);
+  useEffect(() => {
+    if (!onCambiarGaleria) return;
+    const urls = archivos.map((item) => URL.createObjectURL(item));
+    setPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [archivos, onCambiarGaleria]);
   const urlMostrar = vistaPrevia || imagenActual?.url || null;
   const hayImagen = Boolean(urlMostrar);
 
   function manejarCambio(e) {
+    if (onCambiarGaleria) {
+      const elegidos = Array.from(e.target.files || []);
+      const error = elegidos.map(validarArchivo).find(Boolean) || "";
+      setErrorArchivo(error);
+      if (!error && elegidos.length) onCambiarGaleria(imagenesActuales, [...archivos, ...elegidos]);
+      e.target.value = "";
+      return;
+    }
     const archivoElegido = e.target.files?.[0] || null;
 
     if (!archivoElegido) {
@@ -92,20 +110,37 @@ function SelectorImagen({
     <div className="estructura__campo">
       <label htmlFor={idEntrada}>{etiqueta}</label>
 
+      {onCambiarGaleria && (
+        <div className="admin-productos__galeria" style={{display:"flex",flexWrap:"wrap",gap:"var(--espacio-2)",marginBottom:"var(--espacio-2)"}}>
+          {imagenesActuales.map((item, indice) => (
+            <div key={`asset-${item.id}`} style={{width:96}}>
+              <img src={item.url} alt={`Foto ${indice + 1}`} style={{width:96,height:110,objectFit:"contain"}} />
+              <button type="button" disabled={deshabilitado} onClick={() => onCambiarGaleria(imagenesActuales.filter((_, i) => i !== indice), archivos)}>Quitar</button>
+            </div>
+          ))}
+          {archivos.map((item, indice) => (
+            <div key={`nuevo-${indice}-${item.name}`} style={{width:96}}>
+              {previews[indice] && <img src={previews[indice]} alt={`Nueva foto ${indice + 1}`} style={{width:96,height:110,objectFit:"contain"}} />}
+              <button type="button" disabled={deshabilitado} onClick={() => onCambiarGaleria(imagenesActuales, archivos.filter((_, i) => i !== indice))}>Quitar</button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="admin-productos__imagen">
-        <div className="admin-productos__imagen-miniatura">
+        {!onCambiarGaleria && <div className="admin-productos__imagen-miniatura">
           {hayImagen ? (
             <img src={urlMostrar} alt={etiqueta} />
           ) : (
             <FiImage aria-hidden="true" />
           )}
-        </div>
+        </div>}
 
         <div className="admin-productos__imagen-controles">
           <input
             ref={inputRef}
             id={idEntrada}
             type="file"
+            multiple={Boolean(onCambiarGaleria)}
             accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
             onChange={manejarCambio}
             disabled={deshabilitado}
@@ -114,15 +149,14 @@ function SelectorImagen({
 
           <FiUpload aria-hidden="true" />
 
-          <span className="admin-productos__imagen-estado">
+          {!onCambiarGaleria ? <span className="admin-productos__imagen-estado">
             {archivo
               ? `${archivo.name} · ${Math.round(archivo.size / 1024)} KB`
               : imagenActual
                 ? "Imagen guardada"
                 : "Sin imagen"}
-          </span>
-
-          {hayImagen && (
+          </span> : <span className="admin-productos__imagen-estado">{imagenesActuales.length + archivos.length} fotografías</span>}
+          {!onCambiarGaleria && hayImagen && (
             <button
               type="button"
               className="admin-productos__imagen-quitar"

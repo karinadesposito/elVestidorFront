@@ -1,6 +1,13 @@
-import { Fragment, useEffect, useState } from 'react'
+
+import { useEffect, useState } from 'react'
 import { Link, matchPath, useLocation } from 'react-router-dom'
-import { FiMenu, FiSearch, FiShoppingCart } from 'react-icons/fi'
+import {
+  FiMenu,
+  FiSearch,
+  FiShoppingCart,
+  FiChevronLeft,
+  FiChevronRight,
+} from 'react-icons/fi'
 
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
@@ -40,6 +47,15 @@ function Barra({
   const [compacta, setCompacta] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(null)
   const [menuMobileAbierto, setMenuMobileAbierto] = useState(false)
+  const [promoActual, setPromoActual] = useState(0)
+
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      setPromoActual(actual => (actual + 1) % promos.length)
+    }, 5000)
+
+    return () => clearInterval(intervalo)
+  }, [])
 
   useEffect(() => {
     if (esCatalogo) {
@@ -79,6 +95,12 @@ function Barra({
     }
   }, [])
 
+  function cambiarPromo(direccion) {
+    setPromoActual(actual =>
+      (actual + direccion + promos.length) % promos.length,
+    )
+  }
+
   function alternarMenu(menu) {
     setMenuAbierto(actual =>
       actual === menu ? null : menu,
@@ -108,29 +130,45 @@ function Barra({
   return (
     <>
       <header className={claseBarra}>
-        {!esCatalogo && (
-          <div className="barra__beneficio">
-            <div className="barra__cinta">
-              {Array.from({ length: 8 }, () => promos)
-                .flat()
-                .map((texto, i) => (
-                  <Fragment key={i}>
-                    <span className="barra__promo">
-                      {texto}
-                    </span>
+        <div className="barra__beneficio">
+          <div className="barra__cinta">
+            <button
+              type="button"
+              className="barra__flecha"
+              onClick={() => cambiarPromo(-1)}
+              aria-label="Beneficio anterior"
+            >
+              <FiChevronLeft />
+            </button>
 
-                    <img
-                      className="barra__divisor"
-                      src={logoSimbolo}
-                      alt=""
-                      width="512"
-                      height="512"
-                    />
-                  </Fragment>
-                ))}
+            <div className="barra__promo-contenido">
+              <img
+                className="barra__divisor"
+                src={logoSimbolo}
+                alt=""
+              />
+
+              <span className="barra__promo">
+                {promos[promoActual]}
+              </span>
+
+              <img
+                className="barra__divisor"
+                src={logoSimbolo}
+                alt=""
+              />
             </div>
+
+            <button
+              type="button"
+              className="barra__flecha"
+              onClick={() => cambiarPromo(1)}
+              aria-label="Siguiente beneficio"
+            >
+              <FiChevronRight />
+            </button>
           </div>
-        )}
+        </div>
 
         <Contenedor className="barra__contenedor">
           <button

@@ -533,6 +533,29 @@ async function resolverIdsImagen({ archivo, imagenActual, quitarImagen }) {
   }
   return null;
 }
+async function resolverGaleria({ imagenesActuales = [], archivos = [] }) {
+  const existentes = imagenesActuales.map((asset) => asset.id).filter(Boolean);
+  const subidos = [];
+  for (const archivo of archivos) {
+    const asset = await subirArchivoAAssets(archivo);
+    subidos.push(asset.id);
+  }
+  const assetIds = [...new Set([...existentes, ...subidos])];
+  return { assetIds, featuredAssetId: assetIds[0] || null };
+}
+async function sincronizarGaleriaColor(productId, color, galeria, omitirId = null) {
+  const producto = await obtenerProductoPorId(productId);
+  const destino = normalizarTexto(color);
+  const hermanas = (producto.variants || []).filter((variante) =>
+    String(variante.id) !== String(omitirId) &&
+    normalizarTexto(obtenerOpcionColor(variante.options || [])) === destino
+  );
+  for (const hermana of hermanas) {
+    await client.mutate({ mutation: ACTUALIZAR_VARIANTE, variables: {
+      input: { id: hermana.id, ...galeria }
+    }});
+  }
+}
 function obtenerValorFaceta(valoresFaceta, codigoFaceta) {
   return (
     valoresFaceta?.find((valor) => valor.facet?.code === codigoFaceta)?.name ||
@@ -588,6 +611,7 @@ function mapearVariante(variante, productoId) {
     activo: variante.enabled,
     stock: variante.stockOnHand ?? 0,
     imagen: mapearImagen(variante.featuredAsset),
+    galeria: (variante.assets || []).map(mapearImagen).filter(Boolean),
     color: obtenerOpcionColor(opciones),
     talle: obtenerOpcionTalle(opciones),
     opciones: opciones.map((opcion) => ({
@@ -1216,6 +1240,8 @@ export async function crearVariante({
   precio,
   activo,
   imagenArchivo,
+  imagenesActuales = [],
+  imagenesArchivos = [],
 }) {
   if (!productId) {
     throw new Error("Debés seleccionar un producto.");
@@ -1281,7 +1307,13 @@ export async function crearVariante({
   const nombreVariante = [opcionColor.name, opcionTalle?.name]
     .filter(Boolean)
     .join(" / ");
-  const imagen = await resolverIdsImagen({ archivo: imagenArchivo });
+  const hermanas = (producto.variants || []).filter((v) =>
+    normalizarTexto(obtenerOpcionColor(v.options || [])) === normalizarTexto(nombreColor));
+  const galeriaHermanas = hermanas[0]?.assets || [];
+  const imagen = await resolverGaleria({
+    imagenesActuales: imagenesActuales.length || imagenesArchivos.length ? imagenesActuales : galeriaHermanas,
+    archivos: imagenesArchivos.length ? imagenesArchivos : imagenArchivo ? [imagenArchivo] : [],
+  });
   const { data } = await client.mutate({
     mutation: CREAR_VARIANTE,
     variables: {
@@ -1312,6 +1344,9 @@ export async function crearVariante({
   if (!varianteCreada) {
     throw new Error("Vendure no pudo crear la variante.");
   }
+  if (hermanas.length && (imagenesArchivos.length || imagenesActuales.length)) {
+    await sincronizarGaleriaColor(productId, nombreColor, imagen, varianteCreada.id);
+  }
   return varianteCreada;
 }
 export async function actualizarVariante({
@@ -1323,6 +1358,11 @@ export async function actualizarVariante({
   imagenArchivo,
   imagenActual,
   quitarImagen,
+  productId,
+  color,
+  imagenesActuales = [],
+  imagenesArchivos = [],
+  galeriaModificada = false,
 }) {
   if (!variantId) {
     throw new Error("Debés seleccionar una variante.");
@@ -1331,11 +1371,9 @@ export async function actualizarVariante({
   if (!codigoSku) {
     throw new Error("El barcode o SKU es obligatorio.");
   }
-  const imagen = await resolverIdsImagen({
-    archivo: imagenArchivo,
-    imagenActual,
-    quitarImagen,
-  });
+  const imagen = galeriaModificada
+    ? await resolverGaleria({ imagenesActuales, archivos: imagenesArchivos })
+    : null;
   const { data } = await client.mutate({
     mutation: ACTUALIZAR_VARIANTE,
     variables: {
@@ -1357,6 +1395,9 @@ export async function actualizarVariante({
   const varianteActualizada = data.updateProductVariant;
   if (!varianteActualizada) {
     throw new Error("Vendure no pudo actualizar la variante.");
+  }
+  if (galeriaModificada && productId && color) {
+    await sincronizarGaleriaColor(productId, color, imagen, variantId);
   }
   return varianteActualizada;
 }
