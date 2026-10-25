@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
@@ -9,6 +10,7 @@ import {
   obtenerCarrito,
   agregarAlCarrito,
   eliminarDelCarrito,
+  actualizarCantidadCarrito,
 } from '../../servicios/carritoService'
 
 function TiendaLayout() {
@@ -17,12 +19,13 @@ function TiendaLayout() {
   const [cargandoCarrito, setCargandoCarrito] = useState(true)
   const [errorCarrito, setErrorCarrito] = useState('')
   const [lineaEliminandoId, setLineaEliminandoId] = useState(null)
+  const [lineaActualizandoId, setLineaActualizandoId] = useState(null)
+  const [errorLinea, setErrorLinea] = useState(null)
 
   const solicitudEnCurso = useRef(true)
 
   useEffect(() => {
     let activo = true
-
     solicitudEnCurso.current = true
 
     async function cargarCarritoInicial() {
@@ -57,17 +60,15 @@ function TiendaLayout() {
   async function abrirCarrito() {
     setCarritoAbierto(true)
 
-    if (solicitudEnCurso.current) {
-      return
-    }
+    if (solicitudEnCurso.current) return
 
     solicitudEnCurso.current = true
     setCargandoCarrito(true)
     setErrorCarrito('')
+    setErrorLinea(null)
 
     try {
-      const resultado = await obtenerCarrito()
-      setCarrito(resultado)
+      setCarrito(await obtenerCarrito())
     } catch (fallo) {
       setErrorCarrito(
         fallo.message || 'No pudimos consultar el carrito.',
@@ -92,6 +93,7 @@ function TiendaLayout() {
     solicitudEnCurso.current = true
     setCargandoCarrito(true)
     setErrorCarrito('')
+    setErrorLinea(null)
 
     try {
       const resultado = await agregarAlCarrito(varianteId, 1)
@@ -101,14 +103,13 @@ function TiendaLayout() {
 
       return resultado
     } catch (fallo) {
-      if (fallo.carrito) {
-        setCarrito(fallo.carrito)
-      }
+      if (fallo.carrito) setCarrito(fallo.carrito)
 
       setErrorCarrito(
         fallo.message || 'No pudimos agregar el producto.',
       )
 
+      setCarritoAbierto(true)
       throw fallo
     } finally {
       solicitudEnCurso.current = false
@@ -117,9 +118,7 @@ function TiendaLayout() {
   }
 
   async function eliminarProductoDelCarrito(lineaId) {
-    if (solicitudEnCurso.current) {
-      return
-    }
+    if (solicitudEnCurso.current) return
 
     const id = String(lineaId ?? '').trim()
 
@@ -132,22 +131,69 @@ function TiendaLayout() {
     setCargandoCarrito(true)
     setLineaEliminandoId(id)
     setErrorCarrito('')
+    setErrorLinea(null)
 
     try {
-      const resultado = await eliminarDelCarrito(id)
+      setCarrito(await eliminarDelCarrito(id))
+    } catch (fallo) {
+      if (fallo.carrito) setCarrito(fallo.carrito)
+
+      setErrorLinea({
+        id,
+        mensaje: fallo.message || 'No pudimos eliminar el producto.',
+      })
+    } finally {
+      solicitudEnCurso.current = false
+      setCargandoCarrito(false)
+      setLineaEliminandoId(null)
+    }
+  }
+
+  async function cambiarCantidadProducto(lineaId, cantidad) {
+    if (solicitudEnCurso.current) return
+
+    const id = String(lineaId ?? '').trim()
+
+    if (!id || !Number.isInteger(cantidad) || cantidad < 1) {
+      return
+    }
+
+    const linea = carrito?.lineas?.find(
+      item => String(item.id) === id,
+    )
+
+    if (!linea || linea.cantidad === cantidad) return
+
+    if (carrito?.estado !== 'AddingItems') {
+      setErrorLinea({
+        id,
+        mensaje: 'Este pedido está en proceso de pago y no puede modificarse.',
+      })
+      return
+    }
+
+    solicitudEnCurso.current = true
+    setCargandoCarrito(true)
+    setLineaActualizandoId(id)
+    setErrorCarrito('')
+    setErrorLinea(null)
+
+    try {
+      const resultado = await actualizarCantidadCarrito(id, cantidad)
       setCarrito(resultado)
     } catch (fallo) {
       if (fallo.carrito) {
         setCarrito(fallo.carrito)
       }
 
-      setErrorCarrito(
-        fallo.message || 'No pudimos eliminar el producto.',
-      )
+      setErrorLinea({
+        id,
+        mensaje: fallo.message || 'No pudimos cambiar la cantidad.',
+      })
     } finally {
       solicitudEnCurso.current = false
       setCargandoCarrito(false)
-      setLineaEliminandoId(null)
+      setLineaActualizandoId(null)
     }
   }
 
@@ -174,8 +220,11 @@ function TiendaLayout() {
         carrito={carrito}
         cargando={cargandoCarrito}
         error={errorCarrito}
+        errorLinea={errorLinea}
         lineaEliminandoId={lineaEliminandoId}
+        lineaActualizandoId={lineaActualizandoId}
         alEliminar={eliminarProductoDelCarrito}
+        alCambiarCantidad={cambiarCantidadProducto}
         alCerrar={cerrarCarrito}
       />
     </>
