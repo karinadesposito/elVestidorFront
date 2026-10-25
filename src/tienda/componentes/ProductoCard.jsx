@@ -1,4 +1,6 @@
+
 import { useId, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 
 import Boton from '../../componentesReuse/Boton'
 
@@ -14,7 +16,10 @@ function ProductoCard({
   alAgregarAlCarrito,
   cargandoCarrito = false,
 }) {
+  const { genero } = useParams()
+
   const [imagenFallida, setImagenFallida] = useState(null)
+  const [indiceImagen, setIndiceImagen] = useState(0)
   const [selectorAbierto, setSelectorAbierto] = useState(false)
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] =
     useState('')
@@ -37,11 +42,16 @@ function ProductoCard({
     producto.disponible !== false &&
     variantesDisponibles.length > 0
 
-  const imagen =
-    selectorAbierto && varianteSeleccionada?.imagen
-      ? varianteSeleccionada.imagen
-      : producto.imagen
+  const imagenes = producto.imagenes?.length
+    ? producto.imagenes
+    : producto.imagen
+      ? [producto.imagen]
+      : []
 
+  const indiceActual =
+    indiceImagen % Math.max(imagenes.length, 1)
+
+  const imagen = imagenes[indiceActual] || null
   const mostrarImagen = imagen && imagenFallida !== imagen
 
   const precio = selectorAbierto
@@ -49,6 +59,7 @@ function ProductoCard({
     : producto.precioDesde
 
   const tienePrecio = Number.isFinite(precio)
+
   const mostrarDesde =
     !selectorAbierto && producto.preciosDiferentes
 
@@ -58,6 +69,22 @@ function ProductoCard({
     tieneStock &&
     tienePrecio &&
     typeof alAgregarAlCarrito === 'function'
+
+  const rutaDetalle =
+    genero && producto.productoId
+      ? `/${genero}/producto/${producto.productoId}`
+      : null
+
+  function cambiarImagen(direccion) {
+    if (imagenes.length <= 1) return
+
+    setIndiceImagen(indice =>
+      (indice + direccion + imagenes.length) %
+      imagenes.length,
+    )
+
+    setImagenFallida(null)
+  }
 
   function cambiarTalle(evento) {
     setVarianteSeleccionadaId(evento.target.value)
@@ -106,21 +133,57 @@ function ProductoCard({
     }
   }
 
+  const contenidoImagen = mostrarImagen ? (
+    <img
+      src={imagen}
+      alt={producto.imagenAlt || producto.nombre}
+      loading="lazy"
+      decoding="async"
+      onError={() => setImagenFallida(imagen)}
+    />
+  ) : (
+    <span className="texto-etiqueta">
+      Sin imagen
+    </span>
+  )
+
   return (
     <article className="tarjeta producto-card">
       <div className="producto-card__imagen">
-        {mostrarImagen ? (
-          <img
-            src={imagen}
-            alt={producto.imagenAlt || producto.nombre}
-            loading="lazy"
-            decoding="async"
-            onError={() => setImagenFallida(imagen)}
-          />
+        {rutaDetalle ? (
+          <Link
+            to={rutaDetalle}
+            className="producto-card__enlace-imagen"
+            aria-label={`Ver detalle de ${producto.nombre}, color ${producto.color || 'único'}`}
+          >
+            {contenidoImagen}
+          </Link>
         ) : (
-          <span className="texto-etiqueta">
-            Sin imagen
-          </span>
+          contenidoImagen
+        )}
+
+        {imagenes.length > 1 && (
+          <div
+            className="producto-card__navegacion"
+            role="group"
+            aria-label={`Fotografías de ${producto.nombre}`}
+          >
+            <button
+              type="button"
+              aria-label="Fotografía anterior"
+              onClick={() => cambiarImagen(-1)}
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              aria-label="Fotografía siguiente"
+              onClick={() => cambiarImagen(1)}
+            >
+              ›
+            </button>
+          </div>
         )}
 
         <div className="producto-card__compra">
@@ -173,7 +236,18 @@ function ProductoCard({
           </span>
         )}
 
-        <h2>{producto.nombre}</h2>
+        <h2>
+          {rutaDetalle ? (
+            <Link
+              to={rutaDetalle}
+              className="producto-card__enlace-nombre"
+            >
+              {producto.nombre}
+            </Link>
+          ) : (
+            producto.nombre
+          )}
+        </h2>
 
         {producto.color && (
           <span className="texto-etiqueta">

@@ -1,0 +1,670 @@
+
+/* =========================================
+   EL VESTIDOR - DETALLE DE PRODUCTO
+   Mobile First
+========================================= */
+
+.detalle-producto {
+  width: 100%;
+  min-width: 0;
+  padding: 16px 16px 48px;
+  color: #111;
+  background: #fff;
+}
+
+.detalle-producto,
+.detalle-producto * {
+  box-sizing: border-box;
+}
+
+.detalle-producto__contenedor {
+  width: 100%;
+  max-width: 1160px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+/* =========================================
+   NAVEGACIÓN
+========================================= */
+
+.detalle-producto__migas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 18px;
+  color: #555;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.detalle-producto__migas a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.detalle-producto__migas a:hover {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detalle-producto__migas [aria-current='page'] {
+  color: #111;
+}
+
+/* =========================================
+   ESTRUCTURA PRINCIPAL
+========================================= */
+
+.detalle-producto__principal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* =========================================
+   GALERÍA - MOBILE FIRST
+========================================= */
+
+.detalle-producto__galeria {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.detalle-producto__imagen-principal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 4 / 4.5;
+  max-height: 370px;
+  overflow: hidden;
+  background: #f7f7f7;
+}
+
+.detalle-producto__imagen-principal > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.detalle-producto__imagen-principal > span {
+  color: #777;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Flechas de navegación */
+
+.detalle-producto__flechas {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.detalle-producto__flechas button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0 0 2px;
+  border: 1px solid #e7e7e7;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 94%);
+  color: #111;
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.detalle-producto__flechas button:hover {
+  background: #fff;
+  border-color: #999;
+}
+
+.detalle-producto__flechas button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+
+/* Miniaturas horizontales en mobile y tablet */
+
+.detalle-producto__miniaturas {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  padding: 2px 0 5px;
+  overflow: visible;
+}
+
+.detalle-producto__miniatura {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 61px;
+  padding: 2px;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.detalle-producto__miniatura--activa {
+  border: 2px solid #111;
+}
+
+.detalle-producto__miniatura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.detalle-producto__miniatura:hover {
+  border-color: #777;
+}
+
+.detalle-producto__miniatura:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+/* =========================================
+   INFORMACIÓN DEL PRODUCTO
+========================================= */
+
+.detalle-producto__informacion {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.detalle-producto__informacion h1 {
+  margin: 0 0 10px;
+  color: #111;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.detalle-producto__precio {
+  margin: 0 0 24px;
+  color: #111;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+/* =========================================
+   COLOR Y TALLE
+========================================= */
+
+.detalle-producto__campo {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 22px;
+}
+
+.detalle-producto__campo h2,
+.detalle-producto__descripcion h2 {
+  margin: 0;
+  color: #111;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.detalle-producto__opciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.detalle-producto__opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #d7d7d7;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.detalle-producto__opcion:hover:not(:disabled) {
+  border-color: #111;
+}
+
+.detalle-producto__opcion--activa {
+  border: 2px solid #111;
+  font-weight: 600;
+}
+
+.detalle-producto__opcion:disabled {
+  background: #f5f5f5;
+  color: #999;
+  opacity: 0.65;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.detalle-producto__opcion:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+
+.detalle-producto__sin-stock {
+  margin: 2px 0 0;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   CANTIDAD
+========================================= */
+
+.detalle-producto__cantidad {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  width: auto;
+  min-height: 36px;
+  border: 1px solid #d7d7d7;
+  background: #fff;
+}
+
+.detalle-producto__cantidad button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #111;
+  font-family: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.detalle-producto__cantidad button:hover:not(:disabled) {
+  background: #f3f3f3;
+}
+
+.detalle-producto__cantidad button:disabled {
+  color: #aaa;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.detalle-producto__cantidad button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: -3px;
+}
+
+.detalle-producto__cantidad output {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  padding: 0 5px;
+  color: #111;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================
+   BOTÓN AGREGAR AL CARRITO
+========================================= */
+
+.detalle-producto__informacion > .boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 2px;
+  padding: 10px 16px;
+  border: 1px solid #111;
+  border-radius: 0;
+  background: #111;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+}
+
+.detalle-producto__informacion > .boton:hover:not(:disabled) {
+  background: #333;
+  border-color: #333;
+}
+
+.detalle-producto__informacion > .boton:disabled {
+  background: #888;
+  border-color: #888;
+  color: #fff;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.detalle-producto__informacion > .boton:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+
+/* =========================================
+   ERRORES Y DESCRIPCIÓN
+========================================= */
+
+.detalle-producto__error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e3c8c8;
+  background: #fff5f5;
+  color: #9b2525;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.detalle-producto__descripcion {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+.detalle-producto__descripcion > div {
+  color: #444;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   MOBILE PEQUEÑO - 320px
+========================================= */
+
+@media (max-width: 359px) {
+  .detalle-producto {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .detalle-producto__imagen-principal {
+    max-height: 320px;
+  }
+
+  .detalle-producto__principal {
+    gap: 20px;
+  }
+
+  .detalle-producto__informacion h1 {
+    font-size: 19px;
+  }
+
+  .detalle-producto__precio {
+    margin-bottom: 20px;
+    font-size: 18px;
+  }
+
+  .detalle-producto__campo {
+    margin-bottom: 19px;
+  }
+}
+
+/* =========================================
+   TABLET - 768px
+========================================= */
+
+@media (min-width: 768px) {
+  .detalle-producto {
+    padding: 24px 28px 60px;
+  }
+
+  .detalle-producto__migas {
+    margin-bottom: 24px;
+  }
+
+  .detalle-producto__principal {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 0.9fr);
+    gap: 32px;
+  }
+
+  .detalle-producto__galeria {
+    max-width: 390px;
+  }
+
+  .detalle-producto__imagen-principal {
+    aspect-ratio: 4 / 5;
+    max-height: 460px;
+  }
+
+  .detalle-producto__informacion {
+    padding-top: 2px;
+  }
+
+  .detalle-producto__informacion h1 {
+    margin-bottom: 12px;
+    font-size: 21px;
+  }
+
+  .detalle-producto__precio {
+    margin-bottom: 28px;
+    font-size: 20px;
+  }
+
+  .detalle-producto__campo {
+    margin-bottom: 24px;
+  }
+
+  .detalle-producto__miniatura {
+    flex-basis: 52px;
+    width: 52px;
+    height: 66px;
+  }
+}
+
+/* =========================================
+   DESKTOP - 1024px
+   Miniaturas verticales a la izquierda
+========================================= */
+
+@media (min-width: 1024px) {
+  .detalle-producto {
+    padding: 28px 36px 80px;
+  }
+
+  .detalle-producto__contenedor {
+    max-width: 1160px;
+  }
+
+  .detalle-producto__migas {
+    margin-bottom: 28px;
+  }
+
+  .detalle-producto__principal {
+    grid-template-columns:
+      minmax(0, 500px)
+      minmax(0, 420px);
+    justify-content: center;
+    align-items: start;
+    gap: clamp(36px, 5vw, 70px);
+  }
+
+  .detalle-producto__galeria {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: start;
+    column-gap: 12px;
+    row-gap: 0;
+    width: 100%;
+    max-width: 500px;
+    min-width: 0;
+  }
+
+  .detalle-producto__imagen-principal {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 4 / 4.7;
+    max-height: 510px;
+  }
+
+  .detalle-producto__miniaturas {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    width: 60px;
+    min-width: 0;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .detalle-producto__miniatura {
+    flex: 0 0 auto;
+    width: 60px;
+    height: 76px;
+    padding: 2px;
+  }
+
+  .detalle-producto__informacion {
+    width: 100%;
+    max-width: 420px;
+    padding-top: 4px;
+  }
+
+  .detalle-producto__informacion h1 {
+    margin-bottom: 12px;
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  .detalle-producto__precio {
+    margin-bottom: 30px;
+    font-size: 21px;
+  }
+
+  .detalle-producto__campo {
+    margin-bottom: 26px;
+  }
+
+  .detalle-producto__flechas {
+    right: 12px;
+    left: 12px;
+  }
+
+  .detalle-producto__informacion > .boton {
+    max-width: 380px;
+  }
+
+  .detalle-producto__descripcion {
+    max-width: 380px;
+  }
+}
+
+/* =========================================
+   DESKTOP GRANDE - 1440px
+========================================= */
+
+@media (min-width: 1440px) {
+  .detalle-producto {
+    padding-top: 32px;
+  }
+
+  .detalle-producto__principal {
+    grid-template-columns: 480px 400px;
+    gap: 65px;
+  }
+
+  .detalle-producto__galeria {
+    max-width: 480px;
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+
+  .detalle-producto__imagen-principal {
+    max-height: 500px;
+  }
+
+  .detalle-producto__informacion {
+    max-width: 400px;
+  }
+}
+
+/* =========================================
+   ACCESIBILIDAD
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .detalle-producto *,
+  .detalle-producto *::before,
+  .detalle-producto *::after {
+    scroll-behavior: auto;
+    animation: none;
+    transition: none;
+  }
+}

@@ -79,15 +79,20 @@ function TiendaLayout() {
     }
   }
 
+  // Cierra el panel lateral del carrito.
   function cerrarCarrito() {
     setCarritoAbierto(false)
   }
 
-  async function agregarProductoAlCarrito(varianteId) {
+  async function agregarProductoAlCarrito(varianteId, cantidad = 1) {
     if (solicitudEnCurso.current) {
       throw new Error(
         'Esperá a que termine la actualización del carrito.',
       )
+    }
+
+    if (!Number.isInteger(cantidad) || cantidad < 1) {
+      throw new Error('La cantidad seleccionada no es válida.')
     }
 
     solicitudEnCurso.current = true
@@ -96,14 +101,16 @@ function TiendaLayout() {
     setErrorLinea(null)
 
     try {
-      const resultado = await agregarAlCarrito(varianteId, 1)
+      const resultado = await agregarAlCarrito(varianteId, cantidad)
 
       setCarrito(resultado)
       setCarritoAbierto(true)
 
       return resultado
     } catch (fallo) {
-      if (fallo.carrito) setCarrito(fallo.carrito)
+      if (fallo.carrito) {
+        setCarrito(fallo.carrito)
+      }
 
       setErrorCarrito(
         fallo.message || 'No pudimos agregar el producto.',
@@ -136,7 +143,9 @@ function TiendaLayout() {
     try {
       setCarrito(await eliminarDelCarrito(id))
     } catch (fallo) {
-      if (fallo.carrito) setCarrito(fallo.carrito)
+      if (fallo.carrito) {
+        setCarrito(fallo.carrito)
+      }
 
       setErrorLinea({
         id,
@@ -167,7 +176,8 @@ function TiendaLayout() {
     if (carrito?.estado !== 'AddingItems') {
       setErrorLinea({
         id,
-        mensaje: 'Este pedido está en proceso de pago y no puede modificarse.',
+        mensaje:
+          'Este pedido está en proceso de pago y no puede modificarse.',
       })
       return
     }
