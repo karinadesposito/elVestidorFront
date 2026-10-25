@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -8,6 +9,12 @@ const FORM_INICIAL = {
   email: "",
   sitioWeb: "",
 };
+
+const imagenes = [
+  "/imagenes/carrusel/02-alas.webp",
+  "/imagenes/carrusel/05-coco.webp",
+  "/imagenes/carrusel/08-amigos-noche.webp",
+];
 
 function Beneficios() {
   const [formAbierto, setFormAbierto] = useState(false);
@@ -24,11 +31,12 @@ function Beneficios() {
 
   async function manejarEnvio(e) {
     e.preventDefault();
-    if (enviando) {
-      return;
-    }
+
+    if (enviando) return;
+
     setEnviando(true);
     setError(null);
+
     try {
       const email = await suscribirseClub(form);
       setEmailEnviado(email);
@@ -43,35 +51,54 @@ function Beneficios() {
   return (
     <section className="beneficios">
       <Contenedor className="beneficios__contenedor">
-        <div className="beneficios__tarjeta">
-          <div className="beneficios__particulas" aria-hidden="true">
-            {Array.from({ length: 18 }).map((_, index) => (
-              <span key={index} />
-            ))}
-          </div>
+        <div className="beneficios__imagenes" aria-hidden="true">
+          {imagenes.map((imagen) => (
+            <img
+              key={imagen}
+              src={imagen}
+              alt=""
+              loading="lazy"
+            />
+          ))}
+        </div>
 
-          <p className="beneficios__etiqueta">El Vestidor Club</p>
+        <div className="beneficios__tarjeta">
+          <p className="beneficios__etiqueta">
+            El Vestidor Club
+          </p>
 
           {emailEnviado ? (
             <div className="beneficios__resultado" role="status">
               <h2 className="beneficios__titulo">¡Listo!</h2>
               <p className="beneficios__texto">
-                Si es la primera vez que te anotás, te va a llegar un correo a{" "}
-                <strong>{emailEnviado}</strong> para confirmar. Si ya eras parte
-                del Club, no tenés que hacer nada.
+                Si es la primera vez que te anotás, te va a
+                llegar un correo a{" "}
+                <strong>{emailEnviado}</strong> para confirmar.
+                Si ya eras parte del Club, no tenés que hacer
+                nada.
               </p>
             </div>
           ) : (
             <>
-              <h2 className="beneficios__titulo">No enviamos spam.</h2>
+              <h2 className="beneficios__titulo">
+                No enviamos spam.
+              </h2>
 
               <p className="beneficios__texto">
-                Sólo avisamos cuando llega algo que realmente vale la pena.
+                Sólo avisamos cuando llega algo que realmente
+                vale la pena.
               </p>
 
               {formAbierto ? (
-                <form className="beneficios__formulario" onSubmit={manejarEnvio} noValidate>
-                  <label className="beneficios__campo" htmlFor="club-nombre">
+                <form
+                  className="beneficios__formulario"
+                  onSubmit={manejarEnvio}
+                  noValidate
+                >
+                  <label
+                    className="beneficios__campo"
+                    htmlFor="club-nombre"
+                  >
                     <span>Nombre</span>
                     <input
                       id="club-nombre"
@@ -85,7 +112,11 @@ function Beneficios() {
                       autoFocus
                     />
                   </label>
-                  <label className="beneficios__campo" htmlFor="club-email">
+
+                  <label
+                    className="beneficios__campo"
+                    htmlFor="club-email"
+                  >
                     <span>Email</span>
                     <input
                       id="club-email"
@@ -100,7 +131,6 @@ function Beneficios() {
                     />
                   </label>
 
-                  {/* Campo trampa: invisible para las personas, los robots lo completan. */}
                   <input
                     className="beneficios__trampa"
                     name="sitioWeb"
@@ -118,17 +148,26 @@ function Beneficios() {
                     </p>
                   )}
 
-                  <Boton variante="promocional" type="submit" disabled={enviando}>
-                    {enviando ? "Enviando..." : "Unirme al Club →"}
+                  <Boton
+                    variante="promocional"
+                    type="submit"
+                    disabled={enviando}
+                  >
+                    {enviando
+                      ? "Enviando..."
+                      : "Unirme al Club →"}
                   </Boton>
 
                   <p className="beneficios__aclaracion">
-                    Te vamos a pedir que confirmes tu correo. Podés darte de
-                    baja cuando quieras.
+                    Te vamos a pedir que confirmes tu correo.
+                    Podés darte de baja cuando quieras.
                   </p>
                 </form>
               ) : (
-                <Boton variante="promocional" onClick={() => setFormAbierto(true)}>
+                <Boton
+                  variante="promocional"
+                  onClick={() => setFormAbierto(true)}
+                >
                   Unirme ahora →
                 </Boton>
               )}

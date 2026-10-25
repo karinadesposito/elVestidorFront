@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, matchPath, useLocation } from 'react-router-dom'
 import {
   FiMenu,
@@ -27,6 +27,9 @@ const promos = [
   'Cambios simples',
 ]
 
+const UMBRAL_COMPACTAR = 100
+const UMBRAL_EXPANDIR = 40
+
 function Barra({
   alAbrirCarrito,
   cantidadCarrito = 0,
@@ -34,14 +37,8 @@ function Barra({
   const { pathname } = useLocation()
 
   const esCatalogo = Boolean(
-    matchPath(
-      { path: '/:genero', end: true },
-      pathname,
-    ) ||
-    matchPath(
-      { path: '/:genero/:categoria', end: true },
-      pathname,
-    ),
+    matchPath({ path: '/:genero', end: true }, pathname) ||
+    matchPath({ path: '/:genero/:categoria', end: true }, pathname),
   )
 
   const [compacta, setCompacta] = useState(false)
@@ -49,32 +46,55 @@ function Barra({
   const [menuMobileAbierto, setMenuMobileAbierto] = useState(false)
   const [promoActual, setPromoActual] = useState(0)
 
+  const compactaRef = useRef(false)
+
   useEffect(() => {
-    const intervalo = setInterval(() => {
+    const intervalo = window.setInterval(() => {
       setPromoActual(actual => (actual + 1) % promos.length)
     }, 5000)
 
-    return () => clearInterval(intervalo)
+    return () => window.clearInterval(intervalo)
   }, [])
 
   useEffect(() => {
     if (esCatalogo) {
-      return
+      compactaRef.current = false
+      setCompacta(false)
+      return undefined
     }
 
-    const manejarScroll = () =>
-      setCompacta(window.scrollY > 0)
+    let cuadro = null
 
-    window.addEventListener(
-      'scroll',
-      manejarScroll,
-      { passive: true },
-    )
+    const actualizar = () => {
+      cuadro = null
+      const scroll = Math.max(0, window.scrollY)
+
+      if (!compactaRef.current && scroll >= UMBRAL_COMPACTAR) {
+        compactaRef.current = true
+        setCompacta(true)
+      } else if (
+        compactaRef.current &&
+        scroll <= UMBRAL_EXPANDIR
+      ) {
+        compactaRef.current = false
+        setCompacta(false)
+      }
+    }
+
+    const manejarScroll = () => {
+      if (cuadro !== null) return
+      cuadro = window.requestAnimationFrame(actualizar)
+    }
+
+    window.addEventListener('scroll', manejarScroll, {
+      passive: true,
+    })
 
     manejarScroll()
 
     return () => {
       window.removeEventListener('scroll', manejarScroll)
+      if (cuadro !== null) window.cancelAnimationFrame(cuadro)
     }
   }, [esCatalogo])
 
@@ -88,12 +108,14 @@ function Barra({
     document.addEventListener('mousedown', manejarClickFuera)
 
     return () => {
-      document.removeEventListener(
-        'mousedown',
-        manejarClickFuera,
-      )
+      document.removeEventListener('mousedown', manejarClickFuera)
     }
   }, [])
+
+  useEffect(() => {
+    setMenuAbierto(null)
+    setMenuMobileAbierto(false)
+  }, [pathname])
 
   function cambiarPromo(direccion) {
     setPromoActual(actual =>
@@ -102,9 +124,7 @@ function Barra({
   }
 
   function alternarMenu(menu) {
-    setMenuAbierto(actual =>
-      actual === menu ? null : menu,
-    )
+    setMenuAbierto(actual => actual === menu ? null : menu)
   }
 
   function cerrarMenu() {

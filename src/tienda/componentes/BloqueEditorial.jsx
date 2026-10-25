@@ -1,95 +1,166 @@
-import { useEffect, useState } from 'react'
-import Contenedor from '../../componentesReuse/Contenedor'
-import diaDelPadre from '../../recursos/imagenes/diaDelPadre.webp'
-import ventana from '../../recursos/imagenes/el_vestidor_4.webp'
-import Boton from '../../componentesReuse/Boton'
+
+import { useEffect, useRef, useState } from "react";
+
+import Contenedor from "../../componentesReuse/Contenedor";
+import Boton from "../../componentesReuse/Boton";
+
+import ventana from "../../recursos/imagenes/el_vestidor_4.webp";
+
 const slides = [
   {
-    etiqueta: 'Día del Padre',
-    titulo: 'El regalo perfecto',
-    texto: 'Calzado, abrigo y accesorios para elegir algo que realmente use.',
-    imagen: diaDelPadre,
-    ancho: 1536,
-    alto: 1024,
-    accion: 'Ver ideas',
+    id: "navidad",
+    titulo: "Navidad en El Vestidor",
+    imagen: "/imagenes/carrusel/el-vestidor-christmas.webp",
+    descripcion:
+      "Campaña de Navidad de El Vestidor. This Christmas, Be You.",
+    navidad: true,
   },
   {
-    etiqueta: 'Especial online',
-    titulo: 'Comprá cómodo',
-    texto: '3 cuotas sin interés para armar tu look completo desde casa.',
+    id: "online",
+    titulo: "Comprá cómodo",
+    etiqueta: "Especial online",
+    texto: "Armá tu look favorito y comprá desde donde quieras.",
     imagen: ventana,
-    ancho: 721,
-    alto: 1600,
-    accion: 'Explorar',
+    descripcion: "",
+    accion: "Explorar",
+    navidad: false,
   },
-]
+];
 
-const tiempoSlide = 5000
+const tiempoSlide = 5000;
 
 function BloqueEditorial() {
-  const [slideActivo, setSlideActivo] = useState(0)
+  const [slideActivo, setSlideActivo] = useState(0);
+  const [altura, setAltura] = useState(null);
+
+  const slidesRef = useRef([]);
+  const carruselRef = useRef(null);
 
   useEffect(() => {
     const intervalo = window.setInterval(() => {
-      setSlideActivo((slideActual) => (slideActual + 1) % slides.length)
-    }, tiempoSlide)
+      setSlideActivo(
+        (actual) => (actual + 1) % slides.length
+      );
+    }, tiempoSlide);
 
-    return () => window.clearInterval(intervalo)
-  }, [])
+    return () => window.clearInterval(intervalo);
+  }, []);
+
+  useEffect(() => {
+    const slide = slidesRef.current[slideActivo];
+
+    if (!slide) return;
+
+    const actualizarAltura = () => {
+      setAltura(slide.getBoundingClientRect().height);
+    };
+
+    actualizarAltura();
+
+    const observador = new ResizeObserver(actualizarAltura);
+    observador.observe(slide);
+
+    return () => observador.disconnect();
+  }, [slideActivo]);
+
+  function cambiarSlide(direccion) {
+    setSlideActivo(
+      (actual) =>
+        (actual + direccion + slides.length) % slides.length
+    );
+  }
 
   return (
-    <section className="bloque-editorial">
+    <section
+      className="bloque-editorial"
+      aria-label="Promociones de El Vestidor"
+    >
       <Contenedor className="bloque-editorial__contenedor">
-        <div className="bloque-editorial__carrusel">
+        <div
+          ref={carruselRef}
+          className="bloque-editorial__carrusel"
+          style={
+            altura !== null
+              ? { height: `${altura}px` }
+              : undefined
+          }
+        >
           <div
-            className={`bloque-editorial__pista bloque-editorial__pista--${slideActivo}`}
+            className="bloque-editorial__pista"
+            style={{
+              transform: `translateX(-${slideActivo * 100}%)`,
+            }}
           >
-            {slides.map((slide) => (
-              <article className="bloque-editorial__slide" key={slide.titulo}>
+            {slides.map((slide, indice) => (
+              <article
+                ref={(elemento) => {
+                  slidesRef.current[indice] = elemento;
+                }}
+                className={`bloque-editorial__slide ${
+                  slide.navidad
+                    ? "bloque-editorial__slide--navidad"
+                    : ""
+                }`}
+                key={slide.id}
+                aria-hidden={slideActivo !== indice}
+                inert={slideActivo !== indice}
+              >
                 <div className="bloque-editorial__imagen">
                   <img
                     src={slide.imagen}
-                    alt=""
-                    width={slide.ancho}
-                    height={slide.alto}
+                    alt={slide.descripcion}
+                    loading={indice === 0 ? "eager" : "lazy"}
+                    onLoad={() => {
+                      if (slideActivo === indice) {
+                        const elemento =
+                          slidesRef.current[indice];
+
+                        if (elemento) {
+                          setAltura(
+                            elemento.getBoundingClientRect().height
+                          );
+                        }
+                      }
+                    }}
                   />
                 </div>
 
-                <div className="bloque-editorial__texto">
-                  <p className="texto-etiqueta bloque-editorial__etiqueta">
-                    {slide.etiqueta}
-                  </p>
+                {!slide.navidad && (
+                  <div className="bloque-editorial__texto">
+                    <p className="texto-etiqueta bloque-editorial__etiqueta">
+                      {slide.etiqueta}
+                    </p>
 
-                  <h3>{slide.titulo}</h3>
+                    <h3>{slide.titulo}</h3>
 
-                  <p className="bloque-editorial__descripcion">
-                    {slide.texto}
-                  </p>
+                    <p className="bloque-editorial__descripcion">
+                      {slide.texto}
+                    </p>
 
-                  <Boton className="bloque-editorial__accion" tipo="promocional">
-                    {slide.accion} →
-                  </Boton>
-                </div>
+                    <Boton
+                      className="bloque-editorial__accion"
+                      tipo="promocional"
+                    >
+                      {slide.accion} →
+                    </Boton>
+                  </div>
+                )}
               </article>
             ))}
           </div>
 
           <button
-            aria-label="Anterior"
-            className="bloque-editorial__flecha bloque-editorial__flecha--previa"
-            onClick={() =>
-              setSlideActivo(
-                (slideActivo - 1 + slides.length) % slides.length,
-              )
-            }
             type="button"
+            className="bloque-editorial__flecha bloque-editorial__flecha--previa"
+            aria-label="Promoción anterior"
+            onClick={() => cambiarSlide(-1)}
           />
 
           <button
-            aria-label="Siguiente"
-            className="bloque-editorial__flecha bloque-editorial__flecha--siguiente"
-            onClick={() => setSlideActivo((slideActivo + 1) % slides.length)}
             type="button"
+            className="bloque-editorial__flecha bloque-editorial__flecha--siguiente"
+            aria-label="Promoción siguiente"
+            onClick={() => cambiarSlide(1)}
           />
         </div>
 
@@ -99,22 +170,22 @@ function BloqueEditorial() {
         >
           {slides.map((slide, indice) => (
             <button
+              type="button"
+              key={slide.id}
               aria-label={`Ver ${slide.titulo}`}
               aria-current={slideActivo === indice}
               className={
                 slideActivo === indice
-                  ? 'bloque-editorial__indicador bloque-editorial__indicador--activo'
-                  : 'bloque-editorial__indicador'
+                  ? "bloque-editorial__indicador bloque-editorial__indicador--activo"
+                  : "bloque-editorial__indicador"
               }
-              key={slide.titulo}
               onClick={() => setSlideActivo(indice)}
-              type="button"
             />
           ))}
         </div>
       </Contenedor>
     </section>
-  )
+  );
 }
 
-export default BloqueEditorial
+export default BloqueEditorial;
