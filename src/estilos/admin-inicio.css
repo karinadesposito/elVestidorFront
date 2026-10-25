@@ -1,7 +1,72 @@
+
+/* =========================================
+   ADMIN - INICIO
+   Mobile First
+   Reutiliza estructura.css
+========================================= */
+
+/* =========================================
+   RESUMEN DE PEDIDOS
+========================================= */
+
+.admin-inicio__estados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-2);
+}
+
+.admin-inicio__estados .estructura__tarjeta {
+  min-width: 0;
+  padding: var(--espacio-3);
+  background: var(--color-fondo-alternativo);
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio-lg);
+}
+
+.admin-inicio__estados .estructura__tarjeta span {
+  margin-bottom: var(--espacio-2);
+}
+
+.admin-inicio__estados .estructura__tarjeta strong {
+  display: block;
+  font-size: var(--estructura-texto-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================
+   PANEL DE VENTAS
+========================================= */
+
 .admin-inicio__ventas {
   display: grid;
-  gap: var(--espacio-2);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-3);
+  min-width: 0;
   margin-bottom: var(--espacio-2);
+  padding: var(--espacio-3);
+}
+
+/* Encabezado y períodos */
+
+.admin-inicio__ventas .estructura__panel-encabezado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-2);
+  margin-bottom: 0;
+}
+
+.admin-inicio__ventas .estructura__panel-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-1);
+  width: 100%;
+}
+
+.admin-inicio__ventas .estructura__panel-acciones .boton {
+  min-height: 2rem;
+  white-space: nowrap;
 }
 
 .admin-inicio__atajo--activo {
@@ -9,38 +74,149 @@
   color: var(--color-fondo-principal);
 }
 
+/* Fechas */
+
 .admin-inicio__fechas {
   display: flex;
   flex-wrap: wrap;
+  align-items: end;
   gap: var(--espacio-2);
+  min-width: 0;
+}
+
+.admin-inicio__fechas .estructura__campo {
+  flex: 1 1 8rem;
+  min-width: 0;
+  max-width: 12rem;
 }
 
 .admin-inicio__fechas input {
+  width: 100%;
+  min-width: 0;
   font: inherit;
 }
 
+/* =========================================
+   TOTALES DE VENTAS
+========================================= */
+
 .admin-inicio__totales {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  min-width: 0;
   margin-bottom: 0;
 }
+
+.admin-inicio__totales .estructura__tarjeta {
+  min-width: 0;
+  padding: var(--espacio-3);
+  background: var(--color-fondo-principal);
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio-lg);
+}
+
+.admin-inicio__totales .estructura__tarjeta span {
+  margin-bottom: var(--espacio-2);
+}
+
+.admin-inicio__totales .estructura__tarjeta strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: var(--estructura-texto-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Desglose de ventas */
 
 .admin-inicio__detalle,
 .admin-inicio__aclaracion {
   margin: 0;
   color: var(--color-texto-secundario);
-  font-size: 0.85rem;
+  font-size: var(--estructura-texto-sm);
+  line-height: 1.5;
+}
+
+.admin-inicio__detalle {
+  padding: var(--espacio-2) 0;
+  border-bottom: 1px solid var(--color-borde-suave);
 }
 
 .admin-inicio__detalle strong {
   color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semibold);
 }
 
+/* =========================================
+   VENTAS POR ESTADO
+========================================= */
+
+.admin-inicio__tabla-estados {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-inicio__tabla-estados .estructura__tabla-fila {
+  min-width: 0;
+}
+
+.admin-inicio__tabla-estados .estructura__tabla-dato {
+  min-width: 0;
+}
+
+/* =========================================
+   PEDIDOS RECIENTES
+========================================= */
+
+.admin-inicio__tabla {
+  min-width: 0;
+}
+
+.admin-inicio__tabla .estructura__tabla-dato {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   TABLET - DESDE 768px
+========================================= */
+
 @media (min-width: 48rem) {
+  /* Resumen superior */
+
   .admin-inicio__estados {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  /* Encabezado de ventas */
+
+  .admin-inicio__ventas .estructura__panel-encabezado {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-inicio__ventas .estructura__panel-acciones {
+    justify-content: flex-end;
+    width: auto;
+  }
+
+  /* Fechas */
+
+  .admin-inicio__fechas .estructura__campo {
+    flex: 0 1 10rem;
+  }
+
+  /* Totales */
+
   .admin-inicio__totales {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Tabla de estados */
+
+  .admin-inicio__tabla-estados {
+    max-width: 100%;
   }
 
   .admin-inicio__cabecera,
@@ -60,5 +236,101 @@
       minmax(7rem, 1.4fr)
       minmax(4rem, 0.6fr)
       minmax(6rem, 1fr);
+  }
+}
+
+/* =========================================
+   DESKTOP - DESDE 1024px
+========================================= */
+
+@media (min-width: 64rem) {
+  /* Resumen superior */
+
+  .admin-inicio__estados {
+    gap: var(--espacio-3);
+  }
+
+  .admin-inicio__estados .estructura__tarjeta {
+    padding: var(--espacio-3);
+  }
+
+  /* Panel de ventas */
+
+  .admin-inicio__ventas {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+    column-gap: var(--espacio-4);
+    align-items: start;
+  }
+
+  /* Encabezado y filtros ocupan todo el ancho */
+
+  .admin-inicio__ventas .estructura__panel-encabezado,
+  .admin-inicio__ventas .admin-inicio__fechas {
+    grid-column: 1 / -1;
+  }
+
+  /* Indicadores a todo el ancho */
+
+  .admin-inicio__totales {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Desglose a la izquierda */
+
+  .admin-inicio__detalle {
+    grid-column: 1;
+    align-self: start;
+    padding: var(--espacio-3);
+    background: var(--color-fondo-principal);
+    border: 1px solid var(--color-borde-suave);
+    border-radius: var(--radio-lg);
+  }
+
+  /* Estados a la derecha */
+
+  .admin-inicio__tabla-estados {
+    grid-column: 2;
+    width: 100%;
+    max-width: none;
+    overflow-x: auto;
+  }
+
+  .admin-inicio__cabecera-estados,
+  .admin-inicio__fila-estados {
+    --estructura-tabla-ancho-minimo: 100%;
+    --estructura-tabla-columnas:
+      minmax(8rem, 1.3fr)
+      minmax(4rem, 0.5fr)
+      minmax(7rem, 1fr);
+  }
+
+  /* Aclaración debajo de ambos bloques */
+
+  .admin-inicio__aclaracion {
+    grid-column: 1 / -1;
+  }
+
+  /* Pedidos recientes y alertas */
+
+  .estructura__grilla:has(.admin-inicio__tabla) {
+    grid-template-columns:
+      minmax(0, 3fr)
+      minmax(15rem, 1fr);
+    align-items: start;
+  }
+
+  /* Tabla de pedidos */
+
+  .admin-inicio__cabecera,
+  .admin-inicio__fila {
+    --estructura-tabla-ancho-minimo: 100%;
+    --estructura-tabla-columnas:
+      minmax(9rem, 1.1fr)
+      minmax(10rem, 1.4fr)
+      minmax(8rem, 0.9fr)
+      minmax(8rem, 0.9fr);
   }
 }
