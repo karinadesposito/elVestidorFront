@@ -1,12 +1,9 @@
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
-
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
 import { useAuth } from "../contexto/AuthContext";
-
 import {
   buscarVariantePorBarcode,
   contarStock,
@@ -18,12 +15,9 @@ import {
   registrarBajaMostrador,
   registrarIngresoStock,
 } from "../servicios/stockService";
-
 import { obtenerCatalogosProducto } from "../servicios/productosService";
-
 import "../../estilos/admin-productos.css";
 import "../../estilos/admin-stock.css";
-
 function obtenerFechaActual() {
   const fecha = new Date();
   const anio = fecha.getFullYear();
@@ -31,7 +25,6 @@ function obtenerFechaActual() {
   const dia = String(fecha.getDate()).padStart(2, "0");
   return `${anio}-${mes}-${dia}`;
 }
-
 function crearFormularioIngresoInicial() {
   return {
     proveedorId: "",
@@ -41,19 +34,16 @@ function crearFormularioIngresoInicial() {
     observaciones: "",
   };
 }
-
 const FORM_PROVEEDOR_INICIAL = {
   nombre: "",
   cuit: "",
   telefono: "",
 };
-
 const FORM_BAJA_INICIAL = {
   barcode: "",
   cantidad: "1",
   motivo: "Venta mostrador",
 };
-
 function normalizarBusqueda(valor) {
   return String(valor || "")
     .toLowerCase()
@@ -61,7 +51,6 @@ function normalizarBusqueda(valor) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
 }
-
 function cantidadValida(valor) {
   const cantidad = Number(valor);
   return (
@@ -71,17 +60,14 @@ function cantidadValida(valor) {
     cantidad <= 9999
   );
 }
-
 function agruparProductos(variantes) {
   const grupos = new Map();
-
   variantes.forEach((variante) => {
     const clave = [
       variante.producto,
       variante.marcaId,
       variante.tipoProductoId,
     ].join("|");
-
     if (!grupos.has(clave)) {
       grupos.set(clave, {
         clave,
@@ -91,43 +77,34 @@ function agruparProductos(variantes) {
         variantes: [],
       });
     }
-
     grupos.get(clave).variantes.push(variante);
   });
-
   return Array.from(grupos.values()).sort((a, b) =>
     a.nombre.localeCompare(b.nombre, "es"),
   );
 }
-
 function Stock() {
   const { puede } = useAuth();
   const puedeDarDeBaja = puede("AjustarStockManual");
-
   const [stock, setStock] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroMarca, setFiltroMarca] = useState("");
   const [filtroTipoProducto, setFiltroTipoProducto] = useState("");
-
   const [catalogosProducto, setCatalogosProducto] = useState({
     marcas: [],
     tiposProducto: [],
   });
-
   const [categoriasStock, setCategoriasStock] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-
   const [cargando, setCargando] = useState(true);
   const [cargandoProveedores, setCargandoProveedores] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [guardandoProveedor, setGuardandoProveedor] = useState(false);
   const [guardandoBaja, setGuardandoBaja] = useState(false);
   const [buscandoBarcode, setBuscandoBarcode] = useState(false);
-
   const [error, setError] = useState(null);
   const [mensajeExito, setMensajeExito] = useState("");
   const [modalAbierto, setModalAbierto] = useState(null);
-
   const [formIngreso, setFormIngreso] = useState(
     crearFormularioIngresoInicial,
   );
@@ -135,21 +112,22 @@ function Stock() {
     FORM_PROVEEDOR_INICIAL,
   );
   const [formBaja, setFormBaja] = useState(FORM_BAJA_INICIAL);
-
   const [busquedaIngreso, setBusquedaIngreso] = useState("");
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [varianteDestacadaId, setVarianteDestacadaId] = useState(null);
   const [cantidades, setCantidades] = useState({});
   const [detalles, setDetalles] = useState([]);
   const [barcodeNoEncontrado, setBarcodeNoEncontrado] = useState(false);
-
   const buscadorIngresoRef = useRef(null);
-
+  useEffect(() => {
+    if (!mensajeExito) return;
+    const temporizador = setTimeout(() => setMensajeExito(""), 4500);
+    return () => clearTimeout(temporizador);
+  }, [mensajeExito]);
   useEffect(() => {
     async function cargarInicial() {
       setCargando(true);
       setError(null);
-
       try {
         const [datosStock, datosProveedores, catalogos] =
           await Promise.all([
@@ -157,7 +135,6 @@ function Stock() {
             obtenerProveedores(),
             obtenerCatalogosProducto(),
           ]);
-
         setStock(datosStock.stock);
         setCategoriasStock(contarStock(datosStock.stock));
         setProveedores(datosProveedores);
@@ -168,19 +145,15 @@ function Stock() {
         setCargando(false);
       }
     }
-
     cargarInicial();
   }, []);
-
   async function recargarStock() {
     const datosStock = await obtenerDatosStock();
     setStock(datosStock.stock);
     setCategoriasStock(contarStock(datosStock.stock));
   }
-
   async function recargarProveedores() {
     setCargandoProveedores(true);
-
     try {
       const datos = await obtenerProveedores();
       setProveedores(datos);
@@ -189,17 +162,13 @@ function Stock() {
       setCargandoProveedores(false);
     }
   }
-
   const productos = useMemo(
     () => agruparProductos(stock),
     [stock],
   );
-
   const productosEncontrados = useMemo(() => {
     const termino = normalizarBusqueda(busquedaIngreso);
-
     if (!termino) return [];
-
     return productos
       .filter((producto) => {
         const datos = [
@@ -211,39 +180,32 @@ function Stock() {
             variante.variante,
           ]),
         ];
-
         return datos.some((dato) =>
           normalizarBusqueda(dato).includes(termino),
         );
       })
       .slice(0, 12);
   }, [productos, busquedaIngreso]);
-
   const stockFiltrado = filtrarStock(stock, {
     busqueda,
     marcaId: filtroMarca,
     tipoProductoId: filtroTipoProducto,
   });
-
   const proveedorSeleccionado = proveedores.find(
     (proveedor) =>
       String(proveedor.id) === String(formIngreso.proveedorId),
   );
-
   const proveedoresSugeridos = filtrarProveedores(
     proveedores,
     formIngreso.proveedorNombre,
   );
-
   const mostrarSugerenciasProveedor =
     Boolean(formIngreso.proveedorNombre.trim()) &&
     !proveedorSeleccionado;
-
   const totalUnidades = detalles.reduce(
     (total, detalle) => total + (Number(detalle.cantidad) || 0),
     0,
   );
-
   function abrirModalIngreso() {
     setError(null);
     setMensajeExito("");
@@ -256,10 +218,8 @@ function Stock() {
     setBarcodeNoEncontrado(false);
     setModalAbierto("ingreso");
   }
-
   function cerrarModalIngreso() {
     if (guardando) return;
-
     setModalAbierto(null);
     setError(null);
     setBusquedaIngreso("");
@@ -269,7 +229,6 @@ function Stock() {
     setDetalles([]);
     setBarcodeNoEncontrado(false);
   }
-
   function seleccionarProducto(producto, varianteId = null) {
     setProductoSeleccionado(producto);
     setVarianteDestacadaId(
@@ -280,59 +239,47 @@ function Stock() {
     setBarcodeNoEncontrado(false);
     setError(null);
   }
-
   async function buscarPorBarcode() {
     const codigo = busquedaIngreso.trim();
-
     if (!codigo || buscandoBarcode) return;
-
     const varianteLocal = stock.find(
-      (item) =>
-        normalizarBusqueda(item.barcode) ===
-        normalizarBusqueda(codigo),
+      (item) => normalizarBusqueda(item.barcode) === normalizarBusqueda(codigo),
     );
-
     if (varianteLocal) {
       const producto = productos.find((grupo) =>
-        grupo.variantes.some(
-          (item) => String(item.id) === String(varianteLocal.id),
-        ),
+        grupo.variantes.some((item) => String(item.id) === String(varianteLocal.id)),
       );
-
       if (producto) {
         seleccionarProducto(producto, varianteLocal.id);
         return;
       }
     }
-
+    if (productosEncontrados.length === 1) {
+      seleccionarProducto(productosEncontrados[0]);
+      return;
+    }
+    if (productosEncontrados.length > 1) {
+      setError(null);
+      setBarcodeNoEncontrado(false);
+      return;
+    }
     setBuscandoBarcode(true);
     setError(null);
     setBarcodeNoEncontrado(false);
-
     try {
       const variante = await buscarVariantePorBarcode(codigo);
-
       if (!variante) {
         setBarcodeNoEncontrado(true);
-        setError(
-          `No existe una variante con el barcode ${codigo}.`,
-        );
+        setError(`No se encontraron productos ni variantes con el código ${codigo}.`);
         return;
       }
-
       const producto = productos.find((grupo) =>
-        grupo.variantes.some(
-          (item) => String(item.id) === String(variante.id),
-        ),
+        grupo.variantes.some((item) => String(item.id) === String(variante.id)),
       );
-
       if (!producto) {
-        setError(
-          "La variante existe, pero no está en el listado cargado. Actualizá la página.",
-        );
+        setError("La variante existe, pero no está en el listado cargado. Actualizá la página.");
         return;
       }
-
       seleccionarProducto(producto, variante.id);
     } catch (err) {
       setError(err.message);
@@ -340,57 +287,45 @@ function Stock() {
       setBuscandoBarcode(false);
     }
   }
-
   function manejarTeclaBusquedaIngreso(e) {
     if (e.key !== "Enter") return;
-
     e.preventDefault();
     buscarPorBarcode();
   }
-
   function manejarCantidad(varianteId, valor) {
     setCantidades((anterior) => ({
       ...anterior,
       [String(varianteId)]: valor,
     }));
-
     setError(null);
   }
-
   function agregarVariantesSeleccionadas() {
     if (!productoSeleccionado) return;
-
     const seleccionadas = productoSeleccionado.variantes.filter(
       (variante) =>
         String(cantidades[String(variante.id)] ?? "").trim() !== "",
     );
-
     if (seleccionadas.length === 0) {
       setError("Ingresá una cantidad en al menos una variante.");
       return;
     }
-
     for (const variante of seleccionadas) {
       const cantidad = cantidades[String(variante.id)];
-
       if (!cantidadValida(cantidad)) {
         setError(
           `La cantidad de ${variante.variante} debe ser un entero entre 1 y 9999.`,
         );
         return;
       }
-
       if (!variante.barcode) {
         setError(
           `La variante ${variante.variante} no tiene SKU/barcode.`,
         );
         return;
       }
-
       const existente = detalles.find(
         (detalle) => String(detalle.id) === String(variante.id),
       );
-
       if (
         existente &&
         Number(existente.cantidad) + Number(cantidad) > 9999
@@ -401,17 +336,13 @@ function Stock() {
         return;
       }
     }
-
     setDetalles((anteriores) => {
       const nuevos = [...anteriores];
-
       seleccionadas.forEach((variante) => {
         const cantidad = Number(cantidades[String(variante.id)]);
-
         const indice = nuevos.findIndex(
           (detalle) => String(detalle.id) === String(variante.id),
         );
-
         if (indice >= 0) {
           nuevos[indice] = {
             ...nuevos[indice],
@@ -424,21 +355,17 @@ function Stock() {
           });
         }
       });
-
       return nuevos;
     });
-
     setCantidades({});
     setProductoSeleccionado(null);
     setVarianteDestacadaId(null);
     setBusquedaIngreso("");
     setError(null);
-
     setTimeout(() => {
       buscadorIngresoRef.current?.focus();
     }, 0);
   }
-
   function modificarCantidadDetalle(varianteId, valor) {
     setDetalles((anteriores) =>
       anteriores.map((detalle) =>
@@ -447,23 +374,18 @@ function Stock() {
           : detalle,
       ),
     );
-
     setError(null);
   }
-
   function quitarDetalle(varianteId) {
     setDetalles((anteriores) =>
       anteriores.filter(
         (detalle) => String(detalle.id) !== String(varianteId),
       ),
     );
-
     setError(null);
   }
-
   function manejarCampoIngreso(e) {
     const { name, value } = e.target;
-
     setFormIngreso((anterior) => ({
       ...anterior,
       [name]: value,
@@ -471,46 +393,35 @@ function Stock() {
         ? { proveedorId: "" }
         : {}),
     }));
-
     setError(null);
   }
-
   function seleccionarProveedor(proveedor) {
     setFormIngreso((anterior) => ({
       ...anterior,
       proveedorId: proveedor.id,
       proveedorNombre: proveedor.nombre,
     }));
-
     setError(null);
   }
-
   function manejarTeclaProveedor(e) {
     if (e.key !== "Enter") return;
-
     e.preventDefault();
-
     if (!proveedorSeleccionado) {
       setError("Debés seleccionar un proveedor de la lista.");
     }
   }
-
   function abrirModalProveedor() {
     setError(null);
     setFormProveedor({ ...FORM_PROVEEDOR_INICIAL });
     setModalAbierto("proveedor");
   }
-
   function volverAlIngreso() {
     if (guardandoProveedor) return;
-
     setError(null);
     setModalAbierto("ingreso");
   }
-
   function manejarCampoProveedor(e) {
     const { name, value } = e.target;
-
     setFormProveedor((anterior) => ({
       ...anterior,
       [name]:
@@ -518,28 +429,21 @@ function Stock() {
           ? value.replace(/\D/g, "").slice(0, 15)
           : value,
     }));
-
     setError(null);
   }
-
   async function manejarCrearProveedor(e) {
     e.preventDefault();
-
     if (guardandoProveedor) return;
-
     setGuardandoProveedor(true);
     setError(null);
-
     try {
       const creado = await crearProveedor(formProveedor);
       const actualizados = await recargarProveedores();
-
       const seleccionado =
         actualizados.find(
           (proveedor) =>
             String(proveedor.id) === String(creado.id),
         ) || creado;
-
       seleccionarProveedor(seleccionado);
       setFormProveedor(FORM_PROVEEDOR_INICIAL);
       setMensajeExito(
@@ -552,22 +456,17 @@ function Stock() {
       setGuardandoProveedor(false);
     }
   }
-
   async function manejarRegistrarIngreso(e) {
     e.preventDefault();
-
     if (guardando) return;
-
     if (detalles.length === 0) {
       setError("Agregá al menos una variante al ingreso.");
       return;
     }
-
     if (!formIngreso.proveedorId) {
       setError("Debés seleccionar un proveedor de la lista.");
       return;
     }
-
     if (
       detalles.some(
         (detalle) => !cantidadValida(detalle.cantidad),
@@ -578,11 +477,9 @@ function Stock() {
       );
       return;
     }
-
     setGuardando(true);
     setError(null);
     setMensajeExito("");
-
     try {
       await registrarIngresoStock({
         proveedorId: formIngreso.proveedorId,
@@ -594,9 +491,7 @@ function Stock() {
           cantidad: Number(detalle.cantidad),
         })),
       });
-
       await recargarStock();
-
       setModalAbierto(null);
       setFormIngreso(crearFormularioIngresoInicial());
       setBusquedaIngreso("");
@@ -604,7 +499,6 @@ function Stock() {
       setVarianteDestacadaId(null);
       setCantidades({});
       setDetalles([]);
-
       setMensajeExito(
         "Ingreso de stock registrado correctamente.",
       );
@@ -614,49 +508,36 @@ function Stock() {
       setGuardando(false);
     }
   }
-
   function abrirModalBaja() {
     setError(null);
     setMensajeExito("");
     setFormBaja(FORM_BAJA_INICIAL);
     setModalAbierto("baja");
   }
-
   function cerrarModalBaja() {
     if (guardandoBaja) return;
-
     setModalAbierto(null);
     setError(null);
   }
-
   function manejarCampoBaja(e) {
     const { name, value } = e.target;
-
     setFormBaja((anterior) => ({
       ...anterior,
       [name]: value,
     }));
-
     setError(null);
   }
-
   async function manejarRegistrarBaja(e) {
     e.preventDefault();
-
     if (guardandoBaja) return;
-
     setGuardandoBaja(true);
     setError(null);
     setMensajeExito("");
-
     try {
       const baja = await registrarBajaMostrador(formBaja);
-
       await recargarStock();
-
       setModalAbierto(null);
       setFormBaja(FORM_BAJA_INICIAL);
-
       setMensajeExito(
         `Baja registrada: ${baja.barcode} pasó de ${baja.stockAnterior} a ${baja.stockResultante} unidades.`,
       );
@@ -666,7 +547,6 @@ function Stock() {
       setGuardandoBaja(false);
     }
   }
-
   function abrirProductos() {
     window.open(
       "/admin/productos",
@@ -674,7 +554,6 @@ function Stock() {
       "noopener,noreferrer",
     );
   }
-
   return (
     <main className="estructura">
       <Contenedor>
@@ -683,19 +562,15 @@ function Stock() {
             <h1 className="estructura__titulo">Stock</h1>
           </div>
         </header>
-
         {cargando && <p>Cargando stock...</p>}
-
         {error && !modalAbierto && (
           <p className="login-admin__error">{error}</p>
         )}
-
         {mensajeExito && !modalAbierto && (
           <p className="estructura__tarjeta fondo-verde">
             {mensajeExito}
           </p>
         )}
-
         {!cargando && (
           <>
             <section
@@ -713,11 +588,9 @@ function Stock() {
                 </article>
               ))}
             </section>
-
             <section className="estructura__panel">
               <div className="estructura__panel-encabezado">
                 <h2>Listado de stock</h2>
-
                 <div className="estructura__panel-acciones">
                   <Boton
                     variante="admin"
@@ -725,7 +598,6 @@ function Stock() {
                   >
                     Nuevo ingreso stock
                   </Boton>
-
                   {puedeDarDeBaja && (
                     <Boton
                       variante="admin"
@@ -736,16 +608,13 @@ function Stock() {
                   )}
                 </div>
               </div>
-
               <div id="stock-controles">
                 <div className="admin-productos__buscador">
                   <label htmlFor="buscar-stock">
                     Buscar variantes
                   </label>
-
                   <div className="admin-productos__buscador-control">
                     <FiSearch aria-hidden="true" />
-
                     <input
                       id="buscar-stock"
                       type="text"
@@ -757,7 +626,6 @@ function Stock() {
                       autoComplete="off"
                       aria-controls="listado-stock"
                     />
-
                     {busqueda && (
                       <button
                         type="button"
@@ -774,13 +642,11 @@ function Stock() {
                     )}
                   </div>
                 </div>
-
                 <div className="admin-productos__filtros">
                   <div className="estructura__campo">
                     <label htmlFor="stock-filtro-marca">
                       Marca
                     </label>
-
                     <select
                       id="stock-filtro-marca"
                       value={filtroMarca}
@@ -790,7 +656,6 @@ function Stock() {
                       aria-controls="listado-stock"
                     >
                       <option value="">Todas las marcas</option>
-
                       {catalogosProducto.marcas.map((marca) => (
                         <option
                           key={marca.id}
@@ -801,12 +666,10 @@ function Stock() {
                       ))}
                     </select>
                   </div>
-
                   <div className="estructura__campo">
                     <label htmlFor="stock-filtro-tipo">
                       Tipo Prod.
                     </label>
-
                     <select
                       id="stock-filtro-tipo"
                       value={filtroTipoProducto}
@@ -818,7 +681,6 @@ function Stock() {
                       <option value="">
                         Todos los tipos
                       </option>
-
                       {catalogosProducto.tiposProducto.map(
                         (tipoProducto) => (
                           <option
@@ -831,7 +693,6 @@ function Stock() {
                       )}
                     </select>
                   </div>
-
                   {(filtroMarca || filtroTipoProducto) && (
                     <Boton
                       variante="admin"
@@ -846,7 +707,6 @@ function Stock() {
                   )}
                 </div>
               </div>
-
               <div
                 className="estructura__tabla"
                 id="listado-stock"
@@ -861,7 +721,6 @@ function Stock() {
                   <span>Estado</span>
                   <span>Último ingreso</span>
                 </div>
-
                 {stockFiltrado.length === 0 && (
                   <p role="status">
                     {stock.length === 0
@@ -869,7 +728,6 @@ function Stock() {
                       : "No hay variantes que coincidan con la búsqueda y los filtros."}
                   </p>
                 )}
-
                 {stockFiltrado.map((item) => (
                   <article
                     className={`estructura__tabla-fila admin-stock__fila ${item.color}`}
@@ -881,49 +739,42 @@ function Stock() {
                       </span>
                       <strong>{item.barcode || "—"}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Producto
                       </span>
                       <span>{item.producto}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Variante
                       </span>
                       <span>{item.variante}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Stock
                       </span>
                       <strong>{item.stock}</strong>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Marca
                       </span>
                       <span>{item.marca || "—"}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Tipo Prod.
                       </span>
                       <span>{item.tipoProducto || "—"}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Estado
                       </span>
                       <span>{item.estado}</span>
                     </div>
-
                     <div className="estructura__tabla-dato">
                       <span className="estructura__tabla-etiqueta">
                         Último ingreso
@@ -937,7 +788,6 @@ function Stock() {
           </>
         )}
       </Contenedor>
-
       {modalAbierto === "ingreso" && (
         <ModalAdmin
           titulo="Nuevo ingreso stock"
@@ -957,24 +807,14 @@ function Stock() {
                 {error}
               </p>
             )}
-
-            {mensajeExito && (
-              <p className="estructura__tarjeta fondo-verde">
-                {mensajeExito}
-              </p>
-            )}
-
             <section className="estructura__panel">
               <h3>1. Seleccionar mercadería</h3>
-
               <div className="estructura__campo">
                 <label htmlFor="stock-buscar-producto">
                   Buscar producto o escanear barcode
                 </label>
-
                 <div className="admin-productos__buscador-control">
                   <FiSearch aria-hidden="true" />
-
                   <input
                     id="stock-buscar-producto"
                     ref={buscadorIngresoRef}
@@ -990,7 +830,6 @@ function Stock() {
                     autoComplete="off"
                     autoFocus
                   />
-
                   {busquedaIngreso && (
                     <button
                       type="button"
@@ -1004,7 +843,6 @@ function Stock() {
                     </button>
                   )}
                 </div>
-
                 <div className="estructura__panel-acciones">
                   <Boton
                     variante="admin"
@@ -1017,10 +855,9 @@ function Stock() {
                   >
                     {buscandoBarcode
                       ? "Buscando..."
-                      : "Buscar barcode"}
+                      : "Buscar"}
                   </Boton>
                 </div>
-
                 {barcodeNoEncontrado && (
                   <div className="estructura__panel-acciones">
                     <Boton
@@ -1032,14 +869,12 @@ function Stock() {
                     </Boton>
                   </div>
                 )}
-
                 {busquedaIngreso.trim() &&
                   productosEncontrados.length === 0 && (
                     <p>
                       No se encontraron productos en el listado.
                     </p>
                   )}
-
                 {productosEncontrados.length > 0 && (
                   <div className="estructura__tabla">
                     {productosEncontrados.map((producto) => (
@@ -1048,13 +883,11 @@ function Stock() {
                         key={producto.clave}
                       >
                         <strong>{producto.nombre}</strong>
-
                         <span>
                           {producto.marca || "Sin marca"}
                           {" · "}
                           {producto.variantes.length} variantes
                         </span>
-
                         <Boton
                           variante="admin"
                           type="button"
@@ -1069,18 +902,15 @@ function Stock() {
                   </div>
                 )}
               </div>
-
               {productoSeleccionado && (
                 <div className="estructura__tarjeta">
                   <h3>{productoSeleccionado.nombre}</h3>
-
                   <p>
                     {productoSeleccionado.marca}
                     {productoSeleccionado.tipoProducto
                       ? ` · ${productoSeleccionado.tipoProducto}`
                       : ""}
                   </p>
-
                   <div className="estructura__tabla">
                     <div className="estructura__lista-item">
                       <strong>Variantes del producto</strong>
@@ -1089,13 +919,11 @@ function Stock() {
                         talles recibidos.
                       </span>
                     </div>
-
                     {productoSeleccionado.variantes.map(
                       (variante) => {
                         const destacada =
                           varianteDestacadaId !== null &&
                           String(variante.id) === varianteDestacadaId;
-
                         return (
                           <div
                             className="estructura__lista-item"
@@ -1114,23 +942,19 @@ function Stock() {
                               {variante.variante}
                               {destacada ? " · Código encontrado" : ""}
                             </strong>
-
                             <span>
                               SKU / Barcode:{" "}
                               {variante.barcode || "Sin código"}
                             </span>
-
                             <span>
                               Stock actual: {variante.stock}
                             </span>
-
                             <div className="estructura__campo">
                               <label
                                 htmlFor={`ingreso-cantidad-${variante.id}`}
                               >
                                 Cantidad recibida
                               </label>
-
                               <input
                                 id={`ingreso-cantidad-${variante.id}`}
                                 type="number"
@@ -1155,7 +979,6 @@ function Stock() {
                       },
                     )}
                   </div>
-
                   <div className="estructura__panel-acciones">
                     <Boton
                       variante="admin"
@@ -1164,7 +987,6 @@ function Stock() {
                     >
                       Agregar variantes seleccionadas
                     </Boton>
-
                     <Boton
                       variante="admin"
                       type="button"
@@ -1181,10 +1003,8 @@ function Stock() {
                 </div>
               )}
             </section>
-
             <section className="estructura__panel">
               <h3>Mercadería preparada</h3>
-
               {detalles.length === 0 ? (
                 <p>
                   Todavía no agregaste variantes al ingreso.
@@ -1197,31 +1017,25 @@ function Stock() {
                       const valida = cantidadValida(
                         detalle.cantidad,
                       );
-
                       return (
                         <article
                           className="estructura__lista-item"
                           key={detalle.id}
                         >
                           <strong>{detalle.producto}</strong>
-
                           <span>{detalle.variante}</span>
-
                           <span>
                             Barcode: {detalle.barcode}
                           </span>
-
                           <span>
                             Stock actual: {detalle.stock}
                           </span>
-
                           <div className="estructura__campo">
                             <label
                               htmlFor={`detalle-cantidad-${detalle.id}`}
                             >
                               Cantidad a ingresar
                             </label>
-
                             <input
                               id={`detalle-cantidad-${detalle.id}`}
                               type="number"
@@ -1238,14 +1052,12 @@ function Stock() {
                               }
                             />
                           </div>
-
                           <span>
                             Stock resultante:{" "}
                             {valida
                               ? detalle.stock + cantidad
                               : "—"}
                           </span>
-
                           <div className="estructura__panel-acciones">
                             <Boton
                               variante="admin"
@@ -1261,7 +1073,6 @@ function Stock() {
                       );
                     })}
                   </div>
-
                   <div className="estructura__tarjeta">
                     <strong>
                       {detalles.length} variantes
@@ -1273,15 +1084,12 @@ function Stock() {
                 </>
               )}
             </section>
-
             <section className="estructura__panel">
               <h3>2. Datos del ingreso</h3>
-
               <div className="estructura__campo">
                 <label htmlFor="stock-proveedor">
                   Proveedor
                 </label>
-
                 <input
                   id="stock-proveedor"
                   name="proveedorNombre"
@@ -1293,11 +1101,9 @@ function Stock() {
                   autoComplete="off"
                   required
                 />
-
                 {cargandoProveedores && (
                   <p>Cargando proveedores...</p>
                 )}
-
                 {mostrarSugerenciasProveedor &&
                   proveedoresSugeridos.map((proveedor) => (
                     <div
@@ -1316,11 +1122,9 @@ function Stock() {
                       >
                         {proveedor.nombre}
                       </button>
-
                       <span>CUIT: {proveedor.cuit}</span>
                     </div>
                   ))}
-
                 <div className="estructura__panel-acciones">
                   <Boton
                     variante="admin"
@@ -1331,7 +1135,6 @@ function Stock() {
                   </Boton>
                 </div>
               </div>
-
               {proveedorSeleccionado && (
                 <div className="estructura__tarjeta fondo-verde">
                   <strong>
@@ -1347,12 +1150,10 @@ function Stock() {
                   </span>
                 </div>
               )}
-
               <div className="estructura__campo">
                 <label htmlFor="stock-comprobante">
                   Factura / comprobante
                 </label>
-
                 <input
                   id="stock-comprobante"
                   name="numeroComprobante"
@@ -1364,12 +1165,10 @@ function Stock() {
                   required
                 />
               </div>
-
               <div className="estructura__campo">
                 <label htmlFor="stock-fecha">
                   Fecha
                 </label>
-
                 <input
                   id="stock-fecha"
                   name="fechaComprobante"
@@ -1380,12 +1179,10 @@ function Stock() {
                   required
                 />
               </div>
-
               <div className="estructura__campo">
                 <label htmlFor="stock-observaciones">
                   Observaciones
                 </label>
-
                 <textarea
                   id="stock-observaciones"
                   name="observaciones"
@@ -1393,20 +1190,17 @@ function Stock() {
                   onChange={manejarCampoIngreso}
                   maxLength="100"
                 />
-
                 <span>
                   {formIngreso.observaciones.length}/100
                 </span>
               </div>
             </section>
-
             {guardando && (
               <p>Guardando ingreso...</p>
             )}
           </form>
         </ModalAdmin>
       )}
-
       {modalAbierto === "baja" && puedeDarDeBaja && (
         <ModalAdmin
           titulo="Baja por venta mostrador"
@@ -1425,12 +1219,10 @@ function Stock() {
                 {error}
               </p>
             )}
-
             <div className="estructura__campo">
               <label htmlFor="baja-barcode">
                 Barcode
               </label>
-
               <input
                 id="baja-barcode"
                 name="barcode"
@@ -1444,12 +1236,10 @@ function Stock() {
                 autoFocus
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="baja-cantidad">
                 Cantidad
               </label>
-
               <input
                 id="baja-cantidad"
                 name="cantidad"
@@ -1462,12 +1252,10 @@ function Stock() {
                 required
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="baja-motivo">
                 Motivo
               </label>
-
               <input
                 id="baja-motivo"
                 name="motivo"
@@ -1477,14 +1265,12 @@ function Stock() {
                 maxLength="100"
               />
             </div>
-
             {guardandoBaja && (
               <p>Registrando baja...</p>
             )}
           </form>
         </ModalAdmin>
       )}
-
       {modalAbierto === "proveedor" && (
         <ModalAdmin
           titulo="Nuevo proveedor"
@@ -1501,12 +1287,10 @@ function Stock() {
                 {error}
               </p>
             )}
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-nombre">
                 Nombre
               </label>
-
               <input
                 id="proveedor-nombre"
                 name="nombre"
@@ -1519,12 +1303,10 @@ function Stock() {
                 autoFocus
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-cuit">
                 CUIT
               </label>
-
               <input
                 id="proveedor-cuit"
                 name="cuit"
@@ -1537,12 +1319,10 @@ function Stock() {
                 required
               />
             </div>
-
             <div className="estructura__campo">
               <label htmlFor="proveedor-telefono">
                 Teléfono
               </label>
-
               <input
                 id="proveedor-telefono"
                 name="telefono"
@@ -1553,7 +1333,6 @@ function Stock() {
                 inputMode="numeric"
               />
             </div>
-
             {guardandoProveedor && (
               <p>Guardando proveedor...</p>
             )}
@@ -1563,5 +1342,4 @@ function Stock() {
     </main>
   );
 }
-
 export default Stock;
