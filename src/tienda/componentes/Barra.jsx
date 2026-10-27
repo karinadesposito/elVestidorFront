@@ -1,6 +1,5 @@
-
 import { useEffect, useRef, useState } from 'react'
-import { Link, matchPath, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   FiMenu,
   FiSearch,
@@ -30,16 +29,9 @@ const promos = [
 const UMBRAL_COMPACTAR = 100
 const UMBRAL_EXPANDIR = 40
 
-function Barra({
-  alAbrirCarrito,
-  cantidadCarrito = 0,
-}) {
+function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
   const { pathname } = useLocation()
-
-  const esCatalogo = Boolean(
-    matchPath({ path: '/:genero', end: true }, pathname) ||
-    matchPath({ path: '/:genero/:categoria', end: true }, pathname),
-  )
+  const esInicio = pathname === '/'
 
   const [compacta, setCompacta] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(null)
@@ -50,32 +42,26 @@ function Barra({
 
   useEffect(() => {
     const intervalo = window.setInterval(() => {
-      setPromoActual(actual => (actual + 1) % promos.length)
+      setPromoActual((actual) => (actual + 1) % promos.length)
     }, 5000)
-
     return () => window.clearInterval(intervalo)
   }, [])
 
   useEffect(() => {
-    if (esCatalogo) {
+    if (!esInicio) {
       compactaRef.current = false
       setCompacta(false)
       return undefined
     }
 
     let cuadro = null
-
     const actualizar = () => {
       cuadro = null
       const scroll = Math.max(0, window.scrollY)
-
       if (!compactaRef.current && scroll >= UMBRAL_COMPACTAR) {
         compactaRef.current = true
         setCompacta(true)
-      } else if (
-        compactaRef.current &&
-        scroll <= UMBRAL_EXPANDIR
-      ) {
+      } else if (compactaRef.current && scroll <= UMBRAL_EXPANDIR) {
         compactaRef.current = false
         setCompacta(false)
       }
@@ -86,17 +72,14 @@ function Barra({
       cuadro = window.requestAnimationFrame(actualizar)
     }
 
-    window.addEventListener('scroll', manejarScroll, {
-      passive: true,
-    })
-
+    window.addEventListener('scroll', manejarScroll, { passive: true })
     manejarScroll()
 
     return () => {
       window.removeEventListener('scroll', manejarScroll)
       if (cuadro !== null) window.cancelAnimationFrame(cuadro)
     }
-  }, [esCatalogo])
+  }, [esInicio])
 
   useEffect(() => {
     function manejarClickFuera(evento) {
@@ -104,12 +87,8 @@ function Barra({
         setMenuAbierto(null)
       }
     }
-
     document.addEventListener('mousedown', manejarClickFuera)
-
-    return () => {
-      document.removeEventListener('mousedown', manejarClickFuera)
-    }
+    return () => document.removeEventListener('mousedown', manejarClickFuera)
   }, [])
 
   useEffect(() => {
@@ -118,13 +97,11 @@ function Barra({
   }, [pathname])
 
   function cambiarPromo(direccion) {
-    setPromoActual(actual =>
-      (actual + direccion + promos.length) % promos.length,
-    )
+    setPromoActual((actual) => (actual + direccion + promos.length) % promos.length)
   }
 
   function alternarMenu(menu) {
-    setMenuAbierto(actual => actual === menu ? null : menu)
+    setMenuAbierto((actual) => (actual === menu ? null : menu))
   }
 
   function cerrarMenu() {
@@ -137,14 +114,12 @@ function Barra({
     alAbrirCarrito?.()
   }
 
-  const claseBarra = esCatalogo
-    ? 'barra barra--catalogo'
-    : `barra${compacta ? ' barra--compacta' : ''}`
+  const claseBarra = esInicio
+    ? `barra${compacta ? ' barra--compacta' : ''}`
+    : 'barra barra--compacta barra--catalogo'
 
   const etiquetaCarrito = cantidadCarrito > 0
-    ? `Abrir carrito, ${cantidadCarrito} ${
-        cantidadCarrito === 1 ? 'unidad' : 'unidades'
-      }`
+    ? `Abrir carrito, ${cantidadCarrito} ${cantidadCarrito === 1 ? 'unidad' : 'unidades'}`
     : 'Abrir carrito, vacío'
 
   return (
@@ -152,39 +127,15 @@ function Barra({
       <header className={claseBarra}>
         <div className="barra__beneficio">
           <div className="barra__cinta">
-            <button
-              type="button"
-              className="barra__flecha"
-              onClick={() => cambiarPromo(-1)}
-              aria-label="Beneficio anterior"
-            >
+            <button type="button" className="barra__flecha" onClick={() => cambiarPromo(-1)} aria-label="Beneficio anterior">
               <FiChevronLeft />
             </button>
-
             <div className="barra__promo-contenido">
-              <img
-                className="barra__divisor"
-                src={logoSimbolo}
-                alt=""
-              />
-
-              <span className="barra__promo">
-                {promos[promoActual]}
-              </span>
-
-              <img
-                className="barra__divisor"
-                src={logoSimbolo}
-                alt=""
-              />
+              <img className="barra__divisor" src={logoSimbolo} alt="" />
+              <span className="barra__promo">{promos[promoActual]}</span>
+              <img className="barra__divisor" src={logoSimbolo} alt="" />
             </div>
-
-            <button
-              type="button"
-              className="barra__flecha"
-              onClick={() => cambiarPromo(1)}
-              aria-label="Siguiente beneficio"
-            >
+            <button type="button" className="barra__flecha" onClick={() => cambiarPromo(1)} aria-label="Beneficio siguiente">
               <FiChevronRight />
             </button>
           </div>
@@ -201,29 +152,12 @@ function Barra({
             <FiMenu />
           </button>
 
-          <Link
-            to="/"
-            className="barra__marca"
-            aria-label="Volver al inicio"
-          >
-            <img
-              aria-hidden="true"
-              className="barra__simbolo"
-              src={logoSimbolo}
-              alt=""
-            />
-
-            <img
-              className="barra__logo"
-              src={logoMarca}
-              alt="El Vestidor"
-            />
+          <Link to="/" className="barra__marca" aria-label="Volver al inicio">
+            <img aria-hidden="true" className="barra__simbolo" src={logoSimbolo} alt="" />
+            <img className="barra__logo" src={logoMarca} alt="El Vestidor" />
           </Link>
 
-          <nav
-            className="barra__nav"
-            aria-label="Navegación principal"
-          >
+          <nav className="barra__nav" aria-label="Navegación principal">
             <ul className="barra__lista">
               <ItemMenu
                 titulo="MUJER"
@@ -232,7 +166,6 @@ function Barra({
                 alAlternar={() => alternarMenu('mujer')}
                 alCerrar={cerrarMenu}
               />
-
               <ItemMenu
                 titulo="HOMBRE"
                 items={categoriasHombre}
@@ -240,11 +173,7 @@ function Barra({
                 alAlternar={() => alternarMenu('hombre')}
                 alCerrar={cerrarMenu}
               />
-
-              <li className="barra__item">
-                SEASONS
-              </li>
-
+              <li className="barra__item">SEASONS</li>
               <ItemMenu
                 titulo="SALE"
                 grupos={gruposSale}
@@ -257,14 +186,9 @@ function Barra({
           </nav>
 
           <div className="barra__acciones">
-            <Boton
-              aria-label="Buscar"
-              className="barra__accion"
-              variante="icono"
-            >
+            <Boton aria-label="Buscar" className="barra__accion" variante="icono">
               <FiSearch />
             </Boton>
-
             <Boton
               aria-label={etiquetaCarrito}
               aria-haspopup="dialog"
@@ -273,12 +197,7 @@ function Barra({
               onClick={abrirCarrito}
             >
               <FiShoppingCart aria-hidden="true" />
-
-              {cantidadCarrito > 0 && (
-                <span aria-hidden="true">
-                  {cantidadCarrito}
-                </span>
-              )}
+              {cantidadCarrito > 0 && <span aria-hidden="true">{cantidadCarrito}</span>}
             </Boton>
           </div>
         </Contenedor>

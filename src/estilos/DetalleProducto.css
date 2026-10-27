@@ -3,7 +3,6 @@
    EL VESTIDOR - DETALLE DE PRODUCTO
    Mobile First
 ========================================= */
-
 .detalle-producto {
   width: 100%;
   min-width: 0;
@@ -27,7 +26,6 @@
 /* =========================================
    NAVEGACIÓN
 ========================================= */
-
 .detalle-producto__migas {
   display: flex;
   align-items: center;
@@ -57,7 +55,6 @@
 /* =========================================
    ESTRUCTURA PRINCIPAL
 ========================================= */
-
 .detalle-producto__principal {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -70,7 +67,6 @@
 /* =========================================
    GALERÍA - MOBILE FIRST
 ========================================= */
-
 .detalle-producto__galeria {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -109,7 +105,6 @@
 }
 
 /* Flechas de navegación */
-
 .detalle-producto__flechas {
   position: absolute;
   top: 50%;
@@ -150,7 +145,6 @@
 }
 
 /* Miniaturas horizontales en mobile y tablet */
-
 .detalle-producto__miniaturas {
   display: flex;
   align-items: flex-start;
@@ -200,7 +194,6 @@
 /* =========================================
    INFORMACIÓN DEL PRODUCTO
 ========================================= */
-
 .detalle-producto__informacion {
   display: flex;
   flex-direction: column;
@@ -232,7 +225,6 @@
 /* =========================================
    COLOR Y TALLE
 ========================================= */
-
 .detalle-producto__campo {
   display: grid;
   gap: 9px;
@@ -309,7 +301,6 @@
 /* =========================================
    CANTIDAD
 ========================================= */
-
 .detalle-producto__cantidad {
   display: inline-flex;
   align-items: center;
@@ -364,7 +355,6 @@
 /* =========================================
    BOTÓN AGREGAR AL CARRITO
 ========================================= */
-
 .detalle-producto__informacion > .boton {
   display: flex;
   align-items: center;
@@ -406,7 +396,6 @@
 /* =========================================
    ERRORES Y DESCRIPCIÓN
 ========================================= */
-
 .detalle-producto__error {
   margin: 12px 0 0;
   padding: 10px 12px;
@@ -437,30 +426,24 @@
 /* =========================================
    MOBILE PEQUEÑO - 320px
 ========================================= */
-
 @media (max-width: 359px) {
   .detalle-producto {
     padding-right: 14px;
     padding-left: 14px;
   }
-
   .detalle-producto__imagen-principal {
     max-height: 320px;
   }
-
   .detalle-producto__principal {
     gap: 20px;
   }
-
   .detalle-producto__informacion h1 {
     font-size: 19px;
   }
-
   .detalle-producto__precio {
     margin-bottom: 20px;
     font-size: 18px;
   }
-
   .detalle-producto__campo {
     margin-bottom: 19px;
   }
@@ -469,50 +452,41 @@
 /* =========================================
    TABLET - 768px
 ========================================= */
-
 @media (min-width: 768px) {
   .detalle-producto {
-    padding: 24px 28px 60px;
+    padding: 12px 28px 28px;
   }
-
   .detalle-producto__migas {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
+    font-size: 10px;
   }
-
   .detalle-producto__principal {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(0, 0.9fr);
     gap: 32px;
   }
-
   .detalle-producto__galeria {
     max-width: 390px;
   }
-
   .detalle-producto__imagen-principal {
     aspect-ratio: 4 / 5;
     max-height: 460px;
   }
-
   .detalle-producto__informacion {
     padding-top: 2px;
   }
-
   .detalle-producto__informacion h1 {
     margin-bottom: 12px;
     font-size: 21px;
   }
-
   .detalle-producto__precio {
     margin-bottom: 28px;
     font-size: 20px;
   }
-
   .detalle-producto__campo {
     margin-bottom: 24px;
   }
-
   .detalle-producto__miniatura {
     flex-basis: 52px;
     width: 52px;
@@ -524,20 +498,16 @@
    DESKTOP - 1024px
    Miniaturas verticales a la izquierda
 ========================================= */
-
 @media (min-width: 1024px) {
   .detalle-producto {
-    padding: 28px 36px 80px;
+    padding: 14px 36px 30px;
   }
-
   .detalle-producto__contenedor {
     max-width: 1160px;
   }
-
   .detalle-producto__migas {
-    margin-bottom: 28px;
+    margin-bottom: 12px;
   }
-
   .detalle-producto__principal {
     grid-template-columns:
       minmax(0, 500px)
@@ -546,7 +516,6 @@
     align-items: start;
     gap: clamp(36px, 5vw, 70px);
   }
-
   .detalle-producto__galeria {
     display: grid;
     grid-template-columns: 60px minmax(0, 1fr);
@@ -558,16 +527,14 @@
     max-width: 500px;
     min-width: 0;
   }
-
   .detalle-producto__imagen-principal {
     grid-column: 2;
     grid-row: 1;
     width: 100%;
     min-width: 0;
     aspect-ratio: 4 / 4.7;
-    max-height: 510px;
+    max-height: min(510px, max(300px, calc(100dvh - 190px)));
   }
-
   .detalle-producto__miniaturas {
     grid-column: 1;
     grid-row: 1;
@@ -584,44 +551,36 @@
     padding: 0;
     overflow: visible;
   }
-
   .detalle-producto__miniatura {
     flex: 0 0 auto;
     width: 60px;
     height: 76px;
     padding: 2px;
   }
-
   .detalle-producto__informacion {
     width: 100%;
     max-width: 420px;
     padding-top: 4px;
   }
-
   .detalle-producto__informacion h1 {
     margin-bottom: 12px;
     font-size: 22px;
     line-height: 1.25;
   }
-
   .detalle-producto__precio {
     margin-bottom: 30px;
     font-size: 21px;
   }
-
   .detalle-producto__campo {
     margin-bottom: 26px;
   }
-
   .detalle-producto__flechas {
     right: 12px;
     left: 12px;
   }
-
   .detalle-producto__informacion > .boton {
     max-width: 380px;
   }
-
   .detalle-producto__descripcion {
     max-width: 380px;
   }
@@ -630,26 +589,21 @@
 /* =========================================
    DESKTOP GRANDE - 1440px
 ========================================= */
-
 @media (min-width: 1440px) {
   .detalle-producto {
-    padding-top: 32px;
+    padding-top: 16px;
   }
-
   .detalle-producto__principal {
     grid-template-columns: 480px 400px;
     gap: 65px;
   }
-
   .detalle-producto__galeria {
     max-width: 480px;
     grid-template-columns: 60px minmax(0, 1fr);
   }
-
   .detalle-producto__imagen-principal {
-    max-height: 500px;
+    max-height: min(500px, max(300px, calc(100dvh - 190px)));
   }
-
   .detalle-producto__informacion {
     max-width: 400px;
   }
@@ -658,7 +612,6 @@
 /* =========================================
    ACCESIBILIDAD
 ========================================= */
-
 @media (prefers-reduced-motion: reduce) {
   .detalle-producto *,
   .detalle-producto *::before,

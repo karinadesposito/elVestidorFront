@@ -11,6 +11,12 @@
   box-sizing: border-box;
 }
 
+/* Separación del mensaje de confirmación */
+
+.estructura__tarjeta.fondo-verde + #resumen-stock {
+  margin-top: var(--espacio-3);
+}
+
 /* Nuevo ingreso de stock */
 
 #formulario-ingreso-stock {
@@ -19,6 +25,26 @@
 
 #formulario-ingreso-stock .estructura__panel {
   min-width: 0;
+}
+
+/* Buscador: un único borde visible */
+
+#formulario-ingreso-stock .admin-productos__buscador-control {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#formulario-ingreso-stock .admin-productos__buscador-control input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-inline: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 /* Variantes del producto seleccionado */
@@ -108,13 +134,7 @@
   font-size: 1rem;
 }
 
-/*
-  Variante encontrada por barcode.
-
-  Stock.jsx aplica un outline de 2px a la variante.
-  Lo sustituimos visualmente por un resaltado con espacio
-  interior, fondo suave y línea lateral.
-*/
+/* Resaltado de variante encontrada por barcode */
 
 #formulario-ingreso-stock
   .estructura__tarjeta
@@ -184,14 +204,12 @@
   grid-column: 1 / -1;
 }
 
-/* Tablet y desktop */
+/* Tablet desde 768px */
 
 @media (min-width: 48rem) {
   #resumen-stock {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  /* Buscador y filtros en una misma fila */
 
   #stock-controles {
     max-width: none;
@@ -235,8 +253,6 @@
 
     font-size: var(--estructura-texto-sm);
   }
-
-  /* Más espacio para la información en pantallas grandes */
 
   #formulario-ingreso-stock
     .estructura__tarjeta
