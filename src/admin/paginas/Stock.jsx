@@ -12,6 +12,7 @@ import {
   filtrarStock,
   obtenerDatosStock,
   obtenerProveedores,
+  registrarAjustePositivo,
   registrarBajaMostrador,
   registrarIngresoStock,
   tarjetasResumenStock,
@@ -39,6 +40,28 @@ const FORM_PROVEEDOR_INICIAL = {
   nombre: "",
   cuit: "",
   telefono: "",
+};
+// Movimientos manuales del administrador. Las bajas restan (venta de mostrador
+// o faltantes); el ajuste positivo suma lo que el conteo encontró de más.
+const MOVIMIENTOS_MANUALES = {
+  baja: {
+    titulo: "Baja por venta mostrador",
+    boton: "Dar de baja",
+    motivoInicial: "Venta mostrador",
+    motivoObligatorio: false,
+    registrar: registrarBajaMostrador,
+    exito: "Baja registrada",
+  },
+  ajuste: {
+    titulo: "Ajuste positivo por conteo",
+    boton: "Sumar al stock",
+    motivoInicial: "Conteo físico",
+    motivoObligatorio: true,
+    registrar: registrarAjustePositivo,
+    exito: "Ajuste registrado",
+    ayuda:
+      "Usalo cuando en el conteo aparecen más unidades de las que figuran en el sistema. Si faltan unidades, registrá una baja con el motivo.",
+  },
 };
 const FORM_BAJA_INICIAL = {
   barcode: "",
@@ -554,11 +577,14 @@ function Stock() {
       setGuardando(false);
     }
   }
-  function abrirModalBaja() {
+  function abrirModalBaja(tipo) {
     setError(null);
     setMensajeExito("");
-    setFormBaja(FORM_BAJA_INICIAL);
-    setModalAbierto("baja");
+    setFormBaja({
+      ...FORM_BAJA_INICIAL,
+      motivo: MOVIMIENTOS_MANUALES[tipo].motivoInicial,
+    });
+    setModalAbierto(tipo);
   }
   function cerrarModalBaja() {
     if (guardandoBaja) return;
@@ -575,17 +601,18 @@ function Stock() {
   }
   async function manejarRegistrarBaja(e) {
     e.preventDefault();
-    if (guardandoBaja) return;
+    const movimiento = MOVIMIENTOS_MANUALES[modalAbierto];
+    if (guardandoBaja || !movimiento) return;
     setGuardandoBaja(true);
     setError(null);
     setMensajeExito("");
     try {
-      const baja = await registrarBajaMostrador(formBaja);
+      const registro = await movimiento.registrar(formBaja);
       await recargarStock();
       setModalAbierto(null);
       setFormBaja(FORM_BAJA_INICIAL);
       setMensajeExito(
-        `Baja registrada: ${baja.barcode} pasó de ${baja.stockAnterior} a ${baja.stockResultante} unidades.`,
+        `${movimiento.exito}: ${registro.barcode} pasó de ${registro.stockAnterior} a ${registro.stockResultante} unidades.`,
       );
     } catch (err) {
       setError(err.message);
@@ -645,12 +672,20 @@ function Stock() {
                     Nuevo ingreso stock
                   </Boton>
                   {puedeDarDeBaja && (
-                    <Boton
-                      variante="admin"
-                      onClick={abrirModalBaja}
-                    >
-                      Baja por venta mostrador
-                    </Boton>
+                    <>
+                      <Boton
+                        variante="admin"
+                        onClick={() => abrirModalBaja("baja")}
+                      >
+                        Baja por venta mostrador
+                      </Boton>
+                      <Boton
+                        variante="admin"
+                        onClick={() => abrirModalBaja("ajuste")}
+                      >
+                        Ajuste positivo por conteo
+                      </Boton>
+                    </>
                   )}
                 </div>
               </div>
@@ -1265,12 +1300,12 @@ function Stock() {
           </form>
         </ModalAdmin>
       )}
-      {modalAbierto === "baja" && puedeDarDeBaja && (
+      {MOVIMIENTOS_MANUALES[modalAbierto] && puedeDarDeBaja && (
         <ModalAdmin
-          titulo="Baja por venta mostrador"
+          titulo={MOVIMIENTOS_MANUALES[modalAbierto].titulo}
           onClose={cerrarModalBaja}
           formId="formulario-baja-stock"
-          botonConfirmar="Dar de baja"
+          botonConfirmar={MOVIMIENTOS_MANUALES[modalAbierto].boton}
           botonConfirmarDeshabilitado={guardandoBaja}
         >
           <form
@@ -1278,6 +1313,9 @@ function Stock() {
             className="estructura__formulario"
             onSubmit={manejarRegistrarBaja}
           >
+            {MOVIMIENTOS_MANUALES[modalAbierto].ayuda && (
+              <p>{MOVIMIENTOS_MANUALES[modalAbierto].ayuda}</p>
+            )}
             {error && (
               <p className="login-admin__error">
                 {error}
@@ -1327,10 +1365,11 @@ function Stock() {
                 value={formBaja.motivo}
                 onChange={manejarCampoBaja}
                 maxLength="100"
+                required={MOVIMIENTOS_MANUALES[modalAbierto].motivoObligatorio}
               />
             </div>
             {guardandoBaja && (
-              <p>Registrando baja...</p>
+              <p>Registrando...</p>
             )}
           </form>
         </ModalAdmin>
