@@ -5,8 +5,8 @@ import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
 import { useAuth } from "../contexto/AuthContext";
 import {
+  buscarComprobanteExistente,
   buscarVariantePorBarcode,
-  contarStock,
   crearProveedor,
   filtrarProveedores,
   filtrarStock,
@@ -14,6 +14,7 @@ import {
   obtenerProveedores,
   registrarBajaMostrador,
   registrarIngresoStock,
+  tarjetasResumenStock,
 } from "../servicios/stockService";
 import { obtenerCatalogosProducto } from "../servicios/productosService";
 import "../../estilos/admin-productos.css";
@@ -118,6 +119,9 @@ function Stock() {
   const [cantidades, setCantidades] = useState({});
   const [detalles, setDetalles] = useState([]);
   const [barcodeNoEncontrado, setBarcodeNoEncontrado] = useState(false);
+  // Comprobante ya cargado con el mismo proveedor y número: si está, el ingreso
+  // se agrega a ese comprobante (mercadería de la misma factura en otra entrega).
+  const [comprobanteExistente, setComprobanteExistente] = useState(null);
   const buscadorIngresoRef = useRef(null);
   useEffect(() => {
     if (!mensajeExito) return;
@@ -136,7 +140,7 @@ function Stock() {
             obtenerCatalogosProducto(),
           ]);
         setStock(datosStock.stock);
-        setCategoriasStock(contarStock(datosStock.stock));
+        setCategoriasStock(tarjetasResumenStock(datosStock.resumen));
         setProveedores(datosProveedores);
         setCatalogosProducto(catalogos);
       } catch (err) {
@@ -150,7 +154,7 @@ function Stock() {
   async function recargarStock() {
     const datosStock = await obtenerDatosStock();
     setStock(datosStock.stock);
-    setCategoriasStock(contarStock(datosStock.stock));
+    setCategoriasStock(tarjetasResumenStock(datosStock.resumen));
   }
   async function recargarProveedores() {
     setCargandoProveedores(true);
@@ -216,12 +220,14 @@ function Stock() {
     setCantidades({});
     setDetalles([]);
     setBarcodeNoEncontrado(false);
+    setComprobanteExistente(null);
     setModalAbierto("ingreso");
   }
   function cerrarModalIngreso() {
     if (guardando) return;
     setModalAbierto(null);
     setError(null);
+    setComprobanteExistente(null);
     setBusquedaIngreso("");
     setProductoSeleccionado(null);
     setVarianteDestacadaId(null);
@@ -393,6 +399,9 @@ function Stock() {
         ? { proveedorId: "" }
         : {}),
     }));
+    if (name === "proveedorNombre" || name === "numeroComprobante") {
+      setComprobanteExistente(null);
+    }
     setError(null);
   }
   function seleccionarProveedor(proveedor) {
@@ -401,6 +410,7 @@ function Stock() {
       proveedorId: proveedor.id,
       proveedorNombre: proveedor.nombre,
     }));
+    setComprobanteExistente(null);
     setError(null);
   }
   function manejarTeclaProveedor(e) {
@@ -481,15 +491,48 @@ function Stock() {
     setError(null);
     setMensajeExito("");
     try {
+      // Primer intento con un comprobante ya cargado: se avisa y se pide
+      // confirmar antes de agregarle la mercadería.
+      if (!comprobanteExistente) {
+        const existente = await buscarComprobanteExistente(
+          formIngreso.proveedorId,
+          formIngreso.numeroComprobante,
+        );
+        if (existente) {
+          setComprobanteExistente(existente);
+          // La fecha tiene que ser la del comprobante original.
+          setFormIngreso((anterior) => ({
+            ...anterior,
+            fechaComprobante: existente.fechaComprobante,
+          }));
+          return;
+        }
+      }
+      const repetidos = comprobanteExistente
+        ? detalles.filter((detalle) =>
+            comprobanteExistente.barcodes.includes(detalle.barcode),
+          )
+        : [];
+      if (repetidos.length > 0) {
+        setError(
+          `Ya están cargados en este comprobante: ${repetidos
+            .map((detalle) => `${detalle.producto} ${detalle.variante}`)
+            .join(", ")}. Quitalos para continuar.`,
+        );
+        return;
+      }
       await registrarIngresoStock({
         proveedorId: formIngreso.proveedorId,
         numeroComprobante: formIngreso.numeroComprobante,
-        fechaComprobante: formIngreso.fechaComprobante,
+        fechaComprobante: comprobanteExistente
+          ? comprobanteExistente.fechaComprobante
+          : formIngreso.fechaComprobante,
         observaciones: formIngreso.observaciones,
         detalles: detalles.map((detalle) => ({
           barcode: detalle.barcode,
           cantidad: Number(detalle.cantidad),
         })),
+        continuarComprobante: Boolean(comprobanteExistente),
       });
       await recargarStock();
       setModalAbierto(null);
@@ -500,8 +543,11 @@ function Stock() {
       setCantidades({});
       setDetalles([]);
       setMensajeExito(
-        "Ingreso de stock registrado correctamente.",
+        comprobanteExistente
+          ? "Mercadería agregada al comprobante existente."
+          : "Ingreso de stock registrado correctamente.",
       );
+      setComprobanteExistente(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -793,6 +839,9 @@ function Stock() {
           titulo="Nuevo ingreso stock"
           onClose={cerrarModalIngreso}
           formId="formulario-ingreso-stock"
+          botonConfirmar={
+            comprobanteExistente ? "Agregar al comprobante" : "Guardar"
+          }
           botonConfirmarDeshabilitado={
             guardando || detalles.length === 0
           }
@@ -1177,8 +1226,23 @@ function Stock() {
                   onChange={manejarCampoIngreso}
                   max={obtenerFechaActual()}
                   required
+                  disabled={Boolean(comprobanteExistente)}
                 />
               </div>
+              {comprobanteExistente && (
+                <div className="estructura__tarjeta fondo-amarillo" role="status">
+                  <strong>Este comprobante ya fue cargado</strong>
+                  <span>
+                    Fecha {comprobanteExistente.fechaFormateada} ·{" "}
+                    {comprobanteExistente.unidades} unidades cargadas.
+                  </span>
+                  <span>
+                    Si llegó más mercadería de la misma factura, tocá
+                    "Agregar al comprobante". Si es otra factura, corregí el
+                    número.
+                  </span>
+                </div>
+              )}
               <div className="estructura__campo">
                 <label htmlFor="stock-observaciones">
                   Observaciones
