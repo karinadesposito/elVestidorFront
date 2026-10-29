@@ -64,9 +64,21 @@ const OBTENER_CONTADORES = gql`
   }
 `
 
+// Todo el circuito de envío pasa por esta mutación del back: valida el paso,
+// crea el despacho cuando corresponde y solo pide el permiso GestionarEnvios.
 const TRANSICIONAR_ESTADO = gql`
-  mutation AvanzarEstadoPedido($id: ID!, $estado: String!) {
-    avanzarEstadoPedido(id: $id, estado: $estado) {
+  mutation AvanzarEstadoPedido(
+    $id: ID!
+    $estado: String!
+    $empresaEnvio: String
+    $codigoSeguimiento: String
+  ) {
+    avanzarEstadoPedido(
+      id: $id
+      estado: $estado
+      empresaEnvio: $empresaEnvio
+      codigoSeguimiento: $codigoSeguimiento
+    ) {
       ... on Order { id state }
       ... on ErrorResult { errorCode message }
     }
@@ -130,107 +142,20 @@ export async function cancelarPedido(orderId, motivo) {
   return obtenerDetallePedido(orderId)
 }
 
-const CREAR_DESPACHO = gql`
-  mutation CrearDespacho($input: FulfillOrderInput!) {
-    addFulfillmentToOrder(input: $input) {
-      ... on Fulfillment { id state method trackingCode }
-      ... on ErrorResult { errorCode message }
-    }
-  }
-`
+export async function despacharPedido(orderId, { empresaEnvio, codigoSeguimiento } = {}) {
+  const empresa = String(empresaEnvio || '').trim()
+  if (!empresa) throw new Error('Indicá la empresa de envío.')
 
-const CAMBIAR_ESTADO_DESPACHO = gql`
-  mutation CambiarEstadoDespacho($id: ID!, $state: String!) {
-    transitionFulfillmentToState(id: $id, state: $state) {
-      ... on Fulfillment { id state method trackingCode }
-      ... on ErrorResult { errorCode message }
-    }
-  }
-`
-
-function verificarResultado(resultado, accion) {
-  if (!resultado) throw new Error(`Vendure no devolvió un resultado al ${accion}.`)
-  if (resultado.errorCode) throw new Error(resultado.message || `No se pudo ${accion}.`)
-  if (!resultado.id) throw new Error(`Vendure no confirmó el ${accion}.`)
-  return resultado
-}
-
-export async function despacharPedido(orderId) {
-  // Reconsultar el servidor evita trabajar con cantidades desactualizadas.
-  const pedido = await obtenerDetallePedido(orderId)
-  if (!pedido || pedido.state !== 'EnPreparacion') {
-    throw new Error('Solo se pueden despachar pedidos en preparación.')
-  }
-
-  const despachos = pedido.fulfillments || []
-  const pendientes = despachos.filter(d => d.state === 'Pending')
-  if (pendientes.length > 1) {
-    throw new Error('El pedido tiene varios despachos pendientes. Revisalos antes de continuar.')
-  }
-
-  let fulfillmentId
-  if (pendientes.length === 1) {
-    // Recuperar un despacho ya creado si falló la transición anterior.
-    fulfillmentId = pendientes[0].id
-  } else {
-    const lineas = (pedido.lines || []).map(linea => {
-      const asignadas = (linea.fulfillmentLines || [])
-        .filter(item => despachos.some(d => d.id === item.fulfillmentId && d.state !== 'Cancelled'))
-        .reduce((total, item) => total + item.quantity, 0)
-      return { orderLineId: linea.id, quantity: linea.quantity - asignadas }
-    }).filter(linea => linea.quantity > 0)
-
-    if (!lineas.length) {
-      throw new Error('No hay unidades pendientes de despacho.')
-    }
-
-    const { data } = await client.mutate({
-      mutation: CREAR_DESPACHO,
-      variables: {
-        input: {
-          lines: lineas,
-          handler: {
-            code: 'manual-fulfillment',
-            arguments: [{ name: 'method', value: 'Envío manual' }],
-          },
-        },
-      },
-    })
-    const creado = verificarResultado(data?.addFulfillmentToOrder, 'crear el despacho')
-    fulfillmentId = creado.id
-  }
-
-  const { data } = await client.mutate({
-    mutation: CAMBIAR_ESTADO_DESPACHO,
-    variables: { id: fulfillmentId, state: 'Shipped' },
+  // El back crea el despacho, lo pasa a Enviado y manda el correo con el seguimiento.
+  await transicionarEstado(orderId, 'Shipped', {
+    empresaEnvio: empresa,
+    codigoSeguimiento: String(codigoSeguimiento || '').trim() || null,
   })
-  verificarResultado(data?.transitionFulfillmentToState, 'marcar el despacho como enviado')
   return obtenerDetallePedido(orderId)
 }
 
 export async function entregarPedido(orderId) {
-  // Revalidamos el estado y los envíos reales antes de modificar nada.
-  const pedido = await obtenerDetallePedido(orderId)
-  if (!pedido || pedido.state !== 'Shipped') {
-    throw new Error('Solo se pueden entregar pedidos en estado Enviado.')
-  }
-
-  const despachos = pedido.fulfillments || []
-  const enviados = despachos.filter(despacho => despacho.state === 'Shipped')
-  if (!enviados.length) {
-    throw new Error('El pedido no tiene despachos enviados para entregar.')
-  }
-
-  // Si hay varios despachos, marcamos todos los enviados como entregados.
-  // Una reejecución puede continuar los que aún estén en Shipped.
-  for (const despacho of enviados) {
-    const { data } = await client.mutate({
-      mutation: CAMBIAR_ESTADO_DESPACHO,
-      variables: { id: despacho.id, state: 'Delivered' },
-    })
-    verificarResultado(data?.transitionFulfillmentToState, 'marcar el envío como entregado')
-  }
-
+  await transicionarEstado(orderId, 'Delivered')
   return obtenerDetallePedido(orderId)
 }
 
@@ -446,10 +371,10 @@ export function contarPorEstado(pedidos) {
   ]
 }
 
-export async function transicionarEstado(orderId, nuevoEstado) {
+export async function transicionarEstado(orderId, nuevoEstado, datosEnvio = {}) {
   const { data } = await client.mutate({
     mutation: TRANSICIONAR_ESTADO,
-    variables: { id: orderId, estado: nuevoEstado },
+    variables: { id: orderId, estado: nuevoEstado, ...datosEnvio },
   })
   const result = data.avanzarEstadoPedido
   if (result.errorCode) throw new Error(result.message)

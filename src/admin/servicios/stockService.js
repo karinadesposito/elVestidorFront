@@ -112,6 +112,43 @@ const REGISTRAR_INGRESO_STOCK = gql`
     }
   }
 `
+const BUSCAR_COMPROBANTE = gql`
+  query BuscarComprobante($options: IngresoStockListOptions) {
+    ingresosStock(options: $options) {
+      items {
+        id
+        fechaComprobante
+        proveedor {
+          id
+        }
+        detalles {
+          id
+          barcode
+          cantidad
+        }
+      }
+    }
+  }
+`
+// Los conteos y el umbral de "stock bajo" se calculan en el back, así la
+// pantalla de Stock y el inicio muestran siempre lo mismo.
+const RESUMEN_STOCK = gql`
+  query ResumenStock($limite: Int) {
+    resumenStock(limite: $limite) {
+      umbralStockBajo
+      totalVariantes
+      stockBajo
+      sinStock
+      alertas {
+        varianteId
+        sku
+        producto
+        variante
+        disponible
+      }
+    }
+  }
+`
 const REGISTRAR_BAJA_MOSTRADOR = gql`
   mutation RegistrarBajaMostrador($input: RegistrarBajaMostradorInput!) {
     registrarBajaMostrador(input: $input) {
@@ -271,7 +308,7 @@ function sumarNivelesStock(niveles = []) {
     },
   )
 }
-function obtenerEstadoStock(disponible) {
+function obtenerEstadoStock(disponible, umbralStockBajo) {
   if (disponible < 0) {
     return {
       estado: 'Stock negativo',
@@ -284,7 +321,7 @@ function obtenerEstadoStock(disponible) {
       color: 'fondo-rojo',
     }
   }
-  if (disponible <= 5) {
+  if (disponible <= umbralStockBajo) {
     return {
       estado: 'Stock bajo',
       color: 'fondo-amarillo',
@@ -302,7 +339,7 @@ function formatearFecha(fecha) {
   }
   return `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]}`
 }
-function mapearVarianteStock(variante, ultimoIngresoPorBarcode) {
+function mapearVarianteStock(variante, ultimoIngresoPorBarcode, umbralStockBajo) {
   const valoresFaceta = variante.product?.facetValues || []
   const marca = valoresFaceta.find((valor) => valor.facet?.code === 'marca')
   const tipoProducto = valoresFaceta.find(
@@ -310,7 +347,7 @@ function mapearVarianteStock(variante, ultimoIngresoPorBarcode) {
   )
   const totales = sumarNivelesStock(variante.stockLevels)
   const disponible = totales.stock - totales.reservado
-  const estado = obtenerEstadoStock(disponible)
+  const estado = obtenerEstadoStock(disponible, umbralStockBajo)
   return {
     id: variante.id,
     barcode: variante.sku,
@@ -358,8 +395,35 @@ async function obtenerTodasLasPaginas(query, nombreResultado, options = {}) {
   } while (skip < totalItems)
   return items
 }
+export async function obtenerResumenStock(limite) {
+  const { data } = await client.query({
+    query: RESUMEN_STOCK,
+    variables: { limite },
+    fetchPolicy: 'network-only',
+  })
+  return data.resumenStock
+}
+export function tarjetasResumenStock(resumen) {
+  return [
+    {
+      nombre: 'Total de variantes',
+      cantidad: resumen.totalVariantes,
+      color: 'fondo-verde',
+    },
+    {
+      nombre: `Stock bajo (${resumen.umbralStockBajo} o menos)`,
+      cantidad: resumen.stockBajo,
+      color: 'fondo-amarillo',
+    },
+    {
+      nombre: 'Sin stock',
+      cantidad: resumen.sinStock,
+      color: 'fondo-rojo',
+    },
+  ]
+}
 export async function obtenerDatosStock() {
-  const [variantes, ingresos] = await Promise.all([
+  const [variantes, ingresos, resumen] = await Promise.all([
     obtenerTodasLasPaginas(OBTENER_VARIANTES_STOCK, 'productVariants', {
       sort: {
         sku: 'ASC',
@@ -370,6 +434,7 @@ export async function obtenerDatosStock() {
         createdAt: 'DESC',
       },
     }),
+    obtenerResumenStock(0),
   ])
   const ultimoIngresoPorBarcode = new Map()
   ingresos.forEach((ingreso) => {
@@ -384,9 +449,10 @@ export async function obtenerDatosStock() {
   })
   return {
     stock: variantes.map((variante) =>
-      mapearVarianteStock(variante, ultimoIngresoPorBarcode),
+      mapearVarianteStock(variante, ultimoIngresoPorBarcode, resumen.umbralStockBajo),
     ),
     ingresos,
+    resumen,
   }
 }
 export async function obtenerProveedores() {
@@ -448,7 +514,39 @@ export async function buscarVariantePorBarcode(barcode) {
   if (data.productVariants.totalItems > 1) {
     throw new Error(`Existe más de una variante con el barcode ${barcodeNormalizado}.`)
   }
-  return mapearVarianteStock(data.productVariants.items[0], new Map())
+  // El estado de esta variante no se muestra: solo se usa para ubicarla.
+  return mapearVarianteStock(data.productVariants.items[0], new Map(), 0)
+}
+// Si el comprobante ya fue cargado para ese proveedor, devuelve su fecha, las
+// unidades cargadas y los barcodes, para ofrecer agregarle mercadería.
+export async function buscarComprobanteExistente(proveedorId, numeroComprobante) {
+  const numero = validarNumeroComprobante(numeroComprobante)
+  const { data } = await client.query({
+    query: BUSCAR_COMPROBANTE,
+    variables: {
+      options: {
+        filter: {
+          numeroComprobante: {
+            eq: numero,
+          },
+        },
+        take: 100,
+      },
+    },
+    fetchPolicy: 'network-only',
+  })
+  const ingreso = data.ingresosStock.items.find(
+    (item) => String(item.proveedor.id) === String(proveedorId),
+  )
+  if (!ingreso) {
+    return null
+  }
+  return {
+    fechaComprobante: ingreso.fechaComprobante,
+    fechaFormateada: formatearFecha(ingreso.fechaComprobante),
+    unidades: ingreso.detalles.reduce((total, detalle) => total + detalle.cantidad, 0),
+    barcodes: ingreso.detalles.map((detalle) => detalle.barcode),
+  }
 }
 export async function registrarIngresoStock({
   proveedorId,
@@ -456,6 +554,7 @@ export async function registrarIngresoStock({
   fechaComprobante,
   observaciones,
   detalles,
+  continuarComprobante = false,
 }) {
   if (!proveedorId) {
     throw new Error('Debés seleccionar un proveedor de la lista.')
@@ -466,6 +565,7 @@ export async function registrarIngresoStock({
     fechaComprobante: validarFechaComprobante(fechaComprobante),
     observaciones: validarObservaciones(observaciones),
     detalles: validarDetalles(detalles),
+    continuarComprobante,
   }
   const { data } = await client.mutate({
     mutation: REGISTRAR_INGRESO_STOCK,
@@ -517,37 +617,6 @@ export function filtrarProveedores(proveedores, busqueda) {
     )
     .slice(0, 8)
 }
-export function contarStock(stock) {
-  const categorias = {
-    stockBajo: 0,
-    sinStock: 0,
-  }
-  stock.forEach((item) => {
-    if (item.disponible > 0 && item.disponible <= 5) {
-      categorias.stockBajo += 1
-    } else if (item.disponible <= 0) {
-      categorias.sinStock += 1
-    }
-  })
-  return [
-    {
-      nombre: 'Total de variantes',
-      cantidad: stock.length,
-      color: 'fondo-verde',
-    },
-    {
-      nombre: 'Stock bajo',
-      cantidad: categorias.stockBajo,
-      color: 'fondo-amarillo',
-    },
-    {
-      nombre: 'Sin stock',
-      cantidad: categorias.sinStock,
-      color: 'fondo-rojo',
-    },
-  ]
-}
-
 export function filtrarStock(stock, {
   busqueda = '',
   marcaId = '',

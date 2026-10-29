@@ -4,7 +4,7 @@ import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import { useAuth } from "../contexto/AuthContext";
 import { obtenerPedidos } from "../servicios/pedidosService";
-import { obtenerProductos } from "../servicios/productosService";
+import { obtenerResumenStock } from "../servicios/stockService";
 import {
   formatearFecha,
   formatearPesos,
@@ -59,7 +59,7 @@ function InicioPanel() {
 
   const [resumenPedidos, setResumenPedidos] = useState(null);
   const [pedidosRecientes, setPedidosRecientes] = useState([]);
-  const [alertasStock, setAlertasStock] = useState([]);
+  const [resumenStock, setResumenStock] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
@@ -72,14 +72,14 @@ function InicioPanel() {
   useEffect(() => {
     async function cargar() {
       try {
-        const [resumen, recientes, productos] = await Promise.all([
+        const [resumen, recientes, stock] = await Promise.all([
           obtenerResumenPedidos(),
           obtenerPedidos({ pagina: 1, take: 5 }),
-          obtenerProductos({ pagina: 1, take: 100 }),
+          obtenerResumenStock(5),
         ]);
         setResumenPedidos(resumen);
         setPedidosRecientes(recientes.pedidos);
-        setAlertasStock(productos.productos.filter((p) => p.stock <= 3).slice(0, 5));
+        setResumenStock(stock);
       } catch {
         setError("No pudimos cargar el resumen. Actualizá la página o probá en unos minutos.");
       } finally {
@@ -308,13 +308,30 @@ function InicioPanel() {
           </article>
 
           <aside className="estructura__panel">
-            <h2>Alertas de stock</h2>
-            {!cargando && alertasStock.length === 0 && <p>Sin alertas de stock.</p>}
-            {alertasStock.map((producto) => (
-              <div className="estructura__lista-item" key={producto.id}>
-                <strong>{producto.nombre}</strong>
+            <div className="estructura__panel-encabezado">
+              <h2>Alertas de stock</h2>
+              <div className="estructura__panel-acciones">
+                <Boton variante="admin" onClick={() => navigate("/admin/stock")}>
+                  Ver stock
+                </Boton>
+              </div>
+            </div>
+            {resumenStock && (
+              <p>
+                Sin stock: <strong>{resumenStock.sinStock}</strong> · Stock bajo (
+                {resumenStock.umbralStockBajo} o menos):{" "}
+                <strong>{resumenStock.stockBajo}</strong>
+              </p>
+            )}
+            {!cargando && resumenStock?.alertas.length === 0 && <p>Sin alertas de stock.</p>}
+            {resumenStock?.alertas.map((alerta) => (
+              <div className="estructura__lista-item" key={alerta.varianteId}>
+                <strong>{alerta.producto}</strong>
+                <span>{alerta.variante}</span>
                 <span>
-                  {producto.stock === 0 ? "Sin stock." : `Quedan ${producto.stock} unidades.`}
+                  {alerta.disponible <= 0
+                    ? "Sin stock."
+                    : `Quedan ${alerta.disponible} ${alerta.disponible === 1 ? "unidad" : "unidades"}.`}
                 </span>
               </div>
             ))}

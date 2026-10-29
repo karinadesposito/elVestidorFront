@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+import { useAuth } from "../contexto/AuthContext";
 
 import {
   ESTADO_MAP,
@@ -45,6 +46,10 @@ const COLORES_ESTADO = {
   Delivered: "fondo-verde",
   Cancelled: "fondo-gris",
 };
+
+const EMPRESAS_ENVIO = ["Correo Argentino", "Andreani", "OCA", "Via Cargo", "Envío propio"];
+
+const DATOS_ENVIO_INICIALES = { empresaEnvio: "", codigoSeguimiento: "" };
 
 function mostrarMetodoPago(metodo) {
   if (!metodo) return "No informado";
@@ -93,8 +98,12 @@ function DetallePedido() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { puede } = useAuth();
+  // Cancelar requiere UpdateOrder: los vendedores solo avanzan el circuito de envío.
+  const puedeCancelar = puede("UpdateOrder");
 
   const [pedido, setPedido] = useState(null);
+  const [datosEnvio, setDatosEnvio] = useState(DATOS_ENVIO_INICIALES);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [errorTransicion, setErrorTransicion] = useState("");
@@ -163,8 +172,9 @@ function DetallePedido() {
     setErrorTransicion("");
 
     try {
-      const actualizado = await despacharPedido(pedido.id);
+      const actualizado = await despacharPedido(pedido.id, datosEnvio);
       setPedido(actualizado);
+      setDatosEnvio(DATOS_ENVIO_INICIALES);
     } catch (err) {
       setErrorTransicion(
         err.message || "No se pudo despachar el pedido."
@@ -287,6 +297,7 @@ function DetallePedido() {
       return;
     }
     if (!accionDisponible || accionConfirmar !== accionDisponible.tipo) return;
+    if (accionConfirmar === "despachar" && !datosEnvio.empresaEnvio.trim()) return;
     const tipo = accionConfirmar;
 
     setAccionConfirmar(null);
@@ -355,7 +366,8 @@ function DetallePedido() {
                       : accionDisponible.boton}
                   </Boton>
                 )}
-                {["PaymentSettled", "EnPreparacion"].includes(pedido.state) &&
+                {puedeCancelar &&
+                  ["PaymentSettled", "EnPreparacion"].includes(pedido.state) &&
                   pedido.lines?.length > 0 &&
                   pedido.lines.every(linea => Number.isInteger(linea.quantity) && linea.quantity > 0) &&
                   !pedido.fulfillments?.some(despacho => despacho.state !== "Cancelled") &&
@@ -601,7 +613,10 @@ function DetallePedido() {
             botonConfirmar={
               procesando ? "Procesando..." : accionDisponible.boton
             }
-            botonConfirmarDeshabilitado={procesando}
+            botonConfirmarDeshabilitado={
+              procesando ||
+              (accionConfirmar === "despachar" && !datosEnvio.empresaEnvio.trim())
+            }
           >
             <form
               id="confirmar-accion-pedido"
@@ -611,6 +626,45 @@ function DetallePedido() {
               <p>
                 <strong>Pedido:</strong> #{pedido.code}
               </p>
+              {accionConfirmar === "despachar" && (
+                <>
+                  <div className="estructura__campo">
+                    <label htmlFor="despacho-empresa">Empresa de envío</label>
+                    <input
+                      id="despacho-empresa"
+                      type="text"
+                      list="despacho-empresas"
+                      value={datosEnvio.empresaEnvio}
+                      onChange={(evento) =>
+                        setDatosEnvio({ ...datosEnvio, empresaEnvio: evento.target.value })
+                      }
+                      maxLength={100}
+                      required
+                      autoFocus
+                      disabled={procesando}
+                    />
+                    <datalist id="despacho-empresas">
+                      {EMPRESAS_ENVIO.map((empresa) => (
+                        <option key={empresa} value={empresa} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="estructura__campo">
+                    <label htmlFor="despacho-seguimiento">Código de seguimiento (opcional)</label>
+                    <input
+                      id="despacho-seguimiento"
+                      type="text"
+                      value={datosEnvio.codigoSeguimiento}
+                      onChange={(evento) =>
+                        setDatosEnvio({ ...datosEnvio, codigoSeguimiento: evento.target.value })
+                      }
+                      maxLength={100}
+                      disabled={procesando}
+                    />
+                  </div>
+                  <p>Al confirmar, el cliente recibe un correo con estos datos.</p>
+                </>
+              )}
             </form>
           </ModalAdmin>
         )}
