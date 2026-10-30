@@ -696,3 +696,51 @@ export async function iniciarPagoMercadoPago({
     pagoEnCurso = false
   }
 }
+
+// Recuperación explícita desde el carrito. Ante cualquier pago registrado,
+// no modificamos el pedido: primero debe verificarse su estado en el backend.
+export async function recuperarCarritoParaEditar(pedidoId) {
+  if (pagoEnCurso) {
+    throw new Error('Hay un pago preparándose. No podemos modificar el pedido todavía.')
+  }
+
+  const pedido = await obtenerPedidoCheckout()
+
+  if (!pedido || String(pedido.id) !== String(pedidoId)) {
+    throw new Error('El carrito cambió. Actualizá la página antes de continuar.')
+  }
+
+  if (!pedido.active || pedido.totalQuantity < 1) {
+    throw new Error('Este pedido ya no está disponible para editar.')
+  }
+
+  if (pedido.state === 'AddingItems') return pedido
+
+  if (pedido.state !== 'ArrangingPayment') {
+    throw new Error('El estado actual de este pedido no permite editarlo.')
+  }
+
+  if (!Array.isArray(pedido.payments)) {
+    throw new Error('No pudimos comprobar los pagos del pedido. No se realizaron cambios.')
+  }
+
+  if (pedido.payments.length > 0) {
+    throw new Error(
+      'Este pedido tiene un intento de pago registrado. Para proteger tu compra, no podemos modificarlo hasta verificar su estado.',
+    )
+  }
+
+  const recuperado = await ejecutarMutacion(
+    PREPARAR_PAGO,
+    { estado: 'AddingItems' },
+    'transitionOrderToState',
+    'No pudimos volver a habilitar el carrito.',
+  )
+
+  if (recuperado.state !== 'AddingItems' || String(recuperado.id) !== String(pedidoId)) {
+    throw new Error('No pudimos confirmar que el carrito esté editable.')
+  }
+
+  olvidarCodigoPedidoPago()
+  return recuperado
+}

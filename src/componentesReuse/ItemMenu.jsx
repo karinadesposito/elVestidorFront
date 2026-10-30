@@ -1,5 +1,5 @@
 
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 function ItemMenu({
   titulo,
@@ -10,7 +10,15 @@ function ItemMenu({
   alCerrar,
   destacado = false,
 }) {
+  const navegar = useNavigate()
   const tieneGrupos = grupos.length > 0
+
+  function manejarClickTitulo() {
+    if (destacado) {
+      navegar('/sale')
+    }
+    alAlternar?.()
+  }
 
   function renderizarItems(lista, prefijo = '') {
     return lista.map((item, indice) => {
@@ -52,7 +60,7 @@ function ItemMenu({
       <button
         type="button"
         className="barra__boton-menu"
-        onClick={alAlternar}
+        onClick={manejarClickTitulo}
         aria-expanded={abierto}
       >
         {titulo}
@@ -78,6 +86,17 @@ function ItemMenu({
                   </p>
 
                   <ul className="barra__dropdown-lista">
+                    {destacado && grupo === grupos[0] && (
+                      <li>
+                        <Link
+                          to="/sale"
+                          className="barra__dropdown-item"
+                          onClick={alCerrar}
+                        >
+                          Ver todas las ofertas
+                        </Link>
+                      </li>
+                    )}
                     {renderizarItems(
                       grupo.items,
                       `${grupo.titulo}-`,

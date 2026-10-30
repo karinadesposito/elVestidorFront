@@ -58,6 +58,49 @@ function ProductoCard({
     ? varianteSeleccionada?.precio
     : producto.precioDesde
 
+  // Algunas tarjetas agrupan talles con descuentos diferentes.
+  // En ese caso mostramos la variante ofertada más económica;
+  // al elegir un talle, mostramos solo su descuento real.
+  const variantesEnOferta = (producto.variantes || [])
+    .filter(variante =>
+      Number.isInteger(variante.descuentoPorcentaje) &&
+      variante.descuentoPorcentaje > 0 &&
+      Number.isFinite(variante.precioOfertaEstimado) &&
+      variante.precioOfertaEstimado < variante.precio,
+    )
+    .sort((a, b) =>
+      a.precioOfertaEstimado - b.precioOfertaEstimado,
+    )
+
+  const ofertaRepresentativa = variantesEnOferta[0] || null
+  const usaOfertaDeVariante =
+    !selectorAbierto &&
+    producto.descuentoPorcentaje == null &&
+    ofertaRepresentativa !== null
+
+  const precioOriginalMostrado = usaOfertaDeVariante
+    ? ofertaRepresentativa.precio
+    : precio
+
+  const descuentoPorcentaje = selectorAbierto
+    ? varianteSeleccionada?.descuentoPorcentaje
+    : usaOfertaDeVariante
+      ? ofertaRepresentativa.descuentoPorcentaje
+      : producto.descuentoPorcentaje
+
+  const precioOferta = selectorAbierto
+    ? varianteSeleccionada?.precioOfertaEstimado
+    : usaOfertaDeVariante
+      ? ofertaRepresentativa.precioOfertaEstimado
+      : producto.precioOfertaDesdeEstimado
+
+  const tieneOferta =
+    Number.isInteger(descuentoPorcentaje) &&
+    descuentoPorcentaje > 0 &&
+    Number.isFinite(precioOferta) &&
+    Number.isFinite(precioOriginalMostrado) &&
+    precioOferta < precioOriginalMostrado
+
   const tienePrecio = Number.isFinite(precio)
 
   const mostrarDesde =
@@ -256,9 +299,52 @@ function ProductoCard({
         )}
 
         <p aria-live="polite" aria-atomic="true">
-          {tienePrecio
-            ? `${mostrarDesde ? 'Desde ' : ''}${formatoPrecio.format(precio)}`
-            : 'Precio no disponible'}
+          {tienePrecio ? (
+            tieneOferta ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    color: '#B5121B',
+                    fontSize: 'clamp(1.05rem, 2.5vw, 1.3rem)',
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    marginRight: '0.5rem',
+                  }}
+                >
+                  {(mostrarDesde || usaOfertaDeVariante) ? 'Desde ' : ''}
+                  {formatoPrecio.format(precioOferta)}
+                </span>
+                <del
+                  style={{
+                    color: '#858585',
+                    fontSize: '0.78rem',
+                    fontWeight: 400,
+                    marginRight: '0.5rem',
+                  }}
+                >
+                  {formatoPrecio.format(precioOriginalMostrado)}
+                </del>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    backgroundColor: '#922F2F',
+                    color: '#FFFFFF',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.25rem 0.4rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  -{descuentoPorcentaje}%
+                </span>
+              </>
+            ) : (
+              `${mostrarDesde ? 'Desde ' : ''}${formatoPrecio.format(precio)}`
+            )
+          ) : (
+            'Precio no disponible'
+          )}
         </p>
 
         {!tieneStock && (

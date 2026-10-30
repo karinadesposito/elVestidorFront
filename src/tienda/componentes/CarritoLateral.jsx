@@ -37,6 +37,7 @@ function CarritoLateral({
   lineaEliminandoId = null,
   lineaActualizandoId = null,
   alEliminar,
+  alRecuperar,
   alCambiarCantidad,
   alCerrar,
 }) {
@@ -377,6 +378,22 @@ function CarritoLateral({
               </div>
 
               <p>Envío calculado al finalizar la compra.</p>
+
+              {carrito?.estado === 'ArrangingPayment' && (
+                <>
+                  <p>
+                    Este pedido inició el pago. Si querés modificarlo,
+                    primero comprobaremos que no tenga pagos registrados.
+                  </p>
+                  <Boton
+                    variante="secundario"
+                    onClick={alRecuperar}
+                    disabled={cargando || typeof alRecuperar !== 'function'}
+                  >
+                    Volver a editar el carrito
+                  </Boton>
+                </>
+              )}
 
               <Boton
                 onClick={irAPagar}

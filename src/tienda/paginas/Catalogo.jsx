@@ -81,11 +81,14 @@ function formatearTitulo(texto = '') {
     .join(' ')
 }
 
-function obtenerTitulo(genero, categoria) {
-  if (genero === 'sale') {
-    return categoria
-      ? `Sale ${TITULOS_CATEGORIA[categoria] || formatearTitulo(categoria)}`
-      : 'Sale'
+function obtenerTitulo(genero, categoria, generoSale) {
+  if (genero === 'sale' || generoSale) {
+    const tituloGenero = generoSale ? formatearTitulo(generoSale) : ''
+    const tituloCategoria = categoria
+      ? TITULOS_CATEGORIA[categoria] || formatearTitulo(categoria)
+      : ''
+
+    return ['Sale', tituloGenero, tituloCategoria].filter(Boolean).join(' ')
   }
 
   if (categoria) {
@@ -106,11 +109,12 @@ function coincideValor(valor, nombres) {
 function ContenidoCatalogo({
   genero,
   categoria,
+  generoSale,
   alAgregarAlCarrito,
   cargandoCarrito,
 }) {
-  const esSale = genero === 'sale'
-  const titulo = obtenerTitulo(genero, categoria)
+  const esSale = genero === 'sale' || Boolean(generoSale)
+  const titulo = obtenerTitulo(genero, categoria, generoSale)
 
   const [configuracion, setConfiguracion] = useState(null)
   const [marcas, setMarcas] = useState([])
@@ -125,7 +129,7 @@ function ContenidoCatalogo({
   const [desplazamiento, setDesplazamiento] = useState(0)
   const [hayMas, setHayMas] = useState(false)
 
-  const [cargando, setCargando] = useState(!esSale)
+  const [cargando, setCargando] = useState(true)
   const [cargandoMas, setCargandoMas] = useState(false)
   const [error, setError] = useState('')
 
@@ -133,10 +137,6 @@ function ContenidoCatalogo({
   const solicitudMas = useRef(false)
 
   useEffect(() => {
-    if (esSale) {
-      return
-    }
-
     let activo = true
 
     async function prepararCatalogo() {
@@ -147,8 +147,36 @@ function ContenidoCatalogo({
           return
         }
 
+        // SALE general no filtra por género. Las subsecciones de SALE sí.
+        if (esSale && !generoSale) {
+          const nombresTipo = categoria
+            ? TIPOS_POR_CATEGORIA[categoria] || []
+            : []
+          const tiposCategoria = categoria
+            ? filtrosGenerales.tiposProducto.filter(valor =>
+                coincideValor(valor, nombresTipo),
+              )
+            : filtrosGenerales.tiposProducto
+
+          if (categoria && tiposCategoria.length === 0) {
+            setCargando(false)
+            return
+          }
+
+          setMarcas(filtrosGenerales.marcas)
+          setTiposProducto(tiposCategoria)
+          setConfiguracion({
+            generoId: null,
+            tiposProductoIds: categoria
+              ? tiposCategoria.map(valor => valor.id)
+              : [],
+          })
+          return
+        }
+
+        const generoBuscado = esSale ? generoSale : genero
         const generoEncontrado = filtrosGenerales.generos.find(
-          valor => coincideValor(valor, [genero]),
+          valor => coincideValor(valor, [generoBuscado]),
         )
 
         if (!generoEncontrado) {
@@ -216,7 +244,7 @@ function ContenidoCatalogo({
     return () => {
       activo = false
     }
-  }, [genero, categoria, esSale])
+  }, [genero, categoria, generoSale, esSale])
 
   useEffect(() => {
     if (!configuracion) {
@@ -248,6 +276,7 @@ function ContenidoCatalogo({
             : [],
           orden,
           desplazamiento: 0,
+          soloOfertas: esSale,
         })
 
         if (!activo) {
@@ -282,6 +311,7 @@ function ContenidoCatalogo({
     marcaSeleccionada,
     tipoSeleccionado,
     orden,
+    esSale,
   ])
 
   async function mostrarMas() {
@@ -311,6 +341,7 @@ function ContenidoCatalogo({
           : [],
         orden,
         desplazamiento,
+        soloOfertas: esSale,
       })
 
       if (versionActual !== versionConsulta.current) {
@@ -502,7 +533,7 @@ function ContenidoCatalogo({
 }
 
 function Catalogo() {
-  const { genero, categoria } = useParams()
+  const { genero, categoria, generoSale } = useParams()
 
   const {
     agregarProductoAlCarrito,
@@ -511,9 +542,10 @@ function Catalogo() {
 
   return (
     <ContenidoCatalogo
-      key={`${genero}/${categoria || ''}`}
+      key={`${genero}/${generoSale || ''}/${categoria || ''}`}
       genero={genero}
       categoria={categoria}
+      generoSale={generoSale}
       alAgregarAlCarrito={agregarProductoAlCarrito}
       cargandoCarrito={cargandoCarrito}
     />

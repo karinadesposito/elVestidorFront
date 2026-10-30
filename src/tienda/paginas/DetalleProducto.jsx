@@ -19,7 +19,8 @@ const formatoPrecio = new Intl.NumberFormat('es-AR', {
 })
 
 function DetalleProducto() {
-  const { genero, productoId } = useParams()
+  const { genero: generoRuta, productoId } = useParams()
+  const genero = generoRuta || 'sale'
 
   const {
     agregarProductoAlCarrito,
@@ -116,6 +117,14 @@ function DetalleProducto() {
     varianteSeleccionada ||
     tallesDisponibles[0] ||
     variantesColor[0]
+
+  const porcentajeOferta = precioReferencia?.descuentoPorcentaje
+  const precioOferta = precioReferencia?.precioOfertaEstimado
+  const tieneOferta =
+    Number.isInteger(porcentajeOferta) &&
+    porcentajeOferta > 0 &&
+    Number.isFinite(precioOferta) &&
+    precioOferta < precioReferencia.precio
 
   const disponible = Boolean(
     varianteSeleccionada?.disponible,
@@ -289,8 +298,49 @@ function DetalleProducto() {
             <h1>{producto.nombre}</h1>
 
             {precioReferencia && (
-              <p className="detalle-producto__precio">
-                {formatoPrecio.format(precioReferencia.precio)}
+              <p className="detalle-producto__precio" aria-live="polite">
+                {tieneOferta ? (
+                  <>
+                    <strong
+                      style={{
+                        display: 'inline-block',
+                        color: '#B5121B',
+                        fontSize: 'clamp(1.5rem, 5vw, 2.1rem)',
+                        fontWeight: 700,
+                        lineHeight: 1.2,
+                        marginRight: '0.75rem',
+                      }}
+                    >
+                      {formatoPrecio.format(precioOferta)}
+                    </strong>
+                    <del
+                      style={{
+                        display: 'inline-block',
+                        color: '#858585',
+                        fontSize: '0.9rem',
+                        fontWeight: 400,
+                        marginRight: '0.75rem',
+                      }}
+                    >
+                      {formatoPrecio.format(precioReferencia.precio)}
+                    </del>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        backgroundColor: '#922F2F',
+                        color: '#FFFFFF',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        padding: '0.3rem 0.5rem',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      -{porcentajeOferta}%
+                    </span>
+                  </>
+                ) : (
+                  formatoPrecio.format(precioReferencia.precio)
+                )}
               </p>
             )}
 
