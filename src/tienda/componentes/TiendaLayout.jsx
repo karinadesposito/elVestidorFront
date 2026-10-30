@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom'
 import Barra from './Barra'
 import PiePagina from './PiePagina'
 import CarritoLateral from './CarritoLateral'
+import { recuperarCarritoParaEditar } from '../../servicios/checkoutService'
 
 import {
   obtenerCarrito,
@@ -124,6 +125,38 @@ function TiendaLayout() {
     }
   }
 
+  async function recuperarCarrito() {
+    if (solicitudEnCurso.current) return
+
+    const id = carrito?.id
+    if (!id) {
+      setErrorCarrito('No encontramos el pedido para recuperar.')
+      return
+    }
+
+    solicitudEnCurso.current = true
+    setCargandoCarrito(true)
+    setErrorCarrito('')
+    setErrorLinea(null)
+
+    try {
+      await recuperarCarritoParaEditar(id)
+      setCarrito(await obtenerCarrito())
+    } catch (fallo) {
+      setErrorCarrito(
+        fallo.message || 'No pudimos volver a editar tu carrito.',
+      )
+      try {
+        setCarrito(await obtenerCarrito())
+      } catch {
+        // Conservamos el error y el estado previo si falla la consulta.
+      }
+    } finally {
+      solicitudEnCurso.current = false
+      setCargandoCarrito(false)
+    }
+  }
+
   async function eliminarProductoDelCarrito(lineaId) {
     if (solicitudEnCurso.current) return
 
@@ -234,6 +267,7 @@ function TiendaLayout() {
         lineaEliminandoId={lineaEliminandoId}
         lineaActualizandoId={lineaActualizandoId}
         alEliminar={eliminarProductoDelCarrito}
+        alRecuperar={recuperarCarrito}
         alCambiarCantidad={cambiarCantidadProducto}
         alCerrar={cerrarCarrito}
       />

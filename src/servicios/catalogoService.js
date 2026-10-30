@@ -52,6 +52,8 @@ const OBTENER_CATALOGO = gql`
         }
         precioDesde
         precioHasta
+        descuentoPorcentaje
+        precioOfertaDesdeEstimado
         preciosDiferentes
         moneda
         disponible
@@ -63,6 +65,8 @@ const OBTENER_CATALOGO = gql`
           talleId
           talle
           precioConImpuestos
+          descuentoPorcentaje
+          precioOfertaEstimado
           moneda
           estadoStock
           disponible
@@ -126,6 +130,80 @@ const OBTENER_DETALLE_PRODUCTO = gql`
   }
 `
 
+// Consultamos ofertas anunciadas por el mismo catalogo de Vendure.
+// El detalle de `product` devuelve el precio base, sin las promociones
+// automaticas que nuestro plugin expone por variante.
+const OBTENER_OFERTAS_DETALLE = gql`
+  query ObtenerOfertasDetalle($input: CatalogoTiendaInput!) {
+    catalogoTienda(input: $input) {
+      items {
+        productoId
+        variantes {
+          id
+          descuentoPorcentaje
+          precioOfertaEstimado
+        }
+      }
+      siguienteDesplazamiento
+      hayMas
+    }
+  }
+`
+
+async function obtenerOfertasPorVariante(productoId) {
+  const ofertas = new Map()
+  let desplazamiento = 0
+  let hayMas = true
+
+  // La paginacion se realiza sobre tarjetas de catalogo (producto/color).
+  // Puede haber mas de un color para el mismo producto.
+  while (hayMas) {
+    const { data } = await clienteTienda.query({
+      query: OBTENER_OFERTAS_DETALLE,
+      variables: {
+        input: {
+          soloOfertas: true,
+          skip: desplazamiento,
+          take: TAMANO_PAGINA,
+        },
+      },
+      fetchPolicy: 'network-only',
+    })
+
+    const resultado = data?.catalogoTienda
+    if (!resultado) break
+
+    for (const card of resultado.items || []) {
+      if (String(card.productoId) !== String(productoId)) continue
+
+      for (const variante of card.variantes || []) {
+        const porcentaje = variante.descuentoPorcentaje
+        const importe = variante.precioOfertaEstimado
+        if (
+          Number.isInteger(porcentaje) &&
+          porcentaje > 0 &&
+          importe != null &&
+          Number.isFinite(Number(importe))
+        ) {
+          ofertas.set(String(variante.id), {
+            descuentoPorcentaje: porcentaje,
+            precioOfertaEstimado: Number(importe) / 100,
+          })
+        }
+      }
+    }
+
+    const siguiente = resultado.siguienteDesplazamiento
+    if (!resultado.hayMas || !Number.isInteger(siguiente) || siguiente <= desplazamiento) {
+      hayMas = false
+    } else {
+      desplazamiento = siguiente
+    }
+  }
+
+  return ofertas
+}
+
 function construirFiltros({
   generoId = null,
   tiposProductoIds = [],
@@ -161,6 +239,10 @@ function mapearVariante(variante) {
     talleId: variante.talleId,
     talle: variante.talle,
     precio: variante.precioConImpuestos / 100,
+    descuentoPorcentaje: variante.descuentoPorcentaje ?? null,
+    precioOfertaEstimado: variante.precioOfertaEstimado == null
+      ? null
+      : variante.precioOfertaEstimado / 100,
     moneda: variante.moneda,
     estadoStock: variante.estadoStock,
     disponible: variante.disponible,
@@ -186,6 +268,10 @@ function mapearCard(card) {
       : card.nombre,
     precioDesde: card.precioDesde / 100,
     precioHasta: card.precioHasta / 100,
+    descuentoPorcentaje: card.descuentoPorcentaje ?? null,
+    precioOfertaDesdeEstimado: card.precioOfertaDesdeEstimado == null
+      ? null
+      : card.precioOfertaDesdeEstimado / 100,
     preciosDiferentes: card.preciosDiferentes,
     disponible: card.disponible,
     variantes: card.variantes.map(mapearVariante),
@@ -375,6 +461,7 @@ export async function obtenerCatalogo({
   marcaIds = [],
   orden = 'nombre-asc',
   desplazamiento = 0,
+  soloOfertas = false,
 } = {}) {
   if (
     !Number.isInteger(desplazamiento) ||
@@ -399,8 +486,10 @@ export async function obtenerCatalogo({
           ORDENAMIENTOS['nombre-asc'],
         skip: desplazamiento,
         take: TAMANO_PAGINA,
+        soloOfertas: Boolean(soloOfertas),
       },
     },
+    fetchPolicy: 'network-only',
   })
 
   const resultado = data.catalogoTienda
@@ -431,5 +520,28 @@ export async function obtenerDetalleProducto(productoId) {
     throw new Error('El producto no está disponible.')
   }
 
-  return mapearDetalleProducto(data.product)
+  const detalle = mapearDetalleProducto(data.product)
+
+  // La ficha debe seguir funcionando incluso si falla la consulta
+  // complementaria de ofertas; en ese caso exhibimos el precio base.
+  let ofertas = new Map()
+  try {
+    ofertas = await obtenerOfertasPorVariante(id)
+  } catch (error) {
+    console.warn('No se pudieron recuperar las ofertas del producto.', error)
+  }
+
+  const variantes = detalle.variantes.map(variante => ({
+    ...variante,
+    ...(ofertas.get(String(variante.id)) || {
+      descuentoPorcentaje: null,
+      precioOfertaEstimado: null,
+    }),
+  }))
+
+  return {
+    ...detalle,
+    variantes,
+    colores: agruparColores(variantes, detalle.imagenes),
+  }
 }
