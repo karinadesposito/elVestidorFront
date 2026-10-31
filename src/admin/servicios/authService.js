@@ -119,6 +119,47 @@ export async function cerrarSesion() {
   }
 }
 
+const CAMBIAR_CLAVE_MUTATION = `
+  mutation CambiarMiClave($claveActual: String!, $claveNueva: String!) {
+    cambiarMiClave(claveActual: $claveActual, claveNueva: $claveNueva)
+  }
+`
+
+export const LARGO_MINIMO_CLAVE = 10
+
+// El back verifica la contraseña actual y, si sale bien, cierra todas las
+// sesiones del usuario: después hay que volver a ingresar.
+export async function cambiarMiClave({ claveActual, claveNueva }) {
+  const sesion = obtenerSesion()
+  if (!sesion?.token) {
+    throw new Error('Tu sesión venció. Ingresá de nuevo.')
+  }
+  if (claveNueva.length < LARGO_MINIMO_CLAVE) {
+    throw new Error(`La contraseña nueva tiene que tener al menos ${LARGO_MINIMO_CLAVE} caracteres.`)
+  }
+
+  const response = await fetch('/admin-api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sesion.token}`,
+    },
+    body: JSON.stringify({
+      query: CAMBIAR_CLAVE_MUTATION,
+      variables: { claveActual, claveNueva },
+    }),
+  })
+
+  const result = await response.json()
+
+  if (result.errors) {
+    throw new Error(result.errors[0].message)
+  }
+
+  localStorage.removeItem('admin_sesion')
+  return true
+}
+
 export function obtenerSesion() {
   try {
     const datos = localStorage.getItem('admin_sesion')
