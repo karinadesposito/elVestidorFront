@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FiChevronDown, FiX } from 'react-icons/fi'
 
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
@@ -14,6 +14,7 @@ function MenuMobile({
   gruposSale = [],
 }) {
   const [seccionAbierta, setSeccionAbierta] = useState(null)
+  const navegar = useNavigate()
 
   if (!abierto) return null
 
@@ -21,6 +22,11 @@ function MenuMobile({
     setSeccionAbierta(actual =>
       actual === seccion ? null : seccion,
     )
+  }
+
+  function abrirSale() {
+    alternarSeccion('sale')
+    navegar('/sale')
   }
 
   function cerrarMenu() {
@@ -138,7 +144,7 @@ function MenuMobile({
           <button
             type="button"
             className="menu-mobile__principal menu-mobile__principal--sale"
-            onClick={() => alternarSeccion('sale')}
+            onClick={abrirSale}
             aria-expanded={seccionAbierta === 'sale'}
           >
             SALE
@@ -147,6 +153,13 @@ function MenuMobile({
 
           {seccionAbierta === 'sale' && (
             <div className="menu-mobile__sale">
+              <ul className="menu-mobile__sublista">
+                <li>
+                  <Link to="/sale" onClick={cerrarMenu}>
+                    Ver todas las ofertas
+                  </Link>
+                </li>
+              </ul>
               {gruposSale.map(grupo => (
                 <div
                   className="menu-mobile__grupo"

@@ -58,6 +58,21 @@ function App() {
           />
 
           <Route
+            path="sale/producto/:productoId"
+            element={<DetalleProducto />}
+          />
+
+          <Route
+            path="sale/:generoSale/:categoria"
+            element={<Catalogo />}
+          />
+
+          <Route
+            path="sale/:generoSale"
+            element={<Catalogo />}
+          />
+
+          <Route
             path=":genero"
             element={<Catalogo />}
           />
