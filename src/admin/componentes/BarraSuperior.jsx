@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   FiBox,
+  FiLock,
   FiLogOut,
   FiMenu,
   FiPackage,
@@ -15,6 +16,7 @@ import Boton from '../../componentesReuse/Boton'
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
 import { useAuth } from '../contexto/AuthContext'
+import CambiarClave from './CambiarClave'
 
 import '../../estilos/admin-barra-superior.css'
 
@@ -45,6 +47,7 @@ const enlaces = [
 function BarraSuperior() {
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [usuarioAbierto, setUsuarioAbierto] = useState(false)
+  const [cambiandoClave, setCambiandoClave] = useState(false)
 
   const menuUsuarioRef = useRef(null)
 
@@ -96,6 +99,17 @@ const fecha = `${fechaActual.getDate()} ${
   function cerrarSesion() {
     logout()
     navigate('/admin', { replace: true })
+  }
+
+  function abrirCambioClave() {
+    setUsuarioAbierto(false)
+    setMenuAbierto(false)
+    setCambiandoClave(true)
+  }
+
+  function terminarCambioClave() {
+    setCambiandoClave(false)
+    cerrarSesion()
   }
 
   return (
@@ -174,6 +188,13 @@ const fecha = `${fechaActual.getDate()} ${
                 <div className="barra-admin__usuario-menu">
                   <button
                     type="button"
+                    onClick={abrirCambioClave}
+                  >
+                    <FiLock aria-hidden="true" />
+                    <span>Cambiar mi contraseña</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={cerrarSesion}
                   >
                     <FiLogOut aria-hidden="true" />
@@ -242,6 +263,14 @@ const fecha = `${fechaActual.getDate()} ${
 
               <button
                 type="button"
+                onClick={abrirCambioClave}
+              >
+                <FiLock aria-hidden="true" />
+                <span>Cambiar mi contraseña</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={cerrarSesion}
               >
                 <FiLogOut aria-hidden="true" />
@@ -250,6 +279,13 @@ const fecha = `${fechaActual.getDate()} ${
             </nav>
           </aside>
         </div>
+      )}
+
+      {cambiandoClave && (
+        <CambiarClave
+          onClose={() => setCambiandoClave(false)}
+          onListo={terminarCambioClave}
+        />
       )}
     </>
   )
