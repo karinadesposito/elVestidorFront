@@ -1,3 +1,4 @@
+
 import client from "../../servicios/apolloClient";
 import { gql } from "@apollo/client";
 const IDIOMA = "es";
@@ -159,6 +160,12 @@ const OBTENER_PRODUCTO = gql`
             name
             code
           }
+        }
+        facetValues {
+          id
+          name
+          code
+          facet { id code }
         }
       }
     }
@@ -500,6 +507,7 @@ export async function subirArchivoAAssets(archivo) {
   }
   return mapearImagen(asset);
 }
+
 /**
  * Quitar la imagen de una entidad solo la desvincula; el archivo queda en la
  * biblioteca de assets.
@@ -715,6 +723,16 @@ async function obtenerOCrearValorFaceta({
     return null;
   }
   const codigoValor = generarCodigo(nombreValor);
+  if (configuracionFaceta.codigo === FACETAS.color.codigo) {
+    const facetaColor = facetas.find((faceta) => faceta.code === FACETAS.color.codigo);
+    const colorExistente = facetaColor?.values?.find(
+      (item) => item.code === codigoValor || normalizarTexto(item.name) === normalizarTexto(nombreValor),
+    );
+    if (!colorExistente) {
+      throw new Error(`El color "${nombreValor}" no existe en la facet Color de Vendure.`);
+    }
+    return colorExistente.id;
+  }
   const faceta = await obtenerOCrearFaceta(configuracionFaceta, facetas);
   const valorExistente = faceta.values?.find(
     (valorFaceta) => valorFaceta.code === codigoValor,
@@ -894,6 +912,7 @@ export async function obtenerCatalogosProducto() {
     })),
   };
 }
+
 export async function obtenerOpcionesProducto(productId) {
   if (!productId) {
     return {
@@ -1232,6 +1251,7 @@ export async function eliminarProducto(productId) {
   }
   return respuesta;
 }
+
 export async function crearVariante({
   productId,
   color,
@@ -1255,6 +1275,12 @@ export async function crearVariante({
   if (!codigoSku) {
     throw new Error("El barcode o SKU es obligatorio.");
   }
+  const facetas = await obtenerFacetas();
+  const colorFacetValueId = await obtenerOCrearValorFaceta({
+    configuracionFaceta: FACETAS.color,
+    valor: nombreColor,
+    facetas,
+  });
   const producto = await obtenerProductoPorId(productId);
   const gruposActuales = obtenerGruposSemanticos(producto);
   validarGrupoPropioProducto(gruposActuales.color, TIPOS_GRUPO.color);
@@ -1298,12 +1324,6 @@ export async function crearVariante({
     });
     optionIds.push(opcionTalle.id);
   }
-  const facetas = await obtenerFacetas();
-  const colorFacetValueId = await obtenerOCrearValorFaceta({
-    configuracionFaceta: FACETAS.color,
-    valor: nombreColor,
-    facetas,
-  });
   const nombreVariante = [opcionColor.name, opcionTalle?.name]
     .filter(Boolean)
     .join(" / ");
@@ -1360,6 +1380,7 @@ export async function actualizarVariante({
   quitarImagen,
   productId,
   color,
+  talle,
   imagenesActuales = [],
   imagenesArchivos = [],
   galeriaModificada = false,
@@ -1370,6 +1391,48 @@ export async function actualizarVariante({
   const codigoSku = String(sku || "").trim();
   if (!codigoSku) {
     throw new Error("El barcode o SKU es obligatorio.");
+  }
+  let opcionesActualizadas = optionIds;
+  let valoresFacetaActualizados = null;
+  if (color != null) {
+    if (!productId) throw new Error("No se encontró el producto de la variante.");
+    const producto = await obtenerProductoPorId(productId);
+    const varianteOriginal = (producto.variants || []).find(
+      (item) => String(item.id) === String(variantId),
+    );
+    if (!varianteOriginal) throw new Error("No se encontró la variante a editar.");
+    const facetas = await obtenerFacetas();
+    const idColor = await obtenerOCrearValorFaceta({
+      configuracionFaceta: FACETAS.color, valor: color, facetas,
+    });
+    const grupos = obtenerGruposSemanticos(producto);
+    if (!grupos.color) throw new Error("El producto no tiene un grupo de Color.");
+    validarGrupoPropioProducto(grupos.color, TIPOS_GRUPO.color);
+    const opcionColor = await obtenerOCrearOpcionGrupo({ grupo: grupos.color, nombre: color });
+    const opcionesOriginales = varianteOriginal.options || [];
+    const opcionTalleOriginal = opcionesOriginales.find((opcion) => esGrupoTalle(opcion.group));
+    let opcionTalle = opcionTalleOriginal;
+    if (talle && normalizarTexto(talle) !== normalizarTexto(opcionTalleOriginal?.name)) {
+      if (!grupos.talle) throw new Error("El producto no tiene un grupo de Talle.");
+      validarGrupoPropioProducto(grupos.talle, TIPOS_GRUPO.talle);
+      opcionTalle = await obtenerOCrearOpcionGrupo({ grupo: grupos.talle, nombre: talle });
+    }
+    const otrasOpciones = opcionesOriginales.filter(
+      (opcion) => !esGrupoColor(opcion.group) && !esGrupoTalle(opcion.group),
+    ).map((opcion) => opcion.id);
+    opcionesActualizadas = [opcionColor.id, ...(opcionTalle ? [opcionTalle.id] : []), ...otrasOpciones];
+    const repetida = (producto.variants || []).some((item) =>
+      String(item.id) !== String(variantId) &&
+      normalizarTexto(obtenerOpcionColor(item.options || [])) === normalizarTexto(color) &&
+      normalizarTexto(obtenerOpcionTalle(item.options || [])) === normalizarTexto(opcionTalle?.name),
+    );
+    if (repetida) throw new Error("Ya existe una variante con ese color y talle para este producto.");
+    valoresFacetaActualizados = [
+      ...(varianteOriginal.facetValues || [])
+        .filter((valor) => valor.facet?.code !== FACETAS.color.codigo)
+        .map((valor) => valor.id),
+      idColor,
+    ];
   }
   const imagen = galeriaModificada
     ? await resolverGaleria({ imagenesActuales, archivos: imagenesArchivos })
@@ -1382,7 +1445,8 @@ export async function actualizarVariante({
         sku: codigoSku,
         ...(precio != null ? { price: pesosACentavos(precio) } : {}),
         enabled: Boolean(activo),
-        optionIds,
+        optionIds: opcionesActualizadas,
+        ...(valoresFacetaActualizados ? { facetValueIds: valoresFacetaActualizados } : {}),
         ...(imagen
           ? {
               featuredAssetId: imagen.featuredAssetId,
@@ -1436,8 +1500,6 @@ export async function obtenerResumenProductos() {
     },
   ];
 }
-
-
 const BUSCAR_VARIANTES_LISTADO = gql`
   query BuscarVariantesListado($options: ProductVariantListOptions) {
     productVariants(options: $options) {
@@ -1466,14 +1528,12 @@ const BUSCAR_VARIANTES_LISTADO = gql`
     }
   }
 `;
-
 export async function buscarVariantes(
   termino,
   { pagina = 1, take = 50, marcas = [], tiposProducto = [] } = {},
 ) {
   const texto = String(termino || "").trim();
   if (!texto) return { variantes: [], productos: [], total: 0 };
-
   const filter = {
     _or: [{ name: { contains: texto } }, { sku: { contains: texto } }],
   };
@@ -1481,7 +1541,6 @@ export async function buscarVariantes(
   const variantesEncontradas = [];
   let total = 0;
   let skip = filtrarPorFacetas ? 0 : (pagina - 1) * take;
-
   do {
     const { data } = await client.query({
       query: BUSCAR_VARIANTES_LISTADO,
@@ -1503,12 +1562,10 @@ export async function buscarVariantes(
     skip += resultado.items.length;
     if (!filtrarPorFacetas || resultado.items.length === 0) break;
   } while (skip < total);
-
   const variantesPagina = filtrarPorFacetas
     ? variantesEncontradas.slice((pagina - 1) * take, pagina * take)
     : variantesEncontradas;
   if (filtrarPorFacetas) total = variantesEncontradas.length;
-
   const productosPorId = new Map();
   variantesPagina.forEach((variante) => {
     const producto = variante.product;

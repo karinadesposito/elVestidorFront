@@ -1,11 +1,14 @@
-.estructura {
+.estructura,
+.estructura__modal {
   --estructura-texto-xs: 0.65rem;
   --estructura-texto-sm: 0.75rem;
   --estructura-texto-md: 0.82rem;
   --estructura-texto-lg: 1rem;
   --estructura-texto-xl: 1.2rem;
   --estructura-texto-titulo: clamp(1.2rem, 4vw, 1.6rem);
+}
 
+.estructura {
   min-height: 100vh;
   padding-block: var(--espacio-3);
   color: var(--color-texto-principal);
@@ -37,7 +40,6 @@
 .estructura__tarjeta,
 .estructura__panel,
 .estructura__modal-contenido {
-  
   border-radius: var(--radio-lg);
   background: var(--color-fondo-alternativo);
 }
@@ -159,13 +161,20 @@
   font-size: var(--estructura-texto-sm);
 }
 
+/* Modal */
+
 .estructura__modal {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: grid;
   place-items: end center;
-  padding: var(--espacio-3);
+  box-sizing: border-box;
+  padding: var(--espacio-2);
+  color: var(--color-texto-principal);
+  font-family: var(--fuente-interfaz);
+  font-size: var(--estructura-texto-md);
+  line-height: 1.4;
 }
 
 .estructura__modal-fondo {
@@ -178,16 +187,21 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: var(--espacio-3);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--espacio-2);
+  box-sizing: border-box;
   width: min(100%, 34rem);
-  max-height: calc(100vh - var(--espacio-4));
-  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: calc(100vh - var(--espacio-3));
+  max-height: calc(100dvh - var(--espacio-3));
+  overflow: hidden;
   padding: var(--espacio-3);
 }
 
 .estructura__modal-encabezado {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--espacio-2);
 }
@@ -195,16 +209,18 @@
 .estructura__modal-encabezado h2 {
   margin: 0;
   color: var(--color-texto-fuerte);
-  font-size: var(--estructura-texto-xl);
+  font-size: var(--estructura-texto-lg);
   font-weight: var(--peso-semibold);
+  overflow-wrap: anywhere;
 }
 
 .estructura__modal-cerrar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radio-sm);
   color: var(--color-texto-fuerte);
   font-size: var(--estructura-texto-lg);
@@ -217,16 +233,30 @@
 
 .estructura__modal-cuerpo {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: var(--espacio-1);
 }
 
 .estructura__formulario {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   gap: var(--espacio-2);
+  min-width: 0;
+}
+
+.estructura__formulario > * {
+  min-width: 0;
 }
 
 .estructura__campo {
   display: grid;
+  align-content: start;
   gap: var(--espacio-1);
+  min-width: 0;
 }
 
 .estructura__campo label {
@@ -241,6 +271,7 @@
 .estructura__campo select,
 .estructura__campo textarea {
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   padding: var(--espacio-2);
   border: thin solid var(--color-borde-suave);
@@ -252,19 +283,92 @@
 }
 
 .estructura__campo textarea {
-  min-height: 4rem;
+  min-height: 3.5rem;
   resize: vertical;
+}
+
+.estructura__campo input[type="checkbox"],
+.estructura__campo input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  margin: 0;
+  padding: 0;
+  justify-self: start;
+}
+
+.estructura__campo:has(> input[type="checkbox"]),
+.estructura__campo:has(> input[type="radio"]) {
+  grid-template-columns: max-content max-content;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+.estructura__campo label:has(> input[type="checkbox"]),
+.estructura__campo label:has(> input[type="radio"]) {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+.estructura__modal .boton {
+  padding: var(--espacio-2);
+  font-size: var(--estructura-texto-sm);
+  line-height: 1.35;
 }
 
 .estructura__modal-acciones {
   display: flex;
   flex-direction: column-reverse;
   gap: var(--espacio-2);
+  padding-top: var(--espacio-2);
+  border-top: thin solid var(--color-borde-suave);
 }
 
 .estructura__modal-acciones .boton {
   width: 100%;
 }
+
+/* Listado de promociones: móvil */
+
+#listado-promociones h2 {
+  margin: 0;
+  font-size: var(--estructura-texto-lg);
+}
+
+#listado-promociones .estructura__tabla {
+  font-size: var(--estructura-texto-sm);
+}
+
+#listado-promociones .estructura__tabla-fila {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) max-content;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+#listado-promociones .estructura__tabla-dato {
+  overflow-wrap: anywhere;
+}
+
+#listado-promociones .estructura__tabla-dato p {
+  margin: 0;
+  color: var(--color-texto-secundario);
+}
+
+#listado-promociones
+  .estructura__tabla-dato:nth-child(-n + 2)
+  .estructura__tabla-etiqueta {
+  display: none;
+}
+
+#listado-promociones
+  .estructura__tabla-fila
+  > .estructura__panel-acciones {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+/* Tablet */
 
 @media (min-width: 48rem) {
   .estructura__resumen {
@@ -279,7 +383,16 @@
 
   .estructura__modal {
     place-items: center;
-    padding: var(--espacio-4);
+    padding: var(--espacio-3);
+  }
+
+  .estructura__modal-contenido {
+    max-height: calc(
+      100vh - var(--espacio-3) - var(--espacio-3)
+    );
+    max-height: calc(
+      100dvh - var(--espacio-3) - var(--espacio-3)
+    );
   }
 
   .estructura__modal-acciones {
@@ -290,7 +403,68 @@
   .estructura__modal-acciones .boton {
     width: auto;
   }
+
+  .estructura__modal-contenido:has(
+    #formulario-nuevo-producto,
+    #formulario-nueva-variante,
+    #formulario-ingreso-stock,
+    #formulario-promocion
+  ) {
+    width: min(100%, 48rem);
+  }
+
+  #formulario-nuevo-producto,
+  #formulario-nueva-variante,
+  #formulario-nuevo-proveedor {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  #formulario-nuevo-producto > p,
+  #formulario-nueva-variante > p,
+  #formulario-nuevo-proveedor > p,
+  .estructura__campo:has(
+    > #producto-nombre,
+    > #producto-descripcion,
+    > #variante-producto,
+    > #proveedor-nombre,
+    > input[type="file"]
+  ) {
+    grid-column: 1 / -1;
+  }
+
+  #listado-promociones .estructura__tabla-cabecera,
+  #listado-promociones .estructura__tabla-fila {
+    display: grid;
+    grid-template-columns: var(--estructura-tabla-columnas);
+    align-items: center;
+    min-width: 0;
+    column-gap: var(--espacio-2);
+  }
+
+  #listado-promociones .estructura__tabla-cabecera {
+    padding: 0 var(--espacio-2) var(--espacio-1);
+    border-bottom: thin solid var(--color-borde-suave);
+    color: var(--color-texto-secundario);
+    font-size: var(--estructura-texto-xs);
+    font-weight: var(--peso-semibold);
+    text-transform: uppercase;
+  }
+
+  #listado-promociones .estructura__tabla-etiqueta {
+    display: none;
+  }
+
+  #listado-promociones
+    .estructura__tabla-fila
+    > .estructura__panel-acciones {
+    grid-column: auto;
+    grid-row: auto;
+    justify-content: flex-end;
+  }
 }
+
+/* Escritorio */
 
 @media (min-width: 64rem) {
   .estructura__encabezado {
@@ -337,5 +511,130 @@
 
   .estructura__tabla-etiqueta {
     display: none;
+  }
+
+  .estructura__modal-contenido:has(
+    #formulario-nuevo-producto,
+    #formulario-nueva-variante
+  ) {
+    width: min(100%, 56rem);
+  }
+
+  .estructura__modal-contenido:has(
+    #formulario-ingreso-stock,
+    #formulario-promocion
+  ) {
+    width: min(100%, 70rem);
+  }
+
+  .estructura__modal .estructura__campo label {
+    font-size: var(--estructura-texto-xs);
+  }
+
+  .estructura__modal .estructura__campo input,
+  .estructura__modal .estructura__campo select,
+  .estructura__modal .estructura__campo textarea {
+    font-size: var(--estructura-texto-sm);
+  }
+
+  /* Producto y variante */
+
+  #formulario-nuevo-producto,
+  #formulario-nueva-variante {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  #formulario-nuevo-producto > .estructura__campo,
+  #formulario-nueva-variante > .estructura__campo {
+    grid-column: 1 / 3;
+  }
+
+  #formulario-nueva-variante
+    > .estructura__campo:has(#variante-color),
+  #formulario-nueva-variante
+    > .estructura__campo:has(#variante-barcode) {
+    grid-column: 1;
+  }
+
+  #formulario-nueva-variante
+    > .estructura__campo:has(#variante-talle),
+  #formulario-nueva-variante
+    > .estructura__campo:has(#variante-precio) {
+    grid-column: 2;
+  }
+
+  #formulario-nuevo-producto
+    > .estructura__campo:has(#producto-descripcion),
+  #formulario-nueva-variante
+    > .estructura__campo:has(input[type="file"]) {
+    grid-column: 3 / 5;
+    grid-row: 1 / span 4;
+  }
+
+  #formulario-nuevo-producto #producto-descripcion {
+    min-height: 12rem;
+  }
+
+  /* Formulario de promociones */
+
+  #formulario-promocion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    column-gap: var(--espacio-3);
+  }
+
+  #formulario-promocion > p {
+    grid-column: 1 / -1;
+  }
+
+  #formulario-promocion > .estructura__campo {
+    grid-column: 1;
+  }
+
+  #formulario-promocion
+    > .estructura__campo:has(> strong) {
+    max-height: 12rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--espacio-2);
+    border: thin solid var(--color-borde-suave);
+    border-radius: var(--radio-md);
+  }
+
+  #formulario-promocion
+    > .estructura__campo:has(> strong):last-of-type {
+    grid-column: 2;
+    grid-row: 1 / span 8;
+    max-height: 55vh;
+    max-height: 55dvh;
+  }
+
+  #formulario-promocion
+    > .estructura__campo:has(> strong)
+    > div {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-2);
+    padding-block: var(--espacio-1);
+    border-bottom: thin solid var(--color-borde-suave);
+    font-size: var(--estructura-texto-sm);
+    overflow-wrap: anywhere;
+  }
+
+  #formulario-promocion
+    > .estructura__campo:has(> strong)
+    > div
+    > .boton {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  #formulario-promocion
+    .estructura__campo:has(#promocion-busqueda)
+    .estructura__panel-acciones {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
 }

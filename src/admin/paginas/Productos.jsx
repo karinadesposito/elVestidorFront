@@ -23,28 +23,6 @@ import {
 } from "../servicios/productosService";
 import { useAuth } from "../contexto/AuthContext";
 import "../../estilos/admin-productos.css";
-const COLORES_REFERENCIA = [
-  "Negro",
-  "Blanco",
-  "Gris",
-  "Azul",
-  "Azul marino",
-  "Celeste",
-  "Rojo",
-  "Bordo",
-  "Verde",
-  "Verde oliva",
-  "Beige",
-  "Marrón",
-  "Camel",
-  "Amarillo",
-  "Naranja",
-  "Rosa",
-  "Violeta",
-  "Lila",
-  "Chocolate",
-  "Multicolor",
-];
 const TALLES_ALFABETICOS = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const TALLES_NUMERICOS = [
   "24",
@@ -630,42 +608,17 @@ function Productos() {
     setMensajeExito("");
     try {
       if (varianteEditandoId) {
-        /* * Al editar una variante necesitamos enviar los IDs * de las opciones NUEVAS seleccionadas. * * Ejemplo: * Azul -> id 3 * 44 -> id 33 * * optionIds: ["3", "33"] */ const opcionColorSeleccionada =
-          opcionesProducto.color?.opciones?.find(
-            (opcion) =>
-              normalizarBusqueda(opcion.nombre) ===
-              normalizarBusqueda(colorNormalizado),
-          );
-        const opcionTalleSeleccionada = opcionesProducto.talle?.opciones?.find(
-          (opcion) =>
-            normalizarBusqueda(opcion.nombre) ===
-            normalizarBusqueda(talleNormalizado),
-        );
-        if (!opcionColorSeleccionada) {
-          throw new Error(
-            `No se encontró la opción de color "${colorNormalizado}".`,
-          );
-        }
-        if (!opcionTalleSeleccionada) {
-          throw new Error(
-            `No se encontró la opción de talle "${talleNormalizado}".`,
-          );
-        }
-        const opcionIds = [
-          opcionColorSeleccionada.id,
-          opcionTalleSeleccionada.id,
-        ];
         await actualizarVariante({
           variantId: varianteEditandoId,
           sku: formVariante.barcode,
           precio: puedeModificarPrecios ? formVariante.precio : null,
           activo: formVariante.activo,
-          optionIds: opcionIds,
           imagenArchivo: imagenVariante.archivo,
           imagenActual: imagenVariante.actual,
           quitarImagen: imagenVariante.quitar,
           productId: formVariante.productoId,
           color: colorNormalizado,
+          talle: talleNormalizado,
           imagenesActuales: galeria.actuales,
           imagenesArchivos: galeria.archivos,
           galeriaModificada: galeria.modificada,
@@ -772,33 +725,18 @@ function Productos() {
     setMenuAccionesAbiertoId(null);
     accion();
   }
-  const coloresExistentesProducto = opcionesProducto.color?.opciones || [];
   const tallesExistentesProducto = opcionesProducto.talle?.opciones || [];
   const coloresCatalogo = catalogosProducto?.colores || [];
-  const coloresDisponibles = obtenerValoresSinRepetidos(
-    COLORES_REFERENCIA,
-    coloresCatalogo,
-    coloresExistentesProducto,
-  );
+  const coloresDisponibles = obtenerValoresSinRepetidos(coloresCatalogo);
   const tallesDisponibles = obtenerValoresSinRepetidos(
     TALLES_ALFABETICOS,
     TALLES_NUMERICOS,
     tallesExistentesProducto,
   );
-  const coloresSugeridos = filtrarSugerencias(
-    coloresDisponibles,
-    formVariante.color,
-  );
   const tallesSugeridos = filtrarSugerencias(
     tallesDisponibles,
     formVariante.talle,
   );
-  const mostrarSugerenciasColor =
-    Boolean(formVariante.color.trim()) &&
-    !coloresDisponibles.some(
-      (color) =>
-        normalizarBusqueda(color) === normalizarBusqueda(formVariante.color),
-    );
   const mostrarSugerenciasTalle =
     Boolean(formVariante.talle.trim()) &&
     !tallesDisponibles.some(
@@ -1399,34 +1337,18 @@ function Productos() {
             )}
             <div className="estructura__campo">
               <label htmlFor="variante-color">Color</label>
-              <input
+              <select
                 id="variante-color"
                 name="color"
-                type="text"
                 value={formVariante.color}
-                onChange={(e) => {
-                  manejarCampoVariante(e);
-                  setColorSeleccionado(false);
-                }}
-                autoComplete="off"
+                onChange={(e) => seleccionarColor(e.target.value)}
                 required
-              />
-              {mostrarSugerenciasColor &&
-                coloresSugeridos.map((color) => (
-                  <div
-                    className="estructura__lista-item"
-                    key={normalizarBusqueda(color)}
-                  >
-                    <button
-                      className="estructura__tabla-boton"
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => seleccionarColor(color)}
-                    >
-                      {color}
-                    </button>
-                  </div>
+              >
+                <option value="">Seleccionar color</option>
+                {coloresDisponibles.map((color) => (
+                  <option key={normalizarBusqueda(color)} value={color}>{color}</option>
                 ))}
+              </select>
             </div>
             <div className="estructura__campo">
               <label htmlFor="variante-talle">Talle</label>

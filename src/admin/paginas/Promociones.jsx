@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -7,8 +6,15 @@ import FormularioPromocion from "../componentes/FormularioPromocion";
 
 const COLUMNAS_TABLA = {
   "--estructura-tabla-columnas":
-    "minmax(10rem, 2fr) minmax(7rem, 1fr) minmax(8rem, 1fr) minmax(8rem, 1fr)",
+    "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr) max-content",
   "--estructura-tabla-ancho-minimo": "0",
+};
+
+const COLORES_ESTADO = {
+  Activa: "fondo-verde",
+  Programada: "fondo-amarillo",
+  Finalizada: "fondo-gris",
+  Desactivada: "fondo-rojo",
 };
 
 function formatearFecha(fecha) {
@@ -20,10 +26,13 @@ function formatearFecha(fecha) {
     return "Fecha inválida";
   }
 
-  return valor.toLocaleDateString("es-AR", {
+  return valor.toLocaleString("es-AR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   });
 }
 
@@ -127,18 +136,29 @@ function Promociones() {
           </div>
         </header>
 
-        <section className="estructura__panel">
+        <section
+          id="listado-promociones"
+          className="estructura__panel"
+        >
           <div className="estructura__panel-encabezado">
             <h2>Listado de promociones</h2>
 
-            <Boton variante="admin" onClick={() => setModal("nuevo")}>Nueva promoción</Boton>
-            <Boton
-              variante="admin"
-              onClick={actualizarListado}
-              disabled={cargando}
-            >
-              {cargando ? "Cargando..." : "Actualizar"}
-            </Boton>
+            <div className="estructura__panel-acciones">
+              <Boton
+                variante="admin"
+                onClick={() => setModal("nuevo")}
+              >
+                Nueva promoción
+              </Boton>
+
+              <Boton
+                variante="admin"
+                onClick={actualizarListado}
+                disabled={cargando}
+              >
+                {cargando ? "Cargando..." : "Actualizar"}
+              </Boton>
+            </div>
           </div>
 
           {cargando && (
@@ -154,9 +174,7 @@ function Promociones() {
           {!cargando && !error && (
             <>
               {promociones.length === 0 ? (
-                <p>
-                  Todavía no hay promociones registradas en Vendure.
-                </p>
+                <p>Todavía no hay promociones registradas.</p>
               ) : (
                 <div className="estructura__tabla">
                   <div
@@ -167,55 +185,65 @@ function Promociones() {
                     <span>Estado</span>
                     <span>Inicio</span>
                     <span>Finalización</span>
+                    <span>Acciones</span>
                   </div>
 
-                  {promociones.map((promocion) => (
-                    <article
-                      key={promocion.id}
-                      className="estructura__tabla-fila"
-                      style={COLUMNAS_TABLA}
-                    >
-                      <div className="estructura__tabla-dato">
-                        <span className="estructura__tabla-etiqueta">
-                          Promoción
-                        </span>
-                        <div>
-                          <strong>{promocion.name}</strong>{" "}
-                          <Boton variante="admin" onClick={() => setModal(promocion.id)}>Editar</Boton>
+                  {promociones.map((promocion) => {
+                    const estado = obtenerEstadoPromocion(promocion);
+
+                    return (
+                      <article
+                        key={promocion.id}
+                        className={`estructura__tabla-fila ${COLORES_ESTADO[estado]}`}
+                        style={COLUMNAS_TABLA}
+                      >
+                        <div className="estructura__tabla-dato">
+                          <span className="estructura__tabla-etiqueta">
+                            Promoción
+                          </span>
+                          <strong>{promocion.name}</strong>
                           {promocion.description && (
                             <p>{promocion.description}</p>
                           )}
                         </div>
-                      </div>
 
-                      <div className="estructura__tabla-dato">
-                        <span className="estructura__tabla-etiqueta">
-                          Estado
-                        </span>
-                        <span>
-                          {obtenerEstadoPromocion(promocion)}
-                        </span>
-                      </div>
+                        <div className="estructura__tabla-dato">
+                          <span className="estructura__tabla-etiqueta">
+                            Estado
+                          </span>
+                          <span>{estado}</span>
+                        </div>
 
-                      <div className="estructura__tabla-dato">
-                        <span className="estructura__tabla-etiqueta">
-                          Inicio
-                        </span>
-                        <span>
-                          {formatearFecha(promocion.startsAt)}
-                        </span>
-                      </div>
+                        <div className="estructura__tabla-dato">
+                          <span className="estructura__tabla-etiqueta">
+                            Inicio
+                          </span>
+                          <span>
+                            {formatearFecha(promocion.startsAt)}
+                          </span>
+                        </div>
 
-                      <div className="estructura__tabla-dato">
-                        <span className="estructura__tabla-etiqueta">
-                          Finalización
-                        </span>
-                        <span>
-                          {formatearFecha(promocion.endsAt)}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
+                        <div className="estructura__tabla-dato">
+                          <span className="estructura__tabla-etiqueta">
+                            Finalización
+                          </span>
+                          <span>
+                            {formatearFecha(promocion.endsAt)}
+                          </span>
+                        </div>
+
+                        <div className="estructura__panel-acciones">
+                          <Boton
+                            variante="admin"
+                            aria-label={`Editar promoción ${promocion.name}`}
+                            onClick={() => setModal(promocion.id)}
+                          >
+                            Editar
+                          </Boton>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
 
@@ -260,9 +288,7 @@ function Promociones() {
 
                     <Boton
                       variante="admin"
-                      disabled={
-                        pagina >= totalPaginas || cargando
-                      }
+                      disabled={pagina >= totalPaginas || cargando}
                       onClick={() => setPagina(pagina + 1)}
                     >
                       Siguiente
@@ -274,11 +300,15 @@ function Promociones() {
           )}
         </section>
       </Contenedor>
+
       {modal !== null && (
         <FormularioPromocion
           promocionId={modal === "nuevo" ? null : modal}
           onClose={() => setModal(null)}
-          onGuardado={() => { setModal(null); setRecarga((valor) => valor + 1); }}
+          onGuardado={() => {
+            setModal(null);
+            setRecarga((valor) => valor + 1);
+          }}
         />
       )}
     </main>
