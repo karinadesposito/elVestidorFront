@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 
 import Contenedor from "../../componentesReuse/Contenedor";
@@ -11,6 +10,7 @@ const slides = [
     id: "navidad",
     titulo: "Navidad en El Vestidor",
     imagen: "/imagenes/carrusel/el-vestidor-christmas.webp",
+    imagenMobile: "/imagenes/carrusel/el-vestidor-christmas-mobile.webp",
     descripcion:
       "Campaña de Navidad de El Vestidor. This Christmas, Be You.",
     navidad: true,
@@ -106,23 +106,31 @@ function BloqueEditorial() {
                 inert={slideActivo !== indice}
               >
                 <div className="bloque-editorial__imagen">
-                  <img
-                    src={slide.imagen}
-                    alt={slide.descripcion}
-                    loading={indice === 0 ? "eager" : "lazy"}
-                    onLoad={() => {
-                      if (slideActivo === indice) {
-                        const elemento =
-                          slidesRef.current[indice];
+                  <picture>
+                    {slide.imagenMobile && (
+                      <source
+                        media="(max-width: 47.999rem)"
+                        srcSet={slide.imagenMobile}
+                      />
+                    )}
+                    <img
+                      src={slide.imagen}
+                      alt={slide.descripcion}
+                      loading={indice === 0 ? "eager" : "lazy"}
+                      onLoad={() => {
+                        if (slideActivo === indice) {
+                          const elemento =
+                            slidesRef.current[indice];
 
-                        if (elemento) {
-                          setAltura(
-                            elemento.getBoundingClientRect().height
-                          );
+                          if (elemento) {
+                            setAltura(
+                              elemento.getBoundingClientRect().height
+                            );
+                          }
                         }
-                      }
-                    }}
-                  />
+                      }}
+                    />
+                  </picture>
                 </div>
 
                 {!slide.navidad && (

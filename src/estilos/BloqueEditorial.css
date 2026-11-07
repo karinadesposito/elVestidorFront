@@ -1,4 +1,3 @@
-
 .bloque-editorial {
   width: 100%;
   padding-block: var(--espacio-3);
@@ -131,17 +130,15 @@
 
 .bloque-editorial__flecha {
   position: absolute;
-  top: 50%;
+  bottom: 0.5rem;
   z-index: 2;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgb(255 255 255 / 90%);
+  background: rgb(255 255 255 / 85%);
   color: var(--color-texto-fuerte);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
-  transform: translateY(-50%);
   cursor: pointer;
 }
 
@@ -150,8 +147,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.4rem;
+  height: 0.4rem;
   border-top: 1.5px solid currentColor;
   border-left: 1.5px solid currentColor;
 }
@@ -219,11 +216,6 @@
     padding: var(--espacio-4);
   }
 
-  .bloque-editorial__flecha {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
   .bloque-editorial__flecha--previa {
     left: 1rem;
   }
@@ -236,6 +228,13 @@
 /* Desktop */
 
 @media (min-width: 64rem) {
+  .bloque-editorial__slide--navidad img {
+    width: auto;
+    max-width: 100%;
+    max-height: 400px;
+    margin-inline: auto;
+  }
+
   .bloque-editorial__slide:not(.bloque-editorial__slide--navidad) {
     grid-template-columns: 48% 52%;
   }

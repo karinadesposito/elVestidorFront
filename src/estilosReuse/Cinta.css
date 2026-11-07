@@ -17,12 +17,12 @@
 }
 
 .cinta-marcas__lista {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
   align-items: center;
-  gap: var(--espacio-4);
-  padding-block-start: var(--espacio-6);
+  gap: var(--espacio-2);
+  padding-block-start: var(--espacio-3);
 }
 
 .cinta-marcas__cinta {
@@ -33,7 +33,7 @@
 .cinta-marcas__pista {
   display: flex;
   align-items: center;
-  gap: var(--espacio-4);
+  gap: var(--espacio-5);
   animation: cinta-desplazar 30s linear infinite;
 }
 
@@ -43,8 +43,8 @@
 }
 
 .cinta-marcas__item {
-  width: 5rem;
-  height: 5rem;
+  width: 3.5rem;
+  height: 3.5rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -57,6 +57,21 @@
   width: auto;
   height: auto;
   object-fit: contain;
+}
+
+@media (min-width: 48rem) {
+  .cinta-marcas__item {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .cinta-marcas__logo[alt="Equus"] {
+    transform: scale(1.44);
+  }
+
+  .cinta-marcas__logo[alt="Levi's"] {
+    transform: scale(1.2);
+  }
 }
 
 @media (min-width: 64rem) {
