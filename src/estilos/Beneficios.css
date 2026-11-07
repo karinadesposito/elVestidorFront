@@ -1,43 +1,35 @@
-
 .beneficios {
-  padding-block: var(--espacio-4);
   background: var(--color-fondo-alternativo);
 }
 
 .beneficios__contenedor {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: var(--espacio-2);
+  gap: 0;
 }
 
-/* Mobile: una miniatura */
-
 .beneficios__imagenes {
-  display: flex;
-  justify-content: center;
+  min-width: 0;
+  aspect-ratio: 3.64 / 1;
+  overflow: hidden;
 }
 
 .beneficios__imagenes img {
-  display: none;
-  width: 100%;
-  object-fit: cover;
-}
-
-.beneficios__imagenes img:first-child {
   display: block;
-  width: 96px;
-  height: 96px;
-  border-radius: 0.4rem;
+  width: 108.5%;
+  max-width: none;
+  height: auto;
+  transform: translate(-3.9%, -16.8%);
 }
-
-/* Club */
 
 .beneficios__tarjeta {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: var(--espacio-2);
-  padding: var(--espacio-3);
+  gap: var(--espacio-1);
+  min-width: 0;
+  padding: var(--espacio-2);
   text-align: center;
 }
 
@@ -53,7 +45,7 @@
 .beneficios__titulo {
   margin: 0;
   color: var(--color-texto-fuerte);
-  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
   font-weight: var(--peso-regular);
   line-height: 1.1;
   letter-spacing: -0.04em;
@@ -137,59 +129,8 @@
   text-decoration: none;
 }
 
-/* Tablet: una fotografía a la izquierda */
-
 @media (min-width: 48rem) {
   .beneficios__contenedor {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--espacio-4);
-  }
-
-  .beneficios__imagenes {
-    display: grid;
-  }
-
-  .beneficios__imagenes img:first-child {
-    display: none;
-  }
-
-  .beneficios__imagenes img:nth-child(2) {
-    display: block;
-    width: 100%;
-    height: 300px;
-    border-radius: 0;
-  }
-
-  .beneficios__tarjeta {
-    min-width: 0;
-    padding: var(--espacio-2);
-  }
-}
-
-/* Desktop: tres fotografías en una fila */
-
-@media (min-width: 64rem) {
-  .beneficios__contenedor {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    gap: var(--espacio-5);
-  }
-
-  .beneficios__imagenes {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--espacio-2);
-  }
-
-  .beneficios__imagenes img,
-  .beneficios__imagenes img:first-child,
-  .beneficios__imagenes img:nth-child(2) {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 5;
-    border-radius: 0;
-  }
-
-  .beneficios__tarjeta {
-    gap: var(--espacio-3);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
   }
 }

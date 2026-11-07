@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -9,12 +8,6 @@ const FORM_INICIAL = {
   email: "",
   sitioWeb: "",
 };
-
-const imagenes = [
-  "/imagenes/carrusel/02-alas.webp",
-  "/imagenes/carrusel/05-coco.webp",
-  "/imagenes/carrusel/08-amigos-noche.webp",
-];
 
 function Beneficios() {
   const [formAbierto, setFormAbierto] = useState(false);
@@ -52,14 +45,11 @@ function Beneficios() {
     <section className="beneficios">
       <Contenedor className="beneficios__contenedor">
         <div className="beneficios__imagenes" aria-hidden="true">
-          {imagenes.map((imagen) => (
-            <img
-              key={imagen}
-              src={imagen}
-              alt=""
-              loading="lazy"
-            />
-          ))}
+          <img
+            src="/imagenes/carrusel/club-banner.webp"
+            alt=""
+            loading="lazy"
+          />
         </div>
 
         <div className="beneficios__tarjeta">
@@ -85,7 +75,7 @@ function Beneficios() {
               </h2>
 
               <p className="beneficios__texto">
-                Sólo avisamos cuando llega algo que realmente
+                Sólo avisamos cuando hay algo que realmente
                 vale la pena.
               </p>
 

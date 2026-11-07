@@ -150,7 +150,7 @@ export default function FormularioPromocion({ promocionId, onClose, onGuardado }
             </label>
           </div>
           <div className="estructura__campo">
-            <label htmlFor="promocion-busqueda">Buscar variantes por nombre o SKU</label>
+            <label htmlFor="promocion-busqueda">Agregar productos por barcode</label>
             <div className="estructura__panel-acciones">
               <input id="promocion-busqueda" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} disabled={bloqueado} />
               <Boton variante="admin" onClick={buscar} disabled={bloqueado || buscando || !busqueda.trim()}>

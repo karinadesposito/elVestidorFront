@@ -3,7 +3,13 @@
   z-index: var(--z-header);
   background: var(--color-fondo-principal);
 }
+
+.barra:not(.barra--catalogo) {
+  min-height: calc(40px + var(--alto-barra) + var(--espacio-5));
+}
+
 /* Beneficios */
+
 .barra__beneficio {
   height: 40px;
   overflow: hidden;
@@ -12,6 +18,7 @@
   opacity: 1;
   transition: opacity 0.35s ease;
 }
+
 .barra__cinta {
   display: flex;
   align-items: center;
@@ -21,6 +28,7 @@
   margin-inline: auto;
   padding-inline: var(--espacio-2);
 }
+
 .barra__flecha {
   display: flex;
   flex-shrink: 0;
@@ -32,10 +40,12 @@
   font-size: 1.1rem;
   cursor: pointer;
 }
+
 .barra__flecha:focus-visible {
   outline: 2px solid var(--color-accion);
   outline-offset: -2px;
 }
+
 .barra__promo-contenido {
   display: flex;
   align-items: center;
@@ -43,6 +53,7 @@
   min-width: 0;
   gap: var(--espacio-2);
 }
+
 .barra__promo {
   color: var(--color-texto-fuerte);
   font-size: 0.584375rem;
@@ -50,13 +61,16 @@
   text-align: center;
   text-transform: uppercase;
 }
+
 .barra__divisor {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
   object-fit: contain;
 }
+
 /* Encabezado mobile */
+
 .barra__contenedor {
   position: relative;
   display: grid;
@@ -71,6 +85,7 @@
     background-color 0.4s ease,
     box-shadow 0.4s ease;
 }
+
 .barra__hamburguesa {
   position: absolute;
   inset-inline-start: var(--espacio-2);
@@ -83,6 +98,7 @@
   transform: translateY(-50%);
   transition: font-size 0.4s ease;
 }
+
 .barra__marca {
   display: inline-flex;
   flex-direction: column;
@@ -93,11 +109,13 @@
     gap 0.4s ease,
     transform 0.4s ease;
 }
+
 .barra__simbolo {
   width: auto;
   height: 36px;
   transition: height 0.4s ease;
 }
+
 .barra__logo {
   width: 178px;
   max-width: 100%;
@@ -105,9 +123,11 @@
   aspect-ratio: 1571 / 177;
   transition: width 0.4s ease;
 }
+
 .barra__nav {
   display: none;
 }
+
 .barra__lista {
   display: flex;
   align-items: center;
@@ -115,6 +135,7 @@
   gap: var(--espacio-5);
   transition: gap 0.4s ease;
 }
+
 .barra__item {
   position: relative;
   color: var(--color-texto-principal);
@@ -125,6 +146,7 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+
 .barra__item::after {
   content: "";
   position: absolute;
@@ -136,15 +158,19 @@
   transform: translateX(-50%);
   transition: width 0.25s ease;
 }
+
 .barra__item:hover::after {
   width: 100%;
 }
+
 .barra__item--sale {
   color: #e53935;
 }
+
 .barra__item--sale::after {
   background: #e53935;
 }
+
 .barra__acciones {
   position: absolute;
   inset-inline-end: var(--espacio-2);
@@ -157,6 +183,7 @@
     gap 0.4s ease,
     inset-block-start 0.4s ease;
 }
+
 .barra__accion {
   position: relative;
   display: flex;
@@ -172,6 +199,7 @@
     height 0.4s ease,
     font-size 0.4s ease;
 }
+
 .barra__accion[aria-haspopup='dialog'] > span {
   position: absolute;
   top: -0.5rem;
@@ -193,11 +221,14 @@
   letter-spacing: normal;
   pointer-events: none;
 }
+
 /* Barra compacta mobile */
+
 .barra--compacta .barra__beneficio {
   opacity: 0;
   pointer-events: none;
 }
+
 .barra--compacta .barra__contenedor {
   position: fixed;
   top: 0;
@@ -213,64 +244,84 @@
   border-block-end: thin solid var(--color-borde-suave);
   box-shadow: 0 0.2rem 0.8rem rgb(0 0 0 / 0.05);
 }
+
 .barra--compacta .barra__marca {
   gap: var(--espacio-1);
 }
+
 .barra--compacta .barra__simbolo {
   height: 1.5rem;
 }
+
 .barra--compacta .barra__logo {
   width: clamp(6.5rem, 32vw, 9rem);
 }
+
 .barra--compacta .barra__hamburguesa {
   font-size: 1.5rem;
 }
+
 .barra--compacta .barra__accion {
   font-size: 1.375rem;
 }
+
 /* Tablet */
+
 @media (min-width: 48rem) {
+  .barra:not(.barra--catalogo) {
+    min-height: calc(40px + 9rem);
+  }
+
   .barra__promo {
     font-size: 0.5525rem;
   }
+
   .barra__divisor {
     width: 24px;
     height: 24px;
   }
+
   .barra__contenedor {
-    min-height: calc(var(--alto-barra) + var(--espacio-8));
-    gap: var(--espacio-4);
-    padding-block: var(--espacio-5);
+    min-height: 9rem;
+    gap: var(--espacio-2);
+    padding-block: var(--espacio-3);
   }
+
   .barra__hamburguesa {
     display: none;
   }
+
   .barra__marca {
-    gap: var(--espacio-3);
+    gap: var(--espacio-2);
   }
+
   .barra__simbolo {
-    height: 56px;
+    height: 40px;
   }
+
   .barra__logo {
-    width: 260px;
+    width: 240px;
   }
+
   .barra__nav {
     display: flex;
     max-width: 100%;
     align-items: center;
     justify-content: center;
   }
+
   .barra__acciones {
-    inset-block-start: var(--espacio-6);
+    inset-block-start: var(--espacio-4);
     inset-inline-end: var(--padding-lateral-tablet);
     transform: none;
   }
+
   .barra__accion {
     width: var(--espacio-4);
     height: var(--espacio-4);
-    font-size: 2.25rem;
+    font-size: 2rem;
   }
-  /* Compacta tablet */
+
   .barra--compacta .barra__contenedor {
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
@@ -281,6 +332,7 @@
     padding-block: var(--espacio-2);
     padding-inline: var(--padding-lateral-tablet);
   }
+
   .barra--compacta .barra__marca {
     grid-column: 1;
     grid-row: 1;
@@ -288,24 +340,30 @@
     flex-direction: row;
     gap: var(--espacio-2);
   }
+
   .barra--compacta .barra__simbolo {
     height: 1.75rem;
   }
+
   .barra--compacta .barra__logo {
     width: 9rem;
   }
+
   .barra--compacta .barra__nav {
     grid-column: 2;
     grid-row: 1;
     min-width: 0;
     justify-content: center;
   }
+
   .barra--compacta .barra__lista {
     gap: var(--espacio-3);
   }
+
   .barra--compacta .barra__item {
     font-size: 0.875rem;
   }
+
   .barra--compacta .barra__acciones {
     position: static;
     grid-column: 3;
@@ -314,26 +372,33 @@
     gap: var(--espacio-1);
     transform: none;
   }
+
   .barra--compacta .barra__accion {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.5rem;
   }
 }
+
 /* Desktop */
+
 @media (min-width: 64rem) {
   .barra__simbolo {
-    height: 64px;
+    height: 44px;
   }
+
   .barra__logo {
-    width: 300px;
+    width: 260px;
   }
+
   .barra__accion {
-    font-size: 3rem;
+    font-size: 2.25rem;
   }
+
   .barra__acciones {
     inset-inline-end: var(--padding-lateral-desktop);
   }
+
   .barra--compacta .barra__contenedor {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--espacio-5);
@@ -341,62 +406,80 @@
     padding-block: var(--espacio-2);
     padding-inline: var(--padding-lateral-desktop);
   }
+
   .barra--compacta .barra__simbolo {
     height: 2rem;
   }
+
   .barra--compacta .barra__logo {
     width: 10rem;
   }
+
   .barra--compacta .barra__nav {
     justify-content: flex-start;
   }
+
   .barra--compacta .barra__lista {
     gap: var(--espacio-5);
   }
+
   .barra--compacta .barra__item {
     font-size: 0.875rem;
   }
+
   .barra--compacta .barra__acciones {
     position: static;
     gap: var(--espacio-2);
   }
+
   .barra--compacta .barra__accion {
     width: 2.75rem;
     height: 2.75rem;
     font-size: 1.75rem;
   }
 }
+
 /* Pantallas pequeñas */
+
 @media (max-width: 20rem) {
   .barra__promo {
     font-size: 0.5185rem;
   }
+
   .barra__divisor {
     width: 16px;
     height: 16px;
   }
+
   .barra__simbolo {
     height: 42px;
   }
+
   .barra__logo {
     width: 205px;
   }
+
   .barra--compacta .barra__simbolo {
     height: 1.25rem;
   }
+
   .barra--compacta .barra__logo {
     width: 6.5rem;
   }
 }
-/* Páginas interiores: compacta desde el inicio, sin superposición */
+
+/* Páginas interiores */
+
 .barra--catalogo {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
 }
+
 .barra--catalogo .barra__beneficio {
   display: none;
 }
+
 .barra--catalogo .barra__contenedor {
   position: relative;
   top: auto;
@@ -404,7 +487,9 @@
   left: auto;
   max-width: none;
 }
+
 /* Movimiento reducido */
+
 @media (prefers-reduced-motion: reduce) {
   .barra__beneficio,
   .barra__contenedor,

@@ -10,7 +10,6 @@ import equus from '../recursos/logosMarcas/equusLogo.jpg'
 import kickers from '../recursos/logosMarcas/kickersLogo.png'
 import levis from '../recursos/logosMarcas/LogoLevis.png'
 import newBalance from '../recursos/logosMarcas/newbalanceLogo.png'
-import trown from '../recursos/logosMarcas/trownLogo.jpg'
 
 const marcas = [
   { nombre: 'Merrell', imagen: merrell },
@@ -18,11 +17,10 @@ const marcas = [
   { nombre: 'CAT', imagen: cat },
   { nombre: 'Vans', imagen: vans },
   { nombre: 'Apie', imagen: apie },
-  { nombre: 'Equus', imagen: equus },
   { nombre: 'Kickers', imagen: kickers },
+  { nombre: 'Equus', imagen: equus },
   { nombre: "Levi's", imagen: levis },
   { nombre: 'New Balance', imagen: newBalance },
-  { nombre: 'Trown', imagen: trown },
 ]
 
 function CintaMarcas() {
@@ -40,7 +38,7 @@ function CintaMarcas() {
     <section className="seccion cinta-marcas">
       <Contenedor>
         <p className="texto-etiqueta cinta-marcas__titulo">
-          Nuetras marcas
+          Nuestras marcas
         </p>
         {tablet ? (
           <div className="cinta-marcas__cinta">
