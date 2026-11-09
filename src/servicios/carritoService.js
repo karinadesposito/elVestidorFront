@@ -40,9 +40,9 @@ const DATOS_CARRITO = gql`
   }
 `
 
-const OBTENER_CARRITO = gql`
-  query ObtenerCarritoTienda {
-    activeOrder {
+const RECALCULAR_CARRITO = gql`
+  mutation RecalcularCarritoVigente {
+    recalcularCarritoVigente {
       ...DatosCarritoTienda
     }
   }
@@ -214,17 +214,23 @@ function procesarResultado(resultado, mensaje) {
   return mapearCarrito(resultado)
 }
 
-export async function obtenerCarrito() {
-  const { data } = await clienteTienda.query({
-    query: OBTENER_CARRITO,
-    fetchPolicy: 'network-only',
+// Vendure 3.7.0 no recalcula promociones al leer activeOrder.
+// Esta operación recalcula solamente pedidos editables que no tienen pagos.
+export async function recalcularPedidoActivo() {
+  const { data } = await clienteTienda.mutate({
+    mutation: RECALCULAR_CARRITO,
+    fetchPolicy: 'no-cache',
   })
 
-  if (!data || !('activeOrder' in data)) {
-    throw new Error('No pudimos consultar el carrito.')
+  if (!data || !('recalcularCarritoVigente' in data)) {
+    throw new Error('No pudimos verificar los precios vigentes del carrito.')
   }
 
-  return mapearCarrito(data.activeOrder)
+  return data.recalcularCarritoVigente
+}
+
+export async function obtenerCarrito() {
+  return mapearCarrito(await recalcularPedidoActivo())
 }
 
 export async function agregarAlCarrito(varianteId, cantidad = 1) {

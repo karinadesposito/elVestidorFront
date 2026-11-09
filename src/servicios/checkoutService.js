@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client'
 import clienteTienda from './clienteTienda'
+import { recalcularPedidoActivo } from './carritoService'
 
 const CLAVE_PEDIDO_PAGO = 'elvestidor-pedido-pago'
 
@@ -401,6 +402,10 @@ function obtenerEnlacePendiente(pedido, codigoMetodo) {
 }
 
 export async function obtenerPedidoCheckout() {
+  // Valida el importe vigente antes de consultar el resumen o iniciar pago.
+  // El backend deja intactos los pedidos con pagos o que ya están en checkout.
+  await recalcularPedidoActivo()
+
   const { data } = await clienteTienda.query({
     query: OBTENER_PEDIDO,
     fetchPolicy: 'network-only',
@@ -411,6 +416,21 @@ export async function obtenerPedidoCheckout() {
   }
 
   return data.activeOrder
+}
+
+export async function guardarCompradorCheckout(comprador) {
+  const pedido = await obtenerPedidoCheckout()
+  comprobarEditable(pedido)
+  const input = {
+    firstName: texto(comprador?.nombre), lastName: texto(comprador?.apellido),
+    emailAddress: texto(comprador?.email), phoneNumber: texto(comprador?.telefono),
+  }
+  if (!input.firstName || !input.lastName || !input.phoneNumber ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.emailAddress)) {
+    throw new Error('Completá nombre, apellido, email válido y teléfono.')
+  }
+  return ejecutarMutacion(GUARDAR_COMPRADOR, { input }, 'setCustomerForOrder',
+    'No pudimos guardar los datos del comprador.')
 }
 
 export async function guardarDatosCheckout({
