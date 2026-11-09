@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import ModalAdmin from "../componentes/ModalAdmin";
+import EnvioCorreoPedido from "../componentes/EnvioCorreoPedido";
 import { useAuth } from "../contexto/AuthContext";
 
 import {
@@ -448,6 +449,8 @@ function DetallePedido() {
                 titulo="Entrega"
                 direccion={pedido.shippingAddress}
               />
+
+              <EnvioCorreoPedido pedidoId={pedido.id} />
 
               <section className="estructura__panel admin-detalle-pedido__totales">
                 <div className="estructura__panel-encabezado">

@@ -6,14 +6,20 @@ import Boton from '../../componentesReuse/Boton'
 
 import {
   obtenerPedidoCheckout,
-  guardarDatosCheckout,
-  obtenerMetodosEntrega,
-  seleccionarMetodoEntrega,
+  guardarCompradorCheckout,
+  recuperarCarritoParaEditar,
   obtenerMetodosPago,
   iniciarPagoMercadoPago,
   obtenerCompraRealizada,
   olvidarCodigoPedidoPago,
 } from '../../servicios/checkoutService'
+
+import FormularioEnvioCorreo from '../componentes/FormularioEnvioCorreo'
+import CotizacionEnvioCorreo from '../componentes/CotizacionEnvioCorreo'
+import { obtenerEnvioCorreoActivo, guardarDestinoCorreo, cotizarEnvioCorreo,
+  seleccionarTarifaCorreo, verificarTarifaCorreo } from '../../servicios/envioCorreoService'
+import { DESTINO_CORREO_INICIAL, formularioDesdeEnvioCorreo,
+  construirDestinoCorreo, tarifaConfirmadaCorreo } from '../../servicios/envioCorreoDatos'
 
 import '../../estilos/FinalizarCompra.css'
 
@@ -93,7 +99,9 @@ function FinalizarCompra() {
   const [pedido, setPedido] = useState(null)
   const [comprador, setComprador] = useState(COMPRADOR_INICIAL)
   const [direccion, setDireccion] = useState(DIRECCION_INICIAL)
-  const [metodosEntrega, setMetodosEntrega] = useState([])
+  const [envioCorreo, setEnvioCorreo] = useState(null)
+  const [ahora, setAhora] = useState(Date.now())
+  const [destinoCorreo, setDestinoCorreo] = useState({ ...DESTINO_CORREO_INICIAL })
   const [entregaSeleccionada, setEntregaSeleccionada] = useState('')
   const [metodoPago, setMetodoPago] = useState(null)
   const [datosGuardados, setDatosGuardados] = useState(false)
@@ -113,6 +121,15 @@ function FinalizarCompra() {
   const pagoCerrado = pagoCerradoSinAcreditacion(pedido)
   const ocupado = cargando || procesando
   const tieneProductos = Boolean(pedido?.totalQuantity > 0)
+  const tarifaCorreo = tarifaConfirmadaCorreo(envioCorreo, pedido, ahora)
+
+  useEffect(() => {
+    setAhora(Date.now())
+    if (!envioCorreo?.cotizacion) return
+    const temporizador = window.setInterval(() => setAhora(Date.now()), 1000)
+    return () => window.clearInterval(temporizador)
+  }, [envioCorreo?.cotizacion?.vence])
+
 
   const formatoPrecio = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -130,7 +147,6 @@ function FinalizarCompra() {
 
     if (!resultado) {
       setDatosGuardados(false)
-      setMetodosEntrega([])
       setEntregaSeleccionada('')
       setMetodoPago(null)
       return
@@ -177,19 +193,10 @@ function FinalizarCompra() {
       return { entregas: [], pago: null }
     }
 
-    const puedeConsultarEntregas =
-      resultado.state === 'AddingItems' &&
-      resultado.customer &&
-      resultado.shippingAddress?.streetLine1
-
-    const entregas = puedeConsultarEntregas
-      ? await obtenerMetodosEntrega()
-      : []
-
     const pagos = await obtenerMetodosPago()
 
     return {
-      entregas,
+      entregas: [],
       pago:
         pagos.find(
           metodo => metodo.code === CODIGO_MERCADO_PAGO,
@@ -224,7 +231,6 @@ function FinalizarCompra() {
         aplicarDatosPedido(resultado)
 
         if (esRetornoPago) {
-          setMetodosEntrega([])
           setMetodoPago(null)
 
           const termino =
@@ -245,10 +251,21 @@ function FinalizarCompra() {
           return
         }
 
+        const envio = resultado?.active ? await obtenerEnvioCorreoActivo(resultado.id) : null
+        if (!activo) return
+        setEnvioCorreo(envio)
+        if (resultado?.state === 'AddingItems') {
+          setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
+          setDatosGuardados(Boolean(resultado.customer && envio))
+          setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
+          const opciones = await consultarOpciones(resultado)
+          if (activo) setMetodoPago(opciones.pago)
+          return
+        }
+
         const opciones = await consultarOpciones(resultado)
 
         if (activo) {
-          setMetodosEntrega(opciones.entregas)
           setMetodoPago(opciones.pago)
         }
       } catch (fallo) {
@@ -274,7 +291,6 @@ function FinalizarCompra() {
 
   function invalidarDatosGuardados() {
     setDatosGuardados(false)
-    setMetodosEntrega([])
     setEntregaSeleccionada('')
     setMetodoPago(null)
     setError('')
@@ -284,17 +300,6 @@ function FinalizarCompra() {
     const { name, value } = evento.target
 
     setComprador(actual => ({
-      ...actual,
-      [name]: value,
-    }))
-
-    invalidarDatosGuardados()
-  }
-
-  function cambiarDireccion(evento) {
-    const { name, value } = evento.target
-
-    setDireccion(actual => ({
       ...actual,
       [name]: value,
     }))
@@ -312,79 +317,31 @@ function FinalizarCompra() {
     solicitudEnCurso.current = true
     setProcesando(true)
     setError('')
-    setMetodosEntrega([])
     setEntregaSeleccionada('')
     setMetodoPago(null)
     setDatosGuardados(false)
 
     try {
-      const resultado = await guardarDatosCheckout({
-        comprador,
-        direccion,
-      })
-
+      // Validar el formulario antes de hacer cualquier escritura.
+      construirDestinoCorreo(destinoCorreo, envioCorreo?.revision ?? 0)
+      const compradorGuardado = await guardarCompradorCheckout(comprador)
+      if (String(compradorGuardado.id) !== String(pedido.id)) {
+        throw new Error('El carrito cambió. Actualizá el resumen antes de continuar.')
+      }
+      const envio = await guardarDestinoCorreo(destinoCorreo, envioCorreo, pedido.id)
+      const resultado = await obtenerPedidoCheckout()
+      if (!resultado || String(resultado.id) !== String(pedido.id)) {
+        throw new Error('El carrito cambió. Actualizá el resumen para consultar el destino guardado.')
+      }
       aplicarDatosPedido(resultado)
-
-      const opciones = await consultarOpciones(resultado)
-
-      setMetodosEntrega(opciones.entregas)
-      setMetodoPago(opciones.pago)
-
-      const entregaActual = String(
-        resultado.shippingLines?.[0]?.shippingMethod?.id || '',
-      )
-
-      setEntregaSeleccionada(
-        opciones.entregas.some(
-          metodo => String(metodo.id) === entregaActual,
-        )
-          ? entregaActual
-          : '',
-      )
+      setEnvioCorreo(envio)
+      setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
+      setDatosGuardados(true)
+      setEntregaSeleccionada('')
+      setMetodoPago(null)
     } catch (fallo) {
       setError(
         fallo.message || 'No pudimos guardar tus datos.',
-      )
-    } finally {
-      solicitudEnCurso.current = false
-      setProcesando(false)
-    }
-  }
-
-  async function elegirEntrega(evento) {
-    const id = evento.target.value
-
-    if (
-      !id ||
-      solicitudEnCurso.current ||
-      !datosGuardados ||
-      !editable
-    ) {
-      return
-    }
-
-    solicitudEnCurso.current = true
-    setProcesando(true)
-    setError('')
-
-    try {
-      const resultado = await seleccionarMetodoEntrega(id)
-
-      setPedido(resultado)
-      setEntregaSeleccionada(id)
-
-      const pagos = await obtenerMetodosPago()
-
-      setMetodoPago(
-        pagos.find(
-          metodo => metodo.code === CODIGO_MERCADO_PAGO,
-        ) || null,
-      )
-    } catch (fallo) {
-      setEntregaSeleccionada('')
-      setMetodoPago(null)
-      setError(
-        fallo.message || 'No pudimos seleccionar la entrega.',
       )
     } finally {
       solicitudEnCurso.current = false
@@ -410,25 +367,21 @@ function FinalizarCompra() {
       const resultado = await obtenerPedidoCheckout()
 
       aplicarDatosPedido(resultado)
+      const envio = resultado?.active ? await obtenerEnvioCorreoActivo(resultado.id) : null
+      setEnvioCorreo(envio)
+      if (resultado?.state === 'AddingItems') {
+        setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
+        setDatosGuardados(Boolean(resultado.customer && envio))
+        setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
+        const opciones = await consultarOpciones(resultado)
+        setMetodoPago(opciones.pago)
+        return
+      }
 
       const opciones = await consultarOpciones(resultado)
 
-      setMetodosEntrega(opciones.entregas)
       setMetodoPago(opciones.pago)
 
-      if (resultado?.state === 'AddingItems') {
-        const entregaActual = String(
-          resultado.shippingLines?.[0]?.shippingMethod?.id || '',
-        )
-
-        setEntregaSeleccionada(
-          opciones.entregas.some(
-            metodo => String(metodo.id) === entregaActual,
-          )
-            ? entregaActual
-            : '',
-        )
-      }
     } catch (fallo) {
       setError(
         fallo.message || 'No pudimos actualizar tu compra.',
@@ -446,12 +399,50 @@ function FinalizarCompra() {
   )
 
   const puedePagar =
-    !esRetornoPago &&
-    tieneProductos &&
-    (editable || esperandoPago) &&
-    datosGuardados &&
-    Boolean(entregaSeleccionada) &&
-    Boolean(metodoPago?.isEligible || pagoPendiente)
+    !esRetornoPago && tieneProductos && datosGuardados &&
+    Boolean(metodoPago?.isEligible || pagoPendiente) &&
+    (editable ? Boolean(tarifaCorreo) :
+      esperandoPago && Boolean(entregaSeleccionada) && (!envioCorreo || pagoPendiente))
+
+  async function cambiarTarifa(operacion) {
+    if (solicitudEnCurso.current || !editable || !datosGuardados) return
+    solicitudEnCurso.current = true
+    setProcesando(true)
+    setError('')
+    try {
+      const envio = await operacion()
+      const actualizado = await obtenerPedidoCheckout()
+      if (!actualizado || String(actualizado.id) !== String(pedido.id) || String(envio.pedidoId) !== String(pedido.id)) {
+        throw new Error('El carrito cambió. Actualizá el resumen.')
+      }
+      aplicarDatosPedido(actualizado)
+      setEnvioCorreo(envio)
+      setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
+      setDatosGuardados(true)
+      const opciones = await consultarOpciones(actualizado)
+      setMetodoPago(opciones.pago)
+      setAhora(Date.now())
+    } catch (fallo) {
+      setError(fallo.message || 'No pudimos actualizar el costo del envío.')
+      // Conservar el error y bloquear el pago hasta volver a consultar el registro.
+      setMetodoPago(null)
+    } finally {
+      solicitudEnCurso.current = false
+      setProcesando(false)
+    }
+  }
+
+  async function volverACotizar() {
+    if (solicitudEnCurso.current || ocupado || !pedido) return
+    solicitudEnCurso.current = true
+    setProcesando(true)
+    setError('')
+    try {
+      await recuperarCarritoParaEditar(pedido.id)
+      setRevision(actual => actual + 1)
+    } catch (fallo) { setError(fallo.message || 'No pudimos recuperar el pedido para cotizar.') }
+    finally { solicitudEnCurso.current = false; setProcesando(false) }
+  }
 
   async function pagar() {
     if (
@@ -467,6 +458,7 @@ function FinalizarCompra() {
     setError('')
 
     try {
+      if (editable && envioCorreo) await verificarTarifaCorreo()
       const resultado = await iniciarPagoMercadoPago({
         codigoMetodo: CODIGO_MERCADO_PAGO,
         pedidoId: pedido.id,
@@ -658,90 +650,20 @@ function FinalizarCompra() {
                     </div>
                   </fieldset>
 
-                  <fieldset disabled={ocupado}>
-                    <legend>Dirección de entrega</legend>
+                  <FormularioEnvioCorreo
+                    valor={destinoCorreo}
+                    onCambiar={valor => {
+                      setDestinoCorreo(valor)
+                      invalidarDatosGuardados()
+                    }}
+                    deshabilitado={ocupado}
+                  />
 
-                    <div className="finalizar-compra__campos">
-                      <div className="estructura__campo">
-                        <label htmlFor="compra-calle">
-                          Calle y número
-                        </label>
-                        <input
-                          id="compra-calle"
-                          name="calle"
-                          autoComplete="address-line1"
-                          value={direccion.calle}
-                          onChange={cambiarDireccion}
-                          maxLength={200}
-                          required
-                        />
-                      </div>
-
-                      <div className="estructura__campo">
-                        <label htmlFor="compra-departamento">
-                          Piso y departamento (opcional)
-                        </label>
-                        <input
-                          id="compra-departamento"
-                          name="departamento"
-                          autoComplete="address-line2"
-                          value={direccion.departamento}
-                          onChange={cambiarDireccion}
-                          maxLength={200}
-                        />
-                      </div>
-
-                      <div className="estructura__campo">
-                        <label htmlFor="compra-ciudad">
-                          Ciudad
-                        </label>
-                        <input
-                          id="compra-ciudad"
-                          name="ciudad"
-                          autoComplete="address-level2"
-                          value={direccion.ciudad}
-                          onChange={cambiarDireccion}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
-
-                      <div className="estructura__campo">
-                        <label htmlFor="compra-provincia">
-                          Provincia
-                        </label>
-                        <input
-                          id="compra-provincia"
-                          name="provincia"
-                          autoComplete="address-level1"
-                          value={direccion.provincia}
-                          onChange={cambiarDireccion}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
-
-                      <div className="estructura__campo">
-                        <label htmlFor="compra-codigo-postal">
-                          Código postal
-                        </label>
-                        <input
-                          id="compra-codigo-postal"
-                          name="codigoPostal"
-                          autoComplete="postal-code"
-                          value={direccion.codigoPostal}
-                          onChange={cambiarDireccion}
-                          maxLength={12}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </fieldset>
-
-                  <Boton type="submit" disabled={ocupado}>
+                  <Boton type="submit" disabled={ocupado ||
+                    (destinoCorreo.modalidad === 'S' && !destinoCorreo.codigoSucursal)}>
                     {procesando
                       ? 'Procesando...'
-                      : 'Guardar datos y consultar entrega'}
+                      : 'Guardar datos y destino'}
                   </Boton>
                 </form>
               ) : (
@@ -780,44 +702,33 @@ function FinalizarCompra() {
                 </section>
               )}
 
-              {editable && datosGuardados && (
+              {editable && (
+                <section className="finalizar-compra__panel" aria-live="polite">
+                  <h2>Envío por Correo Argentino</h2>
+                  {datosGuardados && envioCorreo ? (
+                    <>
+                      <p>Destino guardado para este pedido.</p>
+                      <p>{envioCorreo.modalidad === 'S'
+                        ? `Retiro en sucursal: ${envioCorreo.sucursal?.nombre || ''}`
+                        : 'Entrega a domicilio'}</p>
+                      <p>{envioCorreo.destino.calle} {envioCorreo.destino.numero}, {' '}
+                        {envioCorreo.destino.localidad} — {envioCorreo.destino.codigoPostal}</p>
+                    </>
+                  ) : <p>Completá y guardá tus datos y el destino del envío.</p>}
+                  <p>El servicio elegido y su precio se confirman antes de pagar.</p>
+                </section>
+              )}
+              {editable && datosGuardados && envioCorreo && (
+                <CotizacionEnvioCorreo envio={envioCorreo} ocupado={ocupado} ahora={ahora}
+                  formatoPrecio={mostrarPrecio}
+                  onCotizar={() => cambiarTarifa(() => cotizarEnvioCorreo(envioCorreo))}
+                  onSeleccionar={producto => producto && cambiarTarifa(() => seleccionarTarifaCorreo(envioCorreo, producto))}
+                />
+              )}
+              {esperandoPago && envioCorreo && !pagoPendiente && (
                 <section className="finalizar-compra__panel">
-                  <h2>Forma de entrega</h2>
-
-                  {metodosEntrega.length > 0 ? (
-                    <div className="estructura__campo">
-                      <label htmlFor="compra-entrega">
-                        Elegí una opción
-                      </label>
-
-                      <select
-                        id="compra-entrega"
-                        value={entregaSeleccionada}
-                        onChange={elegirEntrega}
-                        disabled={ocupado}
-                      >
-                        <option value="" disabled>
-                          Seleccionar entrega
-                        </option>
-
-                        {metodosEntrega.map(metodo => (
-                          <option
-                            key={metodo.id}
-                            value={String(metodo.id)}
-                          >
-                            {metodo.name}
-                            {' — '}
-                            {mostrarPrecio(metodo.priceWithTax)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <p>
-                      No hay formas de entrega disponibles
-                      para esta dirección.
-                    </p>
-                  )}
+                  <p>El pago no llegó a iniciarse. Podés volver a revisar la cotización del envío.</p>
+                  <Boton onClick={volverACotizar} disabled={ocupado}>Volver a cotizar</Boton>
                 </section>
               )}
             </div>
@@ -867,9 +778,9 @@ function FinalizarCompra() {
                 <div>
                   <dt>Entrega</dt>
                   <dd>
-                    {esRetornoPago || entregaSeleccionada
-                      ? mostrarPrecio(pedido.shippingWithTax)
-                      : 'A seleccionar'}
+                    {editable ? (datosGuardados && tarifaCorreo ? mostrarPrecio(pedido.shippingWithTax) : 'Pendiente de cotización') :
+                      esRetornoPago || entregaSeleccionada
+                        ? mostrarPrecio(pedido.shippingWithTax) : 'A seleccionar'}
                   </dd>
                 </div>
 
@@ -879,12 +790,14 @@ function FinalizarCompra() {
                       ? confirmado
                         ? 'Total pagado'
                         : 'Total del pedido'
-                      : entregaSeleccionada
+                      : (editable ? datosGuardados && tarifaCorreo : entregaSeleccionada)
                         ? 'Total'
                         : 'Total sin entrega'}
                   </dt>
                   <dd>
-                    {mostrarPrecio(pedido.totalWithTax)}
+                    {mostrarPrecio(editable && !(datosGuardados && tarifaCorreo)
+                      ? pedido.totalWithTax - pedido.shippingWithTax
+                      : pedido.totalWithTax)}
                   </dd>
                 </div>
               </dl>
@@ -916,9 +829,9 @@ function FinalizarCompra() {
                   )}
 
                   {datosGuardados &&
-                    !entregaSeleccionada &&
+                    !tarifaCorreo &&
                     editable && (
-                      <p>Seleccioná una forma de entrega.</p>
+                      <p>El envío necesita una tarifa confirmada antes de pagar.</p>
                     )}
 
                   {datosGuardados &&
@@ -937,7 +850,9 @@ function FinalizarCompra() {
                   >
                     {procesando
                       ? 'Procesando...'
-                      : pagoPendiente
+                      : editable && !tarifaCorreo
+                        ? 'Envío pendiente de cotización'
+                        : pagoPendiente
                         ? 'Continuar pago en Mercado Pago'
                         : 'Pagar con Mercado Pago'}
                   </Boton>
