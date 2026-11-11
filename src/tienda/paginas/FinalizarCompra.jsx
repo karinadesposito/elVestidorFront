@@ -29,6 +29,19 @@ import '../../estilos/FinalizarCompra.css'
 
 const CODIGO_MERCADO_PAGO = 'mercado-pago-checkout-pro'
 
+// La conciliación del worker puede necesitar hasta dos ciclos de dos minutos.
+const MAX_CONSULTAS_RETORNO = 90
+const INTERVALO_RETORNO_MS = 3000
+
+export function consultaCompraReintentable(fallo) {
+  const errores = fallo?.graphQLErrors || fallo?.errors || []
+  const codigo = fallo?.extensions?.code
+  const estado = fallo?.networkError?.statusCode || fallo?.statusCode
+  return codigo === 'FORBIDDEN' || errores.some(error => error.extensions?.code === 'FORBIDDEN') ||
+    estado >= 500 || /failed to fetch|networkerror|load failed/i.test(fallo?.message || '')
+}
+
+
 const COMPRADOR_INICIAL = {
   nombre: '',
   apellido: '',
@@ -115,6 +128,7 @@ function FinalizarCompra() {
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
   const [verificacionAgotada, setVerificacionAgotada] = useState(false)
+  const [consultaRetornoPendiente, setConsultaRetornoPendiente] = useState(false)
 
   const solicitudEnCurso = useRef(false)
 
@@ -220,6 +234,7 @@ function FinalizarCompra() {
     setError('')
     setPedido(null)
     setVerificacionAgotada(false)
+    setConsultaRetornoPendiente(esRetornoPago)
 
     async function cargarCheckout() {
       consultas += 1
@@ -236,6 +251,8 @@ function FinalizarCompra() {
         }
 
         aplicarDatosPedido(resultado)
+        setConsultaRetornoPendiente(false)
+        setError('')
 
         if (esRetornoPago) {
           setMetodoPago(null)
@@ -245,10 +262,10 @@ function FinalizarCompra() {
             pagoCerradoSinAcreditacion(resultado)
 
           if (!termino) {
-            if (consultas < 20) {
+            if (consultas < MAX_CONSULTAS_RETORNO) {
               temporizador = window.setTimeout(
                 cargarCheckout,
-                3000,
+                INTERVALO_RETORNO_MS,
               )
             } else {
               setVerificacionAgotada(true)
@@ -277,10 +294,22 @@ function FinalizarCompra() {
           setMetodoPago(opciones.pago)
         }
       } catch (fallo) {
-        if (activo) {
-          setError(
-            fallo.message || 'No pudimos cargar tu compra.',
-          )
+        if (!activo) return
+        if (esRetornoPago && consultaCompraReintentable(fallo)) {
+          setError('')
+          if (consultas < MAX_CONSULTAS_RETORNO) {
+            setConsultaRetornoPendiente(true)
+            temporizador = window.setTimeout(cargarCheckout, INTERVALO_RETORNO_MS)
+          } else {
+            setConsultaRetornoPendiente(false)
+            setVerificacionAgotada(true)
+            setError('Todavía no pudimos consultar la confirmación de esta compra. No vuelvas a pagar. Podés consultar de nuevo o comunicarte con la tienda indicando el código del pedido.')
+          }
+        } else {
+          setConsultaRetornoPendiente(false)
+          setError(esRetornoPago
+            ? 'No pudimos consultar tu compra. No vuelvas a pagar; consultá nuevamente o comunicate con la tienda.'
+            : fallo.message || 'No pudimos cargar tu compra.')
         }
       } finally {
         if (activo) {
@@ -543,6 +572,11 @@ function FinalizarCompra() {
               ? 'Consultando el estado de tu compra...'
               : 'Cargando tu compra...'}
           </p>
+        ) : esRetornoPago && consultaRetornoPendiente && !pedido ? (
+          <section className="finalizar-compra__panel" role="status" aria-live="polite">
+            <h2>Estamos verificando tu pago</h2>
+            <p>La confirmación puede tardar unos minutos. Consultamos el estado automáticamente; no vuelvas a pagar ni cierres esta página.</p>
+          </section>
         ) : esRetornoPago && !pedido ? (
           <section className="finalizar-compra__vacio">
             <h2>No pudimos recuperar tu compra</h2>
