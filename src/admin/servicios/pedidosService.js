@@ -10,6 +10,7 @@ const OBTENER_PEDIDOS = gql`
         code
         state
         createdAt
+        orderPlacedAt
         totalQuantity
         totalWithTax
         customer { firstName lastName emailAddress }
@@ -176,6 +177,7 @@ const COLOR_MAP = {
 }
 
 const ESTADOS_EXCLUIDOS = ['AddingItems', 'ArrangingPayment', 'Draft']
+const ESTADOS_CONFIRMADOS = ['PaymentSettled', 'EnPreparacion', 'Shipped', 'Delivered']
 const TAMANIO_BLOQUE = 100
 const FORMATO_PESOS = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -205,7 +207,7 @@ function obtenerMetodosEnvio(pedido) {
     .filter(Boolean))]
 }
 
-function transformarPedido(pedido) {
+function transformarPedido(pedido, fechaConfirmacion = false) {
   const metodosEnvio = obtenerMetodosEnvio(pedido)
   return {
     id: pedido.id,
@@ -214,8 +216,9 @@ function transformarPedido(pedido) {
       ? `${pedido.customer.firstName || ''} ${pedido.customer.lastName || ''}`.trim() || 'Sin cliente'
       : 'Sin cliente',
     correo: pedido.customer?.emailAddress || '',
-    fecha: new Date(pedido.createdAt).toLocaleDateString('es-AR', {
+    fecha: new Date(fechaConfirmacion ? pedido.orderPlacedAt : pedido.createdAt).toLocaleDateString('es-AR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
+      ...(fechaConfirmacion ? { timeZone: 'America/Argentina/Buenos_Aires' } : {}),
     }),
     estadoVendure: pedido.state,
     estado: ESTADO_MAP[pedido.state] || pedido.state,
@@ -266,11 +269,18 @@ function fechaLocalPedido(fecha) {
   return `${anio}-${mes}-${dia}`
 }
 
-function coincideFiltros(pedido, { termino, envio, fechaDesde, fechaHasta }) {
+function coincideFiltros(pedido, { termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion }) {
+  if (soloConfirmados && (!pedido.orderPlacedAt || !ESTADOS_CONFIRMADOS.includes(pedido.state))) return false
+  if (fechaConfirmacion && !pedido.orderPlacedAt) return false
   if (termino && !coincideBusqueda(pedido, termino)) return false
   if (envio && !obtenerMetodosEnvio(pedido).includes(envio)) return false
   if (fechaDesde || fechaHasta) {
-    const fecha = fechaLocalPedido(pedido.createdAt)
+    const fecha = fechaConfirmacion
+      ? new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'America/Argentina/Buenos_Aires',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(new Date(pedido.orderPlacedAt))
+      : fechaLocalPedido(pedido.createdAt)
     if (fechaDesde && fecha < fechaDesde) return false
     if (fechaHasta && fecha > fechaHasta) return false
   }
@@ -285,15 +295,17 @@ export async function obtenerPedidos({
   envio = '',
   fechaDesde = '',
   fechaHasta = '',
+  soloConfirmados = false,
+  fechaConfirmacion = false,
 } = {}) {
   const termino = normalizarBusqueda(busqueda)
-  const necesitaFiltradoLocal = Boolean(termino || envio || fechaDesde || fechaHasta)
+  const necesitaFiltradoLocal = Boolean(termino || envio || fechaDesde || fechaHasta || soloConfirmados || fechaConfirmacion)
 
   // Sin filtros locales, Vendure pagina directamente en el servidor.
   if (!necesitaFiltradoLocal) {
     const resultado = await consultarPedidos((pagina - 1) * take, take, estado)
     return {
-      pedidos: resultado.items.map(transformarPedido),
+      pedidos: resultado.items.map(pedido => transformarPedido(pedido, fechaConfirmacion)),
       total: resultado.totalItems,
     }
   }
@@ -307,7 +319,7 @@ export async function obtenerPedidos({
     const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, estado)
     total = resultado.totalItems
     coincidencias.push(...resultado.items.filter(pedido => coincideFiltros(pedido, {
-      termino, envio, fechaDesde, fechaHasta,
+      termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion,
     })))
     skip += resultado.items.length
     if (resultado.items.length === 0) break
@@ -315,7 +327,7 @@ export async function obtenerPedidos({
 
   const inicio = (pagina - 1) * take
   return {
-    pedidos: coincidencias.slice(inicio, inicio + take).map(transformarPedido),
+    pedidos: coincidencias.slice(inicio, inicio + take).map(pedido => transformarPedido(pedido, fechaConfirmacion)),
     total: coincidencias.length,
   }
 }
@@ -385,6 +397,7 @@ export async function transicionarEstado(orderId, nuevoEstado, datosEnvio = {}) 
 // los mismos filtros locales que utiliza el listado.
 export async function obtenerPedidosParaExportar({
   busqueda = '', estado = '', envio = '', fechaDesde = '', fechaHasta = '',
+  soloConfirmados = false, fechaConfirmacion = false,
 } = {}) {
   const termino = normalizarBusqueda(busqueda)
   const coincidencias = []
@@ -394,8 +407,8 @@ export async function obtenerPedidosParaExportar({
     const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, estado)
     total = resultado.totalItems
     coincidencias.push(...resultado.items.filter(pedido => coincideFiltros(pedido, {
-      termino, envio, fechaDesde, fechaHasta,
-    })).map(transformarPedido))
+      termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion,
+    })).map(pedido => transformarPedido(pedido, fechaConfirmacion)))
     skip += resultado.items.length
     if (resultado.items.length === 0) break
   } while (skip < total)

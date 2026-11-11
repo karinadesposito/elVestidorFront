@@ -16,10 +16,14 @@ import {
 
 import FormularioEnvioCorreo from '../componentes/FormularioEnvioCorreo'
 import CotizacionEnvioCorreo from '../componentes/CotizacionEnvioCorreo'
-import { obtenerEnvioCorreoActivo, guardarDestinoCorreo, cotizarEnvioCorreo,
-  seleccionarTarifaCorreo, verificarTarifaCorreo } from '../../servicios/envioCorreoService'
-import { DESTINO_CORREO_INICIAL, formularioDesdeEnvioCorreo,
-  construirDestinoCorreo, tarifaConfirmadaCorreo } from '../../servicios/envioCorreoDatos'
+import {
+  obtenerEnvioCorreoActivo, guardarDestinoCorreo, cotizarEnvioCorreo,
+  seleccionarTarifaCorreo, verificarTarifaCorreo, seleccionarRetiroLocal, retiroLocalConfirmado
+} from '../../servicios/envioCorreoService'
+import {
+  DESTINO_CORREO_INICIAL, formularioDesdeEnvioCorreo,
+  construirDestinoCorreo, tarifaConfirmadaCorreo
+} from '../../servicios/envioCorreoDatos'
 
 import '../../estilos/FinalizarCompra.css'
 
@@ -100,6 +104,7 @@ function FinalizarCompra() {
   const [comprador, setComprador] = useState(COMPRADOR_INICIAL)
   const [direccion, setDireccion] = useState(DIRECCION_INICIAL)
   const [envioCorreo, setEnvioCorreo] = useState(null)
+  const [modalidadEntrega, setModalidadEntrega] = useState('correo')
   const [ahora, setAhora] = useState(Date.now())
   const [destinoCorreo, setDestinoCorreo] = useState({ ...DESTINO_CORREO_INICIAL })
   const [entregaSeleccionada, setEntregaSeleccionada] = useState('')
@@ -122,6 +127,8 @@ function FinalizarCompra() {
   const ocupado = cargando || procesando
   const tieneProductos = Boolean(pedido?.totalQuantity > 0)
   const tarifaCorreo = tarifaConfirmadaCorreo(envioCorreo, pedido, ahora)
+  const retiroConfirmado = retiroLocalConfirmado(pedido, envioCorreo)
+  const entregaConfirmada = modalidadEntrega === 'local' ? retiroConfirmado : Boolean(tarifaCorreo)
 
   useEffect(() => {
     setAhora(Date.now())
@@ -256,7 +263,8 @@ function FinalizarCompra() {
         setEnvioCorreo(envio)
         if (resultado?.state === 'AddingItems') {
           setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
-          setDatosGuardados(Boolean(resultado.customer && envio))
+          setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio))))
+          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : 'correo')
           setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
           const opciones = await consultarOpciones(resultado)
           if (activo) setMetodoPago(opciones.pago)
@@ -322,13 +330,15 @@ function FinalizarCompra() {
     setDatosGuardados(false)
 
     try {
-      // Validar el formulario antes de hacer cualquier escritura.
-      construirDestinoCorreo(destinoCorreo, envioCorreo?.revision ?? 0)
+      // Validar sólo el destino que corresponde a la entrega elegida.
+      if (modalidadEntrega === 'correo') construirDestinoCorreo(destinoCorreo, envioCorreo?.revision ?? 0)
       const compradorGuardado = await guardarCompradorCheckout(comprador)
       if (String(compradorGuardado.id) !== String(pedido.id)) {
         throw new Error('El carrito cambió. Actualizá el resumen antes de continuar.')
       }
-      const envio = await guardarDestinoCorreo(destinoCorreo, envioCorreo, pedido.id)
+      const retiro = modalidadEntrega === 'local'
+      if (retiro) await seleccionarRetiroLocal()
+      const envio = retiro ? null : await guardarDestinoCorreo(destinoCorreo, envioCorreo, pedido.id)
       const resultado = await obtenerPedidoCheckout()
       if (!resultado || String(resultado.id) !== String(pedido.id)) {
         throw new Error('El carrito cambió. Actualizá el resumen para consultar el destino guardado.')
@@ -337,11 +347,14 @@ function FinalizarCompra() {
       setEnvioCorreo(envio)
       setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
       setDatosGuardados(true)
-      setEntregaSeleccionada('')
-      setMetodoPago(null)
+      setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
+      const opciones = await consultarOpciones(resultado)
+      setMetodoPago(opciones.pago)
     } catch (fallo) {
       setError(
-        fallo.message || 'No pudimos guardar tus datos.',
+        /failed to fetch|networkerror|load failed/i.test(fallo.message || '')
+          ? 'No pudimos conectar con la tienda. Revisá tu conexión e intentá guardar nuevamente.'
+          : fallo.message || 'No pudimos guardar tus datos.',
       )
     } finally {
       solicitudEnCurso.current = false
@@ -371,7 +384,8 @@ function FinalizarCompra() {
       setEnvioCorreo(envio)
       if (resultado?.state === 'AddingItems') {
         setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
-        setDatosGuardados(Boolean(resultado.customer && envio))
+        setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio))))
+          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : 'correo')
         setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
         const opciones = await consultarOpciones(resultado)
         setMetodoPago(opciones.pago)
@@ -401,7 +415,7 @@ function FinalizarCompra() {
   const puedePagar =
     !esRetornoPago && tieneProductos && datosGuardados &&
     Boolean(metodoPago?.isEligible || pagoPendiente) &&
-    (editable ? Boolean(tarifaCorreo) :
+    (editable ? entregaConfirmada :
       esperandoPago && Boolean(entregaSeleccionada) && (!envioCorreo || pagoPendiente))
 
   async function cambiarTarifa(operacion) {
@@ -458,7 +472,7 @@ function FinalizarCompra() {
     setError('')
 
     try {
-      if (editable && envioCorreo) await verificarTarifaCorreo()
+      if (editable && modalidadEntrega === 'correo' && envioCorreo) await verificarTarifaCorreo()
       const resultado = await iniciarPagoMercadoPago({
         codigoMetodo: CODIGO_MERCADO_PAGO,
         pedidoId: pedido.id,
@@ -650,20 +664,35 @@ function FinalizarCompra() {
                     </div>
                   </fieldset>
 
-                  <FormularioEnvioCorreo
+                  <fieldset disabled={ocupado}>
+                    <legend>Forma de entrega</legend>
+                    <div className="estructura__campo">
+                      <label htmlFor="forma-entrega">¿Cómo querés recibir tu compra?</label>
+                      <select id="forma-entrega" value={modalidadEntrega} onChange={evento => {
+                        setModalidadEntrega(evento.target.value)
+                        invalidarDatosGuardados()
+                      }}>
+                        <option value="correo">Envío por Correo Argentino</option>
+                        <option value="local">Retiro en el local — sin cargo</option>
+                      </select>
+                    </div>
+                    {modalidadEntrega === 'local' && <p>Retirá en Pinto 680, Tandil, Buenos Aires. Sin costo de entrega.</p>}
+                  </fieldset>
+
+                  {modalidadEntrega === 'correo' && <FormularioEnvioCorreo
                     valor={destinoCorreo}
                     onCambiar={valor => {
                       setDestinoCorreo(valor)
                       invalidarDatosGuardados()
                     }}
                     deshabilitado={ocupado}
-                  />
+                  />}
 
                   <Boton type="submit" disabled={ocupado ||
-                    (destinoCorreo.modalidad === 'S' && !destinoCorreo.codigoSucursal)}>
+                    (modalidadEntrega === 'correo' && destinoCorreo.modalidad === 'S' && !destinoCorreo.codigoSucursal)}>
                     {procesando
                       ? 'Procesando...'
-                      : 'Guardar datos y destino'}
+                      : 'Guardar datos y entrega'}
                   </Boton>
                 </form>
               ) : (
@@ -702,7 +731,7 @@ function FinalizarCompra() {
                 </section>
               )}
 
-              {editable && (
+              {editable && modalidadEntrega === 'correo' && (
                 <section className="finalizar-compra__panel" aria-live="polite">
                   <h2>Envío por Correo Argentino</h2>
                   {datosGuardados && envioCorreo ? (
@@ -718,7 +747,12 @@ function FinalizarCompra() {
                   <p>El servicio elegido y su precio se confirman antes de pagar.</p>
                 </section>
               )}
-              {editable && datosGuardados && envioCorreo && (
+              {editable && modalidadEntrega === 'local' && datosGuardados && retiroConfirmado && (
+                <section className="finalizar-compra__panel"><h2>Retiro en el local</h2>
+                  <p>Pinto 680, Tandil, Buenos Aires. Entrega sin cargo.</p>
+                </section>
+              )}
+              {editable && modalidadEntrega === 'correo' && datosGuardados && envioCorreo && (
                 <CotizacionEnvioCorreo envio={envioCorreo} ocupado={ocupado} ahora={ahora}
                   formatoPrecio={mostrarPrecio}
                   onCotizar={() => cambiarTarifa(() => cotizarEnvioCorreo(envioCorreo))}
@@ -778,7 +812,7 @@ function FinalizarCompra() {
                 <div>
                   <dt>Entrega</dt>
                   <dd>
-                    {editable ? (datosGuardados && tarifaCorreo ? mostrarPrecio(pedido.shippingWithTax) : 'Pendiente de cotización') :
+                    {editable ? (datosGuardados && entregaConfirmada ? mostrarPrecio(pedido.shippingWithTax) : modalidadEntrega === 'local' ? 'A confirmar' : 'Pendiente de cotización') :
                       esRetornoPago || entregaSeleccionada
                         ? mostrarPrecio(pedido.shippingWithTax) : 'A seleccionar'}
                   </dd>
@@ -790,12 +824,12 @@ function FinalizarCompra() {
                       ? confirmado
                         ? 'Total pagado'
                         : 'Total del pedido'
-                      : (editable ? datosGuardados && tarifaCorreo : entregaSeleccionada)
+                      : (editable ? datosGuardados && entregaConfirmada : entregaSeleccionada)
                         ? 'Total'
                         : 'Total sin entrega'}
                   </dt>
                   <dd>
-                    {mostrarPrecio(editable && !(datosGuardados && tarifaCorreo)
+                    {mostrarPrecio(editable && !(datosGuardados && entregaConfirmada)
                       ? pedido.totalWithTax - pedido.shippingWithTax
                       : pedido.totalWithTax)}
                   </dd>
@@ -829,9 +863,9 @@ function FinalizarCompra() {
                   )}
 
                   {datosGuardados &&
-                    !tarifaCorreo &&
+                    !entregaConfirmada &&
                     editable && (
-                      <p>El envío necesita una tarifa confirmada antes de pagar.</p>
+                      <p>{modalidadEntrega === 'local' ? 'Guardá tus datos y confirmá el retiro antes de pagar.' : 'El envío necesita una tarifa confirmada antes de pagar.'}</p>
                     )}
 
                   {datosGuardados &&
@@ -850,11 +884,11 @@ function FinalizarCompra() {
                   >
                     {procesando
                       ? 'Procesando...'
-                      : editable && !tarifaCorreo
-                        ? 'Envío pendiente de cotización'
+                      : editable && !entregaConfirmada
+                        ? modalidadEntrega === 'local' ? 'Confirmá el retiro en el local' : 'Envío pendiente de cotización'
                         : pagoPendiente
-                        ? 'Continuar pago en Mercado Pago'
-                        : 'Pagar con Mercado Pago'}
+                          ? 'Continuar pago en Mercado Pago'
+                          : 'Pagar con Mercado Pago'}
                   </Boton>
 
                   <Boton

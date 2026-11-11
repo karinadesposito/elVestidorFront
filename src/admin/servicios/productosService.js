@@ -1,3 +1,4 @@
+import { solicitarAdmin } from './authService';
 
 import client from "../../servicios/apolloClient";
 import { gql } from "@apollo/client";
@@ -482,7 +483,7 @@ export async function subirArchivoAAssets(archivo) {
   );
   formulario.append("variables.input.0.file", archivo, archivo.name);
   const token = obtenerTokenAdmin();
-  const respuesta = await fetch("/admin-api", {
+  const respuesta = await solicitarAdmin("/admin-api", {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formulario,

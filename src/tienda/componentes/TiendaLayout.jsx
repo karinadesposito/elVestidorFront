@@ -231,7 +231,9 @@ function TiendaLayout() {
 
       setErrorLinea({
         id,
-        mensaje: fallo.message || 'No pudimos cambiar la cantidad.',
+        mensaje: /failed to fetch|networkerror|load failed/i.test(fallo.message || '')
+          ? 'No pudimos conectar con la tienda. Revisá tu conexión e intentá nuevamente.'
+          : fallo.message || 'No pudimos cambiar la cantidad.',
       })
     } finally {
       solicitudEnCurso.current = false

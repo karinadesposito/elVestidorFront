@@ -1,19 +1,15 @@
 import { ApolloClient, InMemoryCache, createHttpLink, ApolloLink } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
+import { obtenerSesion, solicitarAdmin } from '../admin/servicios/authService'
 
 const httpLink = createHttpLink({
   uri: '/admin-api',
+  credentials: 'omit',
+  fetch: solicitarAdmin,
 })
 
 const authLink = setContext((_, { headers }) => {
-  let token = null
-  try {
-    const sesion = JSON.parse(localStorage.getItem('admin_sesion'))
-    token = sesion?.token
-  } catch {
-    // sesión corrupta, se ignora
-  }
-
+  const token = obtenerSesion()?.token
   return {
     headers: {
       ...headers,

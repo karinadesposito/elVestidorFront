@@ -89,3 +89,14 @@ export async function verificarTarifaCorreo() {
   const { data } = await clienteTienda.mutate({ mutation: VERIFICAR_TARIFA })
   if (data?.verificarTarifaMiCorreo !== true) throw new Error('No pudimos verificar el costo del envío.')
 }
+
+const SELECCIONAR_RETIRO = gql`mutation SeleccionarRetiroLocal { seleccionarRetiroLocal }`
+export async function seleccionarRetiroLocal() {
+  const { data } = await clienteTienda.mutate({ mutation: SELECCIONAR_RETIRO })
+  if (data?.seleccionarRetiroLocal !== true) throw new Error('No pudimos confirmar el retiro en el local.')
+}
+
+export function retiroLocalConfirmado(pedido, envio) {
+  return !envio && pedido?.shippingWithTax === 0 && pedido.shippingLines?.length === 1 &&
+    pedido.shippingLines[0].shippingMethod?.code === 'retiro-local'
+}
