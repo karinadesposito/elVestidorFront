@@ -118,6 +118,7 @@ function InicioPanel() {
     setRango((anterior) => ({ ...anterior, [name]: value }));
   }
 
+
   const tarjetas = puedeVerVentas
     ? [
         {
@@ -176,12 +177,30 @@ function InicioPanel() {
         },
       ];
 
+
+  function abrirPedidos(tarjeta) {
+    const hoy = hoyArgentina();
+    navigate("/admin/pedidos", {
+      state: {
+        listadoPedidos: {
+          pagina: 1,
+          indicadorInicio: tarjeta.indicador,
+          pestania: tarjeta.estado,
+          estadoFiltro: tarjeta.estado,
+          fechaDesde: tarjeta.indicador === "nuevos" ? hoy : "",
+          fechaHasta: tarjeta.indicador === "nuevos" ? hoy : "",
+        },
+      },
+    });
+  }
+
   return (
     <main className="estructura">
       <Contenedor>
         <h1>Resumen del negocio</h1>
 
         {error && <p className="login-admin__error">{error}</p>}
+
 
         {puedeVerVentas && (
           <section
