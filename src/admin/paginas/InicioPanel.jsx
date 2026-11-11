@@ -137,11 +137,27 @@ function InicioPanel() {
   }
 
   const tarjetasEstado = [
-    { texto: "Pedidos nuevos hoy", valor: resumenPedidos?.nuevosHoy },
-    { texto: "Por preparar", valor: resumenPedidos?.porPreparar },
-    { texto: "En preparación", valor: resumenPedidos?.enPreparacion },
-    { texto: "Despachados", valor: resumenPedidos?.enviados },
+    { texto: "Pedidos nuevos hoy", valor: resumenPedidos?.nuevosHoy, indicador: "nuevos", estado: "" },
+    { texto: "Por preparar", valor: resumenPedidos?.porPreparar, indicador: "preparar", estado: "PaymentSettled" },
+    { texto: "En preparación", valor: resumenPedidos?.enPreparacion, indicador: "preparacion", estado: "EnPreparacion" },
+    { texto: "Despachados", valor: resumenPedidos?.enviados, indicador: "despachados", estado: "Shipped" },
   ];
+
+  function abrirPedidos(tarjeta) {
+    const hoy = hoyArgentina();
+    navigate("/admin/pedidos", {
+      state: {
+        listadoPedidos: {
+          pagina: 1,
+          indicadorInicio: tarjeta.indicador,
+          pestania: tarjeta.estado,
+          estadoFiltro: tarjeta.estado,
+          fechaDesde: tarjeta.indicador === "nuevos" ? hoy : "",
+          fechaHasta: tarjeta.indicador === "nuevos" ? hoy : "",
+        },
+      },
+    });
+  }
 
   return (
     <main className="estructura">
@@ -153,6 +169,14 @@ function InicioPanel() {
             <article className="estructura__tarjeta" key={tarjeta.texto}>
               <span>{tarjeta.texto}</span>
               <strong>{cargando ? "…" : tarjeta.valor ?? "—"}</strong>
+              <Boton
+                variante="admin"
+                onClick={() => abrirPedidos(tarjeta)}
+                disabled={cargando || Boolean(error) || tarjeta.valor == null}
+                aria-label={`Ver pedidos: ${tarjeta.texto}`}
+              >
+                Ver pedidos
+              </Boton>
             </article>
           ))}
         </section>

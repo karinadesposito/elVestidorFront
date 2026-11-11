@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { iniciarSesion, cerrarSesion, obtenerSesion, tienePermiso } from '../servicios/authService'
+import {
+  iniciarSesion, cerrarSesion, obtenerSesion, tienePermiso,
+  EVENTO_SESION_ADMIN_VENCIDA, MENSAJE_SESION_ADMIN_VENCIDA,
+} from '../servicios/authService'
+import client from '../../servicios/apolloClient'
 
 const AuthContext = createContext(null)
 
@@ -9,8 +13,21 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const datos = obtenerSesion()
-    if (datos) setSesion(datos)
+    const actualizar = () => {
+      const datos = obtenerSesion()
+      setSesion(datos)
+      setError(datos ? null : MENSAJE_SESION_ADMIN_VENCIDA)
+      void client.clearStore().catch(() => {})
+    }
+    const sincronizar = (evento) => {
+      if (evento.key === 'admin_sesion' || evento.key === null) actualizar()
+    }
+    window.addEventListener(EVENTO_SESION_ADMIN_VENCIDA, actualizar)
+    window.addEventListener('storage', sincronizar)
+    return () => {
+      window.removeEventListener(EVENTO_SESION_ADMIN_VENCIDA, actualizar)
+      window.removeEventListener('storage', sincronizar)
+    }
   }, [])
 
   const login = useCallback(async ({ email, password }) => {
@@ -18,6 +35,7 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const datos = await iniciarSesion({ email, password })
+      await client.clearStore()
       setSesion(datos)
       return datos
     } catch (err) {
@@ -29,9 +47,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
-    cerrarSesion()
+    void cerrarSesion()
     setSesion(null)
     setError(null)
+    void client.clearStore().catch(() => {})
   }, [])
 
   const puede = useCallback(permiso => tienePermiso(sesion, permiso), [sesion])

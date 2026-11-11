@@ -39,13 +39,14 @@ function Pedidos() {
   const [envioFiltro, setEnvioFiltro] = useState(anterior.envioFiltro ?? "");
   const [fechaDesde, setFechaDesde] = useState(anterior.fechaDesde ?? "");
   const [fechaHasta, setFechaHasta] = useState(anterior.fechaHasta ?? "");
+  const [indicadorInicio, setIndicadorInicio] = useState(anterior.indicadorInicio ?? "");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [exportando, setExportando] = useState(false);
   const [errorExportacion, setErrorExportacion] = useState(null);
 
   const estadoAplicado = estadoFiltro || pestania;
-  const filtrosActivos = Boolean(busqueda || estadoFiltro || envioFiltro || fechaDesde || fechaHasta);
+  const filtrosActivos = Boolean(busqueda || estadoFiltro || pestania || envioFiltro || fechaDesde || fechaHasta || indicadorInicio);
   const fechasInvalidas = Boolean(fechaDesde && fechaHasta && fechaDesde > fechaHasta);
   const totalPaginas = Math.max(1, Math.ceil(totalPedidos / TAMANIO_PAGINA));
 
@@ -102,6 +103,8 @@ function Pedidos() {
           envio: envioFiltro,
           fechaDesde,
           fechaHasta,
+          soloConfirmados: Boolean(indicadorInicio),
+          fechaConfirmacion: indicadorInicio === "nuevos",
         });
         if (!activo) return;
         const ultimaPagina = Math.max(1, Math.ceil(respuesta.total / TAMANIO_PAGINA));
@@ -122,11 +125,11 @@ function Pedidos() {
     }
     cargar();
     return () => { activo = false; };
-  }, [pagina, busquedaAplicada, estadoAplicado, envioFiltro, fechaDesde, fechaHasta, fechasInvalidas]);
+  }, [pagina, busquedaAplicada, estadoAplicado, envioFiltro, fechaDesde, fechaHasta, fechasInvalidas, indicadorInicio]);
 
   const estadoListado = {
     pagina, busqueda, busquedaAplicada, pestania,
-    estadoFiltro, envioFiltro, fechaDesde, fechaHasta,
+    estadoFiltro, envioFiltro, fechaDesde, fechaHasta, indicadorInicio,
   };
 
   async function exportarPedidos() {
@@ -140,6 +143,8 @@ function Pedidos() {
         envio: envioFiltro,
         fechaDesde,
         fechaHasta,
+        soloConfirmados: Boolean(indicadorInicio),
+        fechaConfirmacion: indicadorInicio === "nuevos",
       });
       if (resultados.length === 0) {
         setErrorExportacion("No hay pedidos para exportar con los filtros actuales.");
@@ -198,6 +203,8 @@ function Pedidos() {
     setBusqueda("");
     setBusquedaAplicada("");
     setEstadoFiltro("");
+    setPestania("");
+    setIndicadorInicio("");
     setEnvioFiltro("");
     setFechaDesde("");
     setFechaHasta("");
@@ -222,6 +229,15 @@ function Pedidos() {
 
         <section className="estructura__panel">
           <div className="estructura__panel-encabezado"><h2>Listado de pedidos</h2></div>
+
+          {indicadorInicio && (
+            <p role="status">
+              {indicadorInicio === "nuevos"
+                ? "Pedidos confirmados: las fechas se aplican a la fecha del pedido en horario de Argentina, no a la creación del carrito."
+                : "Pedidos confirmados del estado seleccionado desde InicioPanel."}
+              {" "}Usá “Limpiar filtros” para volver al listado general.
+            </p>
+          )}
 
           <nav className="estructura__panel-acciones" aria-label="Estados de pedidos">
             {PESTANIAS.map(opcion => (
@@ -277,11 +293,11 @@ function Pedidos() {
             </div>
 
             <div className="estructura__campo">
-              <label htmlFor="desde-pedidos">Desde</label>
+              <label htmlFor="desde-pedidos">{indicadorInicio === "nuevos" ? "Pedido desde" : "Desde"}</label>
               <input id="desde-pedidos" type="date" value={fechaDesde} onChange={e => { setFechaDesde(e.target.value); setPagina(1); }} />
             </div>
             <div className="estructura__campo">
-              <label htmlFor="hasta-pedidos">Hasta</label>
+              <label htmlFor="hasta-pedidos">{indicadorInicio === "nuevos" ? "Pedido hasta" : "Hasta"}</label>
               <input id="hasta-pedidos" type="date" value={fechaHasta} onChange={e => { setFechaHasta(e.target.value); setPagina(1); }} />
             </div>
             {filtrosActivos && <Boton variante="admin" onClick={limpiarFiltros}>Limpiar filtros</Boton>}
@@ -300,7 +316,7 @@ function Pedidos() {
               <div className="estructura__tabla">
                 <div className="estructura__tabla-cabecera admin-pedidos__cabecera">
                   <span>Pedido</span><span>Cliente</span><span>Estado</span>
-                  <span>Envío</span><span>Pago</span><span>Total</span><span>Fecha</span>
+                  <span>Envío</span><span>Pago</span><span>Total</span><span>{indicadorInicio === "nuevos" ? "Fecha del pedido" : "Fecha"}</span>
                 </div>
                 {pedidos.length === 0 && (
                   <p>No se encontraron pedidos con los criterios seleccionados.</p>
