@@ -1,3 +1,4 @@
+
 import { Fragment, useEffect, useRef, useState } from "react";
 import { FiMoreVertical, FiSearch, FiX } from "react-icons/fi";
 import Contenedor from "../../componentesReuse/Contenedor";
@@ -66,6 +67,7 @@ const FORM_VARIANTE_INICIAL = {
   barcode: "",
   precio: "",
   activo: true,
+  enTemporada: false,
 };
 function normalizarBusqueda(valor) {
   return String(valor || "")
@@ -422,6 +424,7 @@ function Productos() {
       barcode: variante.sku || "",
       precio: variante.precio != null ? variante.precio / 100 : "",
       activo: Boolean(variante.activo),
+      enTemporada: Boolean(variante.enTemporada),
     });
     setImagenVariante({ archivo: null, actual: variante.imagen || null, quitar: false });
     const otras = productos.find((p) => String(p.id) === String(variante.productoId))?.variantes || [];
@@ -613,6 +616,7 @@ function Productos() {
           sku: formVariante.barcode,
           precio: puedeModificarPrecios ? formVariante.precio : null,
           activo: formVariante.activo,
+          enTemporada: formVariante.enTemporada,
           imagenArchivo: imagenVariante.archivo,
           imagenActual: imagenVariante.actual,
           quitarImagen: imagenVariante.quitar,
@@ -633,6 +637,7 @@ function Productos() {
           // Sin permiso de precios la variante nace sin precio e inactiva.
           precio: puedeModificarPrecios ? formVariante.precio : null,
           activo: puedeModificarPrecios ? formVariante.activo : false,
+          enTemporada: formVariante.enTemporada,
           imagenArchivo: imagenVariante.archivo,
           imagenesActuales: galeria.actuales,
           imagenesArchivos: galeria.archivos,
@@ -1430,6 +1435,16 @@ function Productos() {
                 }
                 onChange={manejarCampoVariante}
                 disabled={!puedeModificarPrecios && !varianteEditandoId}
+              />
+            </div>
+            <div className="estructura__campo">
+              <label htmlFor="variante-temporada">¿Incluir en Seasons?</label>
+              <input
+                id="variante-temporada"
+                name="enTemporada"
+                type="checkbox"
+                checked={formVariante.enTemporada}
+                onChange={manejarCampoVariante}
               />
             </div>
             {guardando && <p>Guardando...</p>}

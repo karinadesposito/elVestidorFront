@@ -48,6 +48,11 @@ function App() {
           <Route index element={<Inicio />} />
 
           <Route
+            path="seasons"
+            element={<Catalogo soloTemporada />}
+          />
+
+          <Route
             path="checkout"
             element={<FinalizarCompra />}
           />

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -173,7 +174,9 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
                 alAlternar={() => alternarMenu('hombre')}
                 alCerrar={cerrarMenu}
               />
-              <li className="barra__item">SEASONS</li>
+              <li className="barra__item">
+                <Link to="/seasons" onClick={cerrarMenu}>SEASONS</Link>
+              </li>
               <ItemMenu
                 titulo="SALE"
                 grupos={gruposSale}

@@ -180,13 +180,13 @@ function MenuMobile({
             </div>
           )}
 
-          <button
-            type="button"
+          <Link
+            to="/seasons"
             className="menu-mobile__principal"
+            onClick={cerrarMenu}
           >
             SEASONS
-            <FiChevronDown />
-          </button>
+          </Link>
         </nav>
       </aside>
     </div>
@@ -194,4 +194,3 @@ function MenuMobile({
 }
 
 export default MenuMobile
-
