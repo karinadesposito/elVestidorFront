@@ -1,3 +1,4 @@
+
 import { gql } from '@apollo/client'
 import clienteTienda from './clienteTienda'
 
@@ -461,6 +462,7 @@ export async function obtenerCatalogo({
   orden = 'nombre-asc',
   desplazamiento = 0,
   soloOfertas = false,
+  soloTemporada = false,
 } = {}) {
   if (
     !Number.isInteger(desplazamiento) ||
@@ -486,6 +488,7 @@ export async function obtenerCatalogo({
         skip: desplazamiento,
         take: TAMANO_PAGINA,
         soloOfertas: Boolean(soloOfertas),
+        soloTemporada: Boolean(soloTemporada),
       },
     },
     fetchPolicy: 'network-only',
@@ -502,7 +505,7 @@ export async function obtenerCatalogo({
   }
 }
 
-export async function obtenerDetalleProducto(productoId, soloOfertas = false) {
+export async function obtenerDetalleProducto(productoId) {
   const id = String(productoId ?? '').trim()
 
   if (!id) {
@@ -521,14 +524,12 @@ export async function obtenerDetalleProducto(productoId, soloOfertas = false) {
 
   const detalle = mapearDetalleProducto(data.product)
 
-  // Fuera de SALE, conservamos el precio base si falla la consulta de ofertas.
+  // La ficha debe seguir funcionando incluso si falla la consulta
+  // complementaria de ofertas; en ese caso exhibimos el precio base.
   let ofertas = new Map()
   try {
     ofertas = await obtenerOfertasPorVariante(id)
   } catch (error) {
-    if (soloOfertas) {
-      throw new Error('No pudimos consultar las ofertas. Intentá nuevamente.')
-    }
     console.warn('No se pudieron recuperar las ofertas del producto.', error)
   }
 
@@ -538,15 +539,7 @@ export async function obtenerDetalleProducto(productoId, soloOfertas = false) {
       descuentoPorcentaje: null,
       precioOfertaEstimado: null,
     }),
-  })).filter(variante => !soloOfertas || (
-    variante.descuentoPorcentaje > 0 &&
-    Number.isFinite(variante.precioOfertaEstimado) &&
-    variante.precioOfertaEstimado < variante.precio
-  ))
-
-  if (soloOfertas && variantes.length === 0) {
-    throw new Error('Este producto ya no tiene ofertas disponibles.')
-  }
+  }))
 
   return {
     ...detalle,

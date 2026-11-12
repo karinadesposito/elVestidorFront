@@ -5,6 +5,8 @@ import { useOutletContext, useParams } from 'react-router-dom'
 import Contenedor from '../../componentesReuse/Contenedor'
 import Boton from '../../componentesReuse/Boton'
 import ProductoCard from '../componentes/ProductoCard'
+import ModalPromocional from '../../componentesReuse/ModalPromocional'
+import estatuaVansImg from '../../recursos/imagenes/estatua-vans.webp'
 
 import {
   obtenerCatalogo,
@@ -110,19 +112,23 @@ function ContenidoCatalogo({
   genero,
   categoria,
   generoSale,
+  soloTemporada,
   alAgregarAlCarrito,
   cargandoCarrito,
 }) {
   const esSale = genero === 'sale' || Boolean(generoSale)
-  const titulo = obtenerTitulo(genero, categoria, generoSale)
+  const titulo = soloTemporada
+    ? 'Seasons'
+    : obtenerTitulo(genero, categoria, generoSale)
 
+  const [mostrarModalPromocional, setMostrarModalPromocional] = useState(soloTemporada)
   const [configuracion, setConfiguracion] = useState(null)
   const [marcas, setMarcas] = useState([])
   const [tiposProducto, setTiposProducto] = useState([])
 
   const [marcaSeleccionada, setMarcaSeleccionada] = useState('')
   const [tipoSeleccionado, setTipoSeleccionado] = useState('')
-  const [orden, setOrden] = useState('nombre-asc')
+  const [orden, setOrden] = useState('precio-asc')
 
   const [productos, setProductos] = useState([])
   const [total, setTotal] = useState(0)
@@ -147,8 +153,8 @@ function ContenidoCatalogo({
           return
         }
 
-        // SALE general no filtra por género. Las subsecciones de SALE sí.
-        if (esSale && !generoSale) {
+        // SALE general y Seasons no filtran por género.
+        if (soloTemporada || (esSale && !generoSale)) {
           const nombresTipo = categoria
             ? TIPOS_POR_CATEGORIA[categoria] || []
             : []
@@ -244,7 +250,7 @@ function ContenidoCatalogo({
     return () => {
       activo = false
     }
-  }, [genero, categoria, generoSale, esSale])
+  }, [genero, categoria, generoSale, esSale, soloTemporada])
 
   useEffect(() => {
     if (!configuracion) {
@@ -277,6 +283,7 @@ function ContenidoCatalogo({
           orden,
           desplazamiento: 0,
           soloOfertas: esSale,
+          soloTemporada,
         })
 
         if (!activo) {
@@ -312,6 +319,7 @@ function ContenidoCatalogo({
     tipoSeleccionado,
     orden,
     esSale,
+    soloTemporada,
   ])
 
   async function mostrarMas() {
@@ -342,6 +350,7 @@ function ContenidoCatalogo({
         orden,
         desplazamiento,
         soloOfertas: esSale,
+        soloTemporada,
       })
 
       if (versionActual !== versionConsulta.current) {
@@ -383,156 +392,164 @@ function ContenidoCatalogo({
   }
 
   return (
-    <main className="categoria seccion">
-      <Contenedor>
-        <header className="categoria__encabezado">
-          <h1>{titulo}</h1>
-        </header>
+    <>
+      {soloTemporada && mostrarModalPromocional && (
+        <ModalPromocional
+          imagen={estatuaVansImg}
+          titulo="LLEGARON LAS VANS"
+          subtitulo="APURATE."
+          destacado="10% OFF"
+          descripcion="Comprando online"
+          boton="VER OFERTAS"
+          onClose={() => setMostrarModalPromocional(false)}
+        />
+      )}
 
-        {configuracion && (
-          <div className="tienda-catalogo__herramientas">
-            <div className="estructura__campo">
-              <label htmlFor="tienda-catalogo-marca">
-                Marca
-              </label>
+      <main className="categoria seccion">
+        <Contenedor>
+          <header className="categoria__encabezado">
+            <h1>{titulo}</h1>
+          </header>
 
-              <select
-                id="tienda-catalogo-marca"
-                value={marcaSeleccionada}
-                onChange={evento =>
-                  setMarcaSeleccionada(evento.target.value)
-                }
-              >
-                <option value="">Todas las marcas</option>
+          {configuracion && (
+            <div className="tienda-catalogo__herramientas">
+              <div className="estructura__campo">
+                <label htmlFor="tienda-catalogo-marca">
+                  Marca
+                </label>
 
-                {marcas.map(marca => (
-                  <option key={marca.id} value={marca.id}>
-                    {marca.nombre}
+                <select
+                  id="tienda-catalogo-marca"
+                  value={marcaSeleccionada}
+                  onChange={evento =>
+                    setMarcaSeleccionada(evento.target.value)
+                  }
+                >
+                  <option value="">Todas las marcas</option>
+
+                  {marcas.map(marca => (
+                    <option key={marca.id} value={marca.id}>
+                      {marca.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="estructura__campo">
+                <label htmlFor="tienda-catalogo-tipo">
+                  Tipo de producto
+                </label>
+
+                <select
+                  id="tienda-catalogo-tipo"
+                  value={tipoSeleccionado}
+                  onChange={evento =>
+                    setTipoSeleccionado(evento.target.value)
+                  }
+                >
+                  <option value="">Todos los tipos</option>
+
+                  {tiposProducto.map(tipo => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="estructura__campo">
+                <label htmlFor="tienda-catalogo-orden">
+                  Ordenar por precio
+                </label>
+
+                <select
+                  id="tienda-catalogo-orden"
+                  value={orden}
+                  onChange={evento =>
+                    setOrden(evento.target.value)
+                  }
+                >
+                  <option value="precio-asc">
+                    Menor a mayor
                   </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="estructura__campo">
-              <label htmlFor="tienda-catalogo-tipo">
-                Tipo de producto
-              </label>
-
-              <select
-                id="tienda-catalogo-tipo"
-                value={tipoSeleccionado}
-                onChange={evento =>
-                  setTipoSeleccionado(evento.target.value)
-                }
-              >
-                <option value="">Todos los tipos</option>
-
-                {tiposProducto.map(tipo => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre}
+                  <option value="precio-desc">
+                    Mayor a menor
                   </option>
-                ))}
-              </select>
+                </select>
+              </div>
+
+              {(marcaSeleccionada || tipoSeleccionado) && (
+                <Boton
+                  variante="secundario"
+                  onClick={limpiarFiltros}
+                >
+                  Limpiar filtros
+                </Boton>
+              )}
             </div>
+          )}
 
-            <div className="estructura__campo">
-              <label htmlFor="tienda-catalogo-orden">
-                Ordenar por
-              </label>
+          {error && <p role="alert">{error}</p>}
 
-              <select
-                id="tienda-catalogo-orden"
-                value={orden}
-                onChange={evento =>
-                  setOrden(evento.target.value)
-                }
-              >
-                <option value="nombre-asc">
-                  Nombre: A a Z
-                </option>
-                <option value="nombre-desc">
-                  Nombre: Z a A
-                </option>
-                <option value="precio-asc">
-                  Precio: menor a mayor
-                </option>
-                <option value="precio-desc">
-                  Precio: mayor a menor
-                </option>
-              </select>
+          {cargando ? (
+            <p role="status">Cargando productos...</p>
+          ) : productos.length > 0 ? (
+            <section
+              className="grilla grilla--productos categoria__grilla"
+              aria-label={`Productos de ${titulo}`}
+            >
+              {productos.map(producto => (
+                <ProductoCard
+                  key={producto.id}
+                  producto={producto}
+                  alAgregarAlCarrito={alAgregarAlCarrito}
+                  cargandoCarrito={cargandoCarrito}
+                />
+              ))}
+            </section>
+          ) : !error ? (
+            <section className="categoria__vacio">
+              <h2>
+                {esSale
+                  ? 'Sin ofertas disponibles'
+                  : 'Sin productos disponibles'}
+              </h2>
+
+              <p>
+                {esSale
+                  ? 'Todavía no hay ofertas publicadas en esta sección.'
+                  : marcaSeleccionada || tipoSeleccionado
+                    ? 'No encontramos productos con estos filtros.'
+                    : 'Todavía no hay productos publicados en esta categoría.'}
+              </p>
+            </section>
+          ) : null}
+
+          {!cargando && configuracion && (
+            <div className="tienda-catalogo__paginacion">
+              <p role="status" aria-live="polite">
+                Mostrando {productos.length} de {total}
+              </p>
+
+              {hayMas && (
+                <Boton
+                  onClick={mostrarMas}
+                  disabled={cargandoMas}
+                >
+                  {cargandoMas
+                    ? 'Cargando...'
+                    : 'Mostrar más'}
+                </Boton>
+              )}
             </div>
-
-            {(marcaSeleccionada || tipoSeleccionado) && (
-              <Boton
-                variante="secundario"
-                onClick={limpiarFiltros}
-              >
-                Limpiar filtros
-              </Boton>
-            )}
-          </div>
-        )}
-
-        {error && <p role="alert">{error}</p>}
-
-        {cargando ? (
-          <p role="status">Cargando productos...</p>
-        ) : productos.length > 0 ? (
-          <section
-            className="grilla grilla--productos categoria__grilla"
-            aria-label={`Productos de ${titulo}`}
-          >
-            {productos.map(producto => (
-              <ProductoCard
-                key={producto.id}
-                producto={producto}
-                alAgregarAlCarrito={alAgregarAlCarrito}
-                cargandoCarrito={cargandoCarrito}
-              />
-            ))}
-          </section>
-        ) : !error ? (
-          <section className="categoria__vacio">
-            <h2>
-              {esSale
-                ? 'Sin ofertas disponibles'
-                : 'Sin productos disponibles'}
-            </h2>
-
-            <p>
-              {esSale
-                ? 'Todavía no hay ofertas publicadas en esta sección.'
-                : marcaSeleccionada || tipoSeleccionado
-                  ? 'No encontramos productos con estos filtros.'
-                  : 'Todavía no hay productos publicados en esta categoría.'}
-            </p>
-          </section>
-        ) : null}
-
-        {!cargando && configuracion && (
-          <div className="tienda-catalogo__paginacion">
-            <p role="status" aria-live="polite">
-              Mostrando {productos.length} de {total}
-            </p>
-
-            {hayMas && (
-              <Boton
-                onClick={mostrarMas}
-                disabled={cargandoMas}
-              >
-                {cargandoMas
-                  ? 'Cargando...'
-                  : 'Mostrar más'}
-              </Boton>
-            )}
-          </div>
-        )}
-      </Contenedor>
-    </main>
+          )}
+        </Contenedor>
+      </main>
+    </>
   )
 }
 
-function Catalogo() {
+function Catalogo({ soloTemporada = false }) {
   const { genero, categoria, generoSale } = useParams()
 
   const {
@@ -542,10 +559,13 @@ function Catalogo() {
 
   return (
     <ContenidoCatalogo
-      key={`${genero}/${generoSale || ''}/${categoria || ''}`}
+      key={soloTemporada
+        ? 'seasons'
+        : `${genero}/${generoSale || ''}/${categoria || ''}`}
       genero={genero}
       categoria={categoria}
       generoSale={generoSale}
+      soloTemporada={soloTemporada}
       alAgregarAlCarrito={agregarProductoAlCarrito}
       cargandoCarrito={cargandoCarrito}
     />
