@@ -176,6 +176,14 @@ function InicioPanel() {
         },
       ];
 
+  tarjetas.push({
+    texto: "Listos para retirar",
+    valor: cargando ? "…" : resumenPedidos?.listosParaRetirar ?? "—",
+    ruta: "/admin/pedidos",
+    enlace: "Ver retiros",
+    estadoNavegacion: { listadoPedidos: { pagina: 1, pestania: "ListoParaRetirar", estadoFiltro: "" } },
+  });
+
   return (
     <main className="estructura">
       <Contenedor>
@@ -254,6 +262,7 @@ function InicioPanel() {
               {tarjeta.ruta && (
                 <Link
                   to={tarjeta.ruta}
+                  state={tarjeta.estadoNavegacion}
                   className="admin-inicio__enlace"
                 >
                   {tarjeta.enlace}

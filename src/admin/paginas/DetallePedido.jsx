@@ -13,6 +13,8 @@ import {
   cancelarPedido,
   despacharPedido,
   entregarPedido,
+  esPedidoRetiroLocal,
+  prepararRetiroPedido,
   obtenerDetallePedido,
   transicionarEstado,
 } from "../servicios/pedidosService";
@@ -43,6 +45,7 @@ const ESTADOS_PAGO = {
 const COLORES_ESTADO = {
   PaymentSettled: "fondo-azul",
   EnPreparacion: "fondo-violeta",
+  ListoParaRetirar: "fondo-amarillo",
   Shipped: "fondo-amarillo",
   Delivered: "fondo-verde",
   Cancelled: "fondo-gris",
@@ -161,10 +164,23 @@ function DetallePedido() {
     }
   }
 
+  async function confirmarListoRetiro() {
+    if (!pedido || !esPedidoRetiroLocal(pedido) || pedido.state !== "EnPreparacion" || transicionando) return;
+    setTransicionando(true);
+    setErrorTransicion("");
+    try {
+      setPedido(await prepararRetiroPedido(pedido.id));
+    } catch (err) {
+      setErrorTransicion(err.message || "No se pudo confirmar el retiro listo.");
+      try { setPedido(await obtenerDetallePedido(id)); } catch { /* Mantener el error original. */ }
+    } finally { setTransicionando(false); }
+  }
+
   async function confirmarDespacho() {
     if (
       !pedido ||
       pedido.state !== "EnPreparacion" ||
+      esPedidoRetiroLocal(pedido) ||
       despachando ||
       transicionando
     ) return;
@@ -194,7 +210,7 @@ function DetallePedido() {
   async function confirmarEntrega() {
     if (
       !pedido ||
-      pedido.state !== "Shipped" ||
+      pedido.state !== (esPedidoRetiroLocal(pedido) ? "ListoParaRetirar" : "Shipped") ||
       entregando ||
       despachando ||
       transicionando
@@ -260,11 +276,22 @@ function DetallePedido() {
       mensaje: "¿Querés pasar este pedido a En preparación?",
       boton: "Pasar a En preparación",
     },
-    EnPreparacion: {
+    EnPreparacion: esPedidoRetiroLocal(pedido) ? {
+      tipo: "retiro",
+      titulo: "Confirmar pedido listo para retirar",
+      mensaje: "¿Confirmás que todas las prendas están listas? El cliente recibirá un correo para retirar en Pinto 680, Tandil.",
+      boton: "Marcar listo para retirar",
+    } : {
       tipo: "despachar",
       titulo: "Confirmar despacho",
       mensaje: "¿Confirmás que el pedido fue despachado?",
       boton: "Marcar como despachado",
+    },
+    ListoParaRetirar: {
+      tipo: "entregar",
+      titulo: "Confirmar retiro en el local",
+      mensaje: "¿Confirmás que el cliente ya retiró todas las prendas? Esta acción registra la entrega del pedido.",
+      boton: "Confirmar entrega en el local",
     },
     Shipped: {
       tipo: "entregar",
@@ -304,6 +331,7 @@ function DetallePedido() {
     setAccionConfirmar(null);
 
     if (tipo === "preparar") await pasarAPreparacion();
+    if (tipo === "retiro") await confirmarListoRetiro();
     if (tipo === "despachar") await confirmarDespacho();
     if (tipo === "entregar") await confirmarEntrega();
   }
@@ -389,15 +417,15 @@ function DetallePedido() {
 
               {pedido.fulfillments?.length > 0 && (
                 <div className="admin-detalle-pedido__despachos">
-                  <h3>Despachos registrados</h3>
+                  <h3>{esPedidoRetiroLocal(pedido) ? "Registro del retiro" : "Despachos registrados"}</h3>
 
                   {pedido.fulfillments.map((despacho) => (
                     <p key={despacho.id}>
-                      <strong>Despacho #{despacho.id}:</strong>{" "}
+                      <strong>{esPedidoRetiroLocal(pedido) ? "Retiro" : "Despacho"} #{despacho.id}:</strong>{" "}
                       {despacho.state === "Shipped"
                         ? "Enviado"
                         : despacho.state === "Pending"
-                        ? "Pendiente"
+                        ? esPedidoRetiroLocal(pedido) ? "Pendiente de retiro" : "Pendiente"
                         : despacho.state === "Delivered"
                         ? "Entregado"
                         : despacho.state}
@@ -446,11 +474,11 @@ function DetallePedido() {
               </div>
 
               <DireccionPedido
-                titulo="Entrega"
+                titulo={esPedidoRetiroLocal(pedido) ? "Retiro en el local" : "Entrega"}
                 direccion={pedido.shippingAddress}
               />
 
-              <EnvioCorreoPedido pedidoId={pedido.id} />
+              {!esPedidoRetiroLocal(pedido) && <EnvioCorreoPedido pedidoId={pedido.id} />}
 
               <section className="estructura__panel admin-detalle-pedido__totales">
                 <div className="estructura__panel-encabezado">
@@ -518,7 +546,7 @@ function DetallePedido() {
                       <span>Cantidad: {linea.quantity}</span>
 
                       <span>
-                        Unidades asociadas a despachos:{" "}
+                        {esPedidoRetiroLocal(pedido) ? "Unidades reservadas para retiro:" : "Unidades asociadas a despachos:"}{" "}
                         {(linea.fulfillmentLines || []).reduce(
                           (total, item) => total + item.quantity,
                           0

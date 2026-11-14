@@ -14,7 +14,7 @@ const OBTENER_PEDIDOS = gql`
         totalQuantity
         totalWithTax
         customer { firstName lastName emailAddress }
-        shippingLines { shippingMethod { name } }
+        shippingLines { shippingMethod { code name } }
         payments { method state }
       }
       totalItems
@@ -36,6 +36,7 @@ const OBTENER_DETALLE_PEDIDO = gql`
       customer { firstName lastName emailAddress }
       shippingAddress { streetLine1 city province postalCode phoneNumber }
       billingAddress { streetLine1 city province postalCode phoneNumber }
+      shippingLines { shippingMethod { code name } }
       fulfillments { id state method trackingCode }
       lines {
         id
@@ -60,6 +61,7 @@ const OBTENER_CONTADORES = gql`
   query ContadoresPedidos {
     confirmados: orders(options: { take: 1, filter: { state: { eq: "PaymentSettled" } } }) { totalItems }
     preparacion: orders(options: { take: 1, filter: { state: { eq: "EnPreparacion" } } }) { totalItems }
+    listosRetiro: orders(options: { take: 1, filter: { state: { eq: "ListoParaRetirar" } } }) { totalItems }
     enviados: orders(options: { take: 1, filter: { state: { eq: "Shipped" } } }) { totalItems }
     entregados: orders(options: { take: 1, filter: { state: { eq: "Delivered" } } }) { totalItems }
   }
@@ -163,6 +165,7 @@ export async function entregarPedido(orderId) {
 export const ESTADO_MAP = {
   PaymentSettled: 'Pago confirmado',
   EnPreparacion: 'En preparación',
+  ListoParaRetirar: 'Listo para retirar',
   Shipped: 'Enviado',
   Delivered: 'Entregado',
   Cancelled: 'Cancelado',
@@ -171,13 +174,14 @@ export const ESTADO_MAP = {
 const COLOR_MAP = {
   PaymentSettled: 'fondo-azul',
   EnPreparacion: 'fondo-violeta',
+  ListoParaRetirar: 'fondo-amarillo',
   Shipped: 'fondo-amarillo',
   Delivered: 'fondo-verde',
   Cancelled: 'fondo-gris',
 }
 
 const ESTADOS_EXCLUIDOS = ['AddingItems', 'ArrangingPayment', 'Draft']
-const ESTADOS_CONFIRMADOS = ['PaymentSettled', 'EnPreparacion', 'Shipped', 'Delivered']
+const ESTADOS_CONFIRMADOS = ['PaymentSettled', 'EnPreparacion', 'ListoParaRetirar', 'Shipped', 'Delivered']
 const TAMANIO_BLOQUE = 100
 const FORMATO_PESOS = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -357,6 +361,7 @@ export async function obtenerContadoresPedidos() {
   return [
     { nombre: 'Pago confirmado', cantidad: data.confirmados.totalItems, color: 'fondo-azul' },
     { nombre: 'En preparación', cantidad: data.preparacion.totalItems, color: 'fondo-violeta' },
+    { nombre: 'Listos para retirar', cantidad: data.listosRetiro.totalItems, color: 'fondo-amarillo' },
     { nombre: 'Enviados', cantidad: data.enviados.totalItems, color: 'fondo-amarillo' },
     { nombre: 'Entregados', cantidad: data.entregados.totalItems, color: 'fondo-verde' },
   ]
@@ -378,6 +383,7 @@ export function contarPorEstado(pedidos) {
   return [
     { nombre: 'Pago confirmado', cantidad: contadores['Pago confirmado'], color: 'fondo-azul' },
     { nombre: 'En preparación', cantidad: contadores['En preparación'], color: 'fondo-violeta' },
+    { nombre: 'Listos para retirar', cantidad: data.listosRetiro.totalItems, color: 'fondo-amarillo' },
     { nombre: 'Enviados', cantidad: contadores.Enviados, color: 'fondo-amarillo' },
     { nombre: 'Entregados', cantidad: contadores.Entregados, color: 'fondo-verde' },
   ]
@@ -413,4 +419,12 @@ export async function obtenerPedidosParaExportar({
     if (resultado.items.length === 0) break
   } while (skip < total)
   return coincidencias
+}
+
+export function esPedidoRetiroLocal(pedido) {
+  return Boolean(pedido?.shippingLines?.some(linea => linea.shippingMethod?.code === 'retiro-local'))
+}
+export async function prepararRetiroPedido(orderId) {
+  await transicionarEstado(orderId, 'ListoParaRetirar')
+  return obtenerDetallePedido(orderId)
 }
