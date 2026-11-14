@@ -3,8 +3,8 @@ import client from '../../servicios/apolloClient'
 import { gql } from '@apollo/client'
 
 const OBTENER_PEDIDOS = gql`
-  query Orders($options: OrderListOptions) {
-    orders(options: $options) {
+  query ListadoPedidosAdministracion($input: FiltroPedidosAdministracionInput) {
+    listadoPedidosAdministracion(input: $input) {
       items {
         id
         code
@@ -180,21 +180,11 @@ const COLOR_MAP = {
   Cancelled: 'fondo-gris',
 }
 
-const ESTADOS_EXCLUIDOS = ['AddingItems', 'ArrangingPayment', 'Draft']
-const ESTADOS_CONFIRMADOS = ['PaymentSettled', 'EnPreparacion', 'ListoParaRetirar', 'Shipped', 'Delivered']
 const TAMANIO_BLOQUE = 100
 const FORMATO_PESOS = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
 })
-
-function normalizarBusqueda(valor) {
-  return String(valor || '')
-    .trim()
-    .toLocaleLowerCase('es-AR')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
 
 function obtenerEstadoPago(pagos = []) {
   if (pagos.some(pago => pago.state === 'Settled')) return 'Confirmado'
@@ -222,7 +212,7 @@ function transformarPedido(pedido, fechaConfirmacion = false) {
     correo: pedido.customer?.emailAddress || '',
     fecha: new Date(fechaConfirmacion ? pedido.orderPlacedAt : pedido.createdAt).toLocaleDateString('es-AR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
-      ...(fechaConfirmacion ? { timeZone: 'America/Argentina/Buenos_Aires' } : {}),
+      timeZone: 'America/Argentina/Buenos_Aires',
     }),
     estadoVendure: pedido.state,
     estado: ESTADO_MAP[pedido.state] || pedido.state,
@@ -235,122 +225,43 @@ function transformarPedido(pedido, fechaConfirmacion = false) {
   }
 }
 
-async function consultarPedidos(skip, take, estado = '') {
-  const filtroEstado = estado
-    ? { eq: estado }
-    : { notIn: ESTADOS_EXCLUIDOS }
+function filtrosConsulta({
+  busqueda = '', estado = '', envio = '', fechaDesde = '', fechaHasta = '',
+  soloConfirmados = false, fechaConfirmacion = false,
+} = {}) {
+  return { busqueda: String(busqueda || '').trim(), estado, envio, fechaDesde, fechaHasta,
+    soloConfirmados, fechaConfirmacion }
+}
 
+async function consultarPedidos(skip, take, filtros) {
   const { data } = await client.query({
     query: OBTENER_PEDIDOS,
-    variables: {
-      options: {
-        skip,
-        take,
-        sort: { createdAt: 'DESC' },
-        filter: { state: filtroEstado },
-      },
-    },
+    variables: { input: { ...filtros, skip, take } },
     fetchPolicy: 'network-only',
   })
-  return data.orders
-}
-
-function coincideBusqueda(pedido, termino) {
-  const codigo = normalizarBusqueda(pedido.code)
-  const nombre = normalizarBusqueda(
-    `${pedido.customer?.firstName || ''} ${pedido.customer?.lastName || ''}`
-  )
-  const correo = normalizarBusqueda(pedido.customer?.emailAddress)
-  return codigo.includes(termino) || nombre.includes(termino) || correo.includes(termino)
-}
-
-// Se comparan fechas de calendario locales (YYYY-MM-DD), sin convertirlas a UTC.
-function fechaLocalPedido(fecha) {
-  const fechaPedido = new Date(fecha)
-  const anio = fechaPedido.getFullYear()
-  const mes = String(fechaPedido.getMonth() + 1).padStart(2, '0')
-  const dia = String(fechaPedido.getDate()).padStart(2, '0')
-  return `${anio}-${mes}-${dia}`
-}
-
-function coincideFiltros(pedido, { termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion }) {
-  if (soloConfirmados && (!pedido.orderPlacedAt || !ESTADOS_CONFIRMADOS.includes(pedido.state))) return false
-  if (fechaConfirmacion && !pedido.orderPlacedAt) return false
-  if (termino && !coincideBusqueda(pedido, termino)) return false
-  if (envio && !obtenerMetodosEnvio(pedido).includes(envio)) return false
-  if (fechaDesde || fechaHasta) {
-    const fecha = fechaConfirmacion
-      ? new Intl.DateTimeFormat('en-CA', {
-          timeZone: 'America/Argentina/Buenos_Aires',
-          year: 'numeric', month: '2-digit', day: '2-digit',
-        }).format(new Date(pedido.orderPlacedAt))
-      : fechaLocalPedido(pedido.createdAt)
-    if (fechaDesde && fecha < fechaDesde) return false
-    if (fechaHasta && fecha > fechaHasta) return false
+  const resultado = data?.listadoPedidosAdministracion
+  if (!resultado || !Array.isArray(resultado.items) || !Number.isInteger(resultado.totalItems)) {
+    throw new Error('No pudimos consultar el listado de pedidos.')
   }
-  return true
+  return resultado
 }
 
-export async function obtenerPedidos({
-  pagina = 1,
-  take = 20,
-  busqueda = '',
-  estado = '',
-  envio = '',
-  fechaDesde = '',
-  fechaHasta = '',
-  soloConfirmados = false,
-  fechaConfirmacion = false,
-} = {}) {
-  const termino = normalizarBusqueda(busqueda)
-  const necesitaFiltradoLocal = Boolean(termino || envio || fechaDesde || fechaHasta || soloConfirmados || fechaConfirmacion)
-
-  // Sin filtros locales, Vendure pagina directamente en el servidor.
-  if (!necesitaFiltradoLocal) {
-    const resultado = await consultarPedidos((pagina - 1) * take, take, estado)
-    return {
-      pedidos: resultado.items.map(pedido => transformarPedido(pedido, fechaConfirmacion)),
-      total: resultado.totalItems,
-    }
-  }
-
-  // Nombre, correo y método de envío no tienen un filtro combinado
-  // adecuado en esta consulta. Se recorren todos los bloques antes de paginar.
-  const coincidencias = []
-  let skip = 0
-  let total = 0
-  do {
-    const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, estado)
-    total = resultado.totalItems
-    coincidencias.push(...resultado.items.filter(pedido => coincideFiltros(pedido, {
-      termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion,
-    })))
-    skip += resultado.items.length
-    if (resultado.items.length === 0) break
-  } while (skip < total)
-
-  const inicio = (pagina - 1) * take
+export async function obtenerPedidos({ pagina = 1, take = 20, ...criterios } = {}) {
+  const filtros = filtrosConsulta(criterios)
+  const resultado = await consultarPedidos((pagina - 1) * take, take, filtros)
   return {
-    pedidos: coincidencias.slice(inicio, inicio + take).map(pedido => transformarPedido(pedido, fechaConfirmacion)),
-    total: coincidencias.length,
+    pedidos: resultado.items.map(pedido => transformarPedido(pedido, filtros.fechaConfirmacion)),
+    total: resultado.totalItems,
   }
 }
 
+const OBTENER_METODOS_ENTREGA = gql`
+  query MetodosEntregaPedidos { metodosEntregaPedidos }
+`
 export async function obtenerMetodosEnvioPedidos() {
-  // Las opciones salen de los pedidos reales, sin inventar nombres de envío.
-  const nombres = new Set()
-  let skip = 0
-  let total = 0
-  do {
-    const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE)
-    total = resultado.totalItems
-    resultado.items.forEach(pedido => {
-      obtenerMetodosEnvio(pedido).forEach(nombre => nombres.add(nombre))
-    })
-    skip += resultado.items.length
-    if (resultado.items.length === 0) break
-  } while (skip < total)
-  return [...nombres].sort((a, b) => a.localeCompare(b, 'es-AR'))
+  const { data } = await client.query({ query: OBTENER_METODOS_ENTREGA, fetchPolicy: 'network-only' })
+  if (!Array.isArray(data?.metodosEntregaPedidos)) throw new Error('No pudimos consultar los métodos de entrega.')
+  return data.metodosEntregaPedidos
 }
 
 export async function obtenerContadoresPedidos() {
@@ -371,19 +282,21 @@ export function contarPorEstado(pedidos) {
   const contadores = {
     'Pago confirmado': 0,
     'En preparación': 0,
+    'Listos para retirar': 0,
     Enviados: 0,
     Entregados: 0,
   }
   pedidos.forEach(pedido => {
     if (pedido.estado === 'Pago confirmado') contadores['Pago confirmado']++
     else if (pedido.estado === 'En preparación') contadores['En preparación']++
+    else if (pedido.estado === 'Listo para retirar') contadores['Listos para retirar']++
     else if (pedido.estado === 'Enviado') contadores.Enviados++
     else if (pedido.estado === 'Entregado') contadores.Entregados++
   })
   return [
     { nombre: 'Pago confirmado', cantidad: contadores['Pago confirmado'], color: 'fondo-azul' },
     { nombre: 'En preparación', cantidad: contadores['En preparación'], color: 'fondo-violeta' },
-    { nombre: 'Listos para retirar', cantidad: data.listosRetiro.totalItems, color: 'fondo-amarillo' },
+    { nombre: 'Listos para retirar', cantidad: contadores['Listos para retirar'], color: 'fondo-amarillo' },
     { nombre: 'Enviados', cantidad: contadores.Enviados, color: 'fondo-amarillo' },
     { nombre: 'Entregados', cantidad: contadores.Entregados, color: 'fondo-verde' },
   ]
@@ -399,26 +312,21 @@ export async function transicionarEstado(orderId, nuevoEstado, datosEnvio = {}) 
   return result
 }
 
-// Exportación: se recorren todas las páginas de Vendure antes de aplicar
-// los mismos filtros locales que utiliza el listado.
-export async function obtenerPedidosParaExportar({
-  busqueda = '', estado = '', envio = '', fechaDesde = '', fechaHasta = '',
-  soloConfirmados = false, fechaConfirmacion = false,
-} = {}) {
-  const termino = normalizarBusqueda(busqueda)
-  const coincidencias = []
+// La exportación recorre únicamente las páginas que coinciden con los mismos
+// filtros del listado. No descarga pedidos ajenos al resultado para filtrarlos aquí.
+export async function obtenerPedidosParaExportar(criterios = {}) {
+  const filtros = filtrosConsulta(criterios)
+  const pedidos = []
   let skip = 0
   let total = 0
   do {
-    const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, estado)
+    const resultado = await consultarPedidos(skip, TAMANIO_BLOQUE, filtros)
     total = resultado.totalItems
-    coincidencias.push(...resultado.items.filter(pedido => coincideFiltros(pedido, {
-      termino, envio, fechaDesde, fechaHasta, soloConfirmados, fechaConfirmacion,
-    })).map(pedido => transformarPedido(pedido, fechaConfirmacion)))
+    pedidos.push(...resultado.items.map(pedido => transformarPedido(pedido, filtros.fechaConfirmacion)))
     skip += resultado.items.length
     if (resultado.items.length === 0) break
   } while (skip < total)
-  return coincidencias
+  return pedidos
 }
 
 export function esPedidoRetiroLocal(pedido) {

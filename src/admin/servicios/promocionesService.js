@@ -4,10 +4,10 @@ import client from "../../servicios/apolloClient";
 const TAMANIO_PAGINA = 50;
 
 const OBTENER_PROMOCIONES = gql`
-  query ObtenerPromociones($options: PromotionListOptions) {
-    promotions(options: $options) {
+  query ObtenerPromociones($skip: Int, $take: Int) {
+    promotions: promocionesAdministracion(skip: $skip, take: $take) {
       totalItems
-      items { id name description enabled startsAt endsAt couponCode }
+      items { id name description enabled startsAt endsAt couponCode estadoListado }
     }
   }
 `;
@@ -62,7 +62,7 @@ export async function obtenerPromociones(pagina = 1) {
   const paginaNormalizada = Math.max(1, Math.floor(Number(pagina) || 1));
   const { data } = await client.query({
     query: OBTENER_PROMOCIONES,
-    variables: { options: { skip: (paginaNormalizada - 1) * TAMANIO_PAGINA, take: TAMANIO_PAGINA } },
+    variables: { skip: (paginaNormalizada - 1) * TAMANIO_PAGINA, take: TAMANIO_PAGINA },
     fetchPolicy: "network-only",
   });
   if (!data?.promotions) throw new Error("Vendure no devolvió el listado de promociones.");
