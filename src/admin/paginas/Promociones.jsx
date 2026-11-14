@@ -37,6 +37,7 @@ function formatearFecha(fecha) {
 }
 
 function obtenerEstadoPromocion(promocion) {
+  if (promocion.estadoListado) return promocion.estadoListado;
   if (!promocion.enabled) {
     return "Desactivada";
   }
@@ -306,6 +307,7 @@ function Promociones() {
           promocionId={modal === "nuevo" ? null : modal}
           onClose={() => setModal(null)}
           onGuardado={() => {
+            if (modal === "nuevo") setPagina(1);
             setModal(null);
             setRecarga((valor) => valor + 1);
           }}
