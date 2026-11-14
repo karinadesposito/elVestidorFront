@@ -18,6 +18,7 @@ const PESTANIAS = [
   { nombre: "Todos", estado: "" },
   { nombre: "Pendientes", estado: "PaymentSettled" },
   { nombre: "En preparación", estado: "EnPreparacion" },
+  { nombre: "Listos para retirar", estado: "ListoParaRetirar" },
   { nombre: "Enviados", estado: "Shipped" },
   { nombre: "Entregados", estado: "Delivered" },
   { nombre: "Cancelados", estado: "Cancelled" },

@@ -7,6 +7,7 @@ const RESUMEN_PEDIDOS = gql`
       nuevosHoy
       porPreparar
       enPreparacion
+      listosParaRetirar
       enviados
     }
   }
