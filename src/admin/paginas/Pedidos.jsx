@@ -16,7 +16,7 @@ import "../../estilos/admin-pedidos.css";
 const TAMANIO_PAGINA = 20;
 const PESTANIAS = [
   { nombre: "Todos", estado: "" },
-  { nombre: "Pendientes", estado: "PaymentSettled" },
+  { nombre: "Pago confirmado", estado: "PaymentSettled" },
   { nombre: "En preparación", estado: "EnPreparacion" },
   { nombre: "Listos para retirar", estado: "ListoParaRetirar" },
   { nombre: "Enviados", estado: "Shipped" },

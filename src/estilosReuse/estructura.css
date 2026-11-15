@@ -47,6 +47,14 @@
 .estructura__tarjeta {
   padding: var(--espacio-2);
 }
+.estructura__resumen > .estructura__tarjeta {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 4.5rem;
+}
+
 
 .estructura__tarjeta span {
   display: block;
@@ -266,6 +274,16 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+.estructura__panel .admin-productos__filtros .estructura__campo label {
+  color: var(--color-texto-secundario);
+  font-size: var(--estructura-texto-xs);
+  font-weight: var(--peso-semibold);
+  letter-spacing: 0.05em;
+}
+
+
+
 
 .estructura__campo input,
 .estructura__campo select,

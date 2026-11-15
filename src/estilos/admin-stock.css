@@ -1,3 +1,4 @@
+
 /* Controles del listado */
 
 #stock-controles {
@@ -8,6 +9,25 @@
 
 #stock-controles .admin-productos__buscador-control {
   box-sizing: border-box;
+}
+
+#stock-controles .estructura__campo label,
+#stock-controles .admin-productos__buscador > label {
+  color: var(--color-texto-secundario);
+  font-size: var(--estructura-texto-xs);
+  font-weight: var(--peso-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.estructura__panel:has(#stock-controles) > .estructura__panel-encabezado .estructura__panel-acciones {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.estructura__panel:has(#stock-controles) > .estructura__panel-encabezado .boton {
+  width: 100%;
 }
 
 .estructura__tarjeta.fondo-verde + #resumen-stock {
@@ -165,25 +185,31 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .estructura__panel:has(#stock-controles) > .estructura__panel-encabezado {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .estructura__panel:has(#stock-controles) > .estructura__panel-encabezado .estructura__panel-acciones {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   #stock-controles {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 2fr 1fr 1fr;
     align-items: end;
     gap: var(--espacio-2);
     max-width: none;
   }
 
   #stock-controles .admin-productos__filtros {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: end;
-    gap: var(--espacio-2);
-    min-width: 0;
+    display: contents;
   }
 
   #stock-controles .admin-productos__buscador,
   #stock-controles .estructura__campo {
     min-width: 0;
+    margin-bottom: 0;
   }
 
   #stock-controles input,
@@ -212,6 +238,20 @@
 /* Escritorio */
 
 @media (min-width: 64rem) {
+  .estructura__panel:has(#stock-controles) > .estructura__panel-encabezado {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .estructura__panel:has(#stock-controles) > .estructura__panel-encabezado .estructura__panel-acciones {
+    display: flex;
+    width: auto;
+  }
+
+  .estructura__panel:has(#stock-controles) > .estructura__panel-encabezado .boton {
+    width: auto;
+  }
+
   #formulario-ingreso-stock {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     align-items: start;
