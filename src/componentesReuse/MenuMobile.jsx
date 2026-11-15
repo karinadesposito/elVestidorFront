@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { FiChevronDown, FiX } from 'react-icons/fi'
 
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
@@ -12,9 +12,9 @@ function MenuMobile({
   categoriasMujer = [],
   categoriasHombre = [],
   gruposSale = [],
+  alAbrirSale,
 }) {
   const [seccionAbierta, setSeccionAbierta] = useState(null)
-  const navegar = useNavigate()
 
   if (!abierto) return null
 
@@ -25,8 +25,8 @@ function MenuMobile({
   }
 
   function abrirSale() {
-    alternarSeccion('sale')
-    navegar('/sale')
+    cerrarMenu()
+    alAbrirSale?.()
   }
 
   function cerrarMenu() {
@@ -145,40 +145,11 @@ function MenuMobile({
             type="button"
             className="menu-mobile__principal menu-mobile__principal--sale"
             onClick={abrirSale}
-            aria-expanded={seccionAbierta === 'sale'}
+            aria-expanded={false}
           >
             SALE
             <FiChevronDown />
           </button>
-
-          {seccionAbierta === 'sale' && (
-            <div className="menu-mobile__sale">
-              <ul className="menu-mobile__sublista">
-                <li>
-                  <Link to="/sale" onClick={cerrarMenu}>
-                    Ver todas las ofertas
-                  </Link>
-                </li>
-              </ul>
-              {gruposSale.map(grupo => (
-                <div
-                  className="menu-mobile__grupo"
-                  key={grupo.titulo}
-                >
-                  <p className="menu-mobile__grupo-titulo">
-                    {grupo.titulo}
-                  </p>
-
-                  <ul className="menu-mobile__sublista">
-                    {renderizarCategorias(
-                      grupo.items,
-                      `sale-${grupo.titulo}-`,
-                    )}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
 
           <Link
             to="/seasons"

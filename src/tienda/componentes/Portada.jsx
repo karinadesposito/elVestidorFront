@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -64,7 +63,7 @@ function Portada() {
                   variante="promocional"
                   className="portada__boton"
                   onClick={() => {
-                    window.location.href = "/mujer";
+                    window.location.href = "/catalogo";
                   }}
                 >
                   DESCUBRÍ LA COLECCIÓN

@@ -34,6 +34,46 @@
   padding-block: var(--espacio-3);
 }
 
+/* Encabezado con logos Levi's y EQUUS */
+
+.categorias .categoria__encabezado {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+
+.categorias .categoria__encabezado h1 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(0.9rem, 2.8vw, 1.5rem);
+  font-weight: var(--peso-semibold);
+}
+
+.categorias .categoria__encabezado img {
+  display: block;
+  width: 100%;
+  object-position: center;
+}
+
+.categorias .categoria__encabezado img:first-child {
+  justify-self: start;
+  max-width: 75px;
+  height: auto;
+  max-height: 40px;
+  object-fit: contain;
+}
+
+.categorias .categoria__encabezado img:last-child {
+  justify-self: end;
+  max-width: 100px;
+  height: 40px;
+  object-fit: cover;
+}
+
+/* Grilla de categorías */
+
 .categorias__grilla {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -107,6 +147,16 @@
 
   .categorias {
     padding-block: var(--espacio-4);
+  }
+
+  .categorias .categoria__encabezado img:first-child {
+    max-width: 95px;
+    max-height: 48px;
+  }
+
+  .categorias .categoria__encabezado img:last-child {
+    max-width: 130px;
+    height: 52px;
   }
 
   .categorias__grilla {

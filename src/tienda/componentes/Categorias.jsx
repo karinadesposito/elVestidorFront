@@ -1,16 +1,15 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 import Contenedor from "../../componentesReuse/Contenedor";
 import Card from "../../componentesReuse/Cards";
-import ModalPromocional from "../../componentesReuse/ModalPromocional";
 
 import modeloHombreImg from "../../recursos/imagenes/modelo_hombre.webp";
 import modeloMujerImg from "../../recursos/imagenes/modelo_mujer.webp";
 import accesoriosImg from "../../recursos/imagenes/accesorios.webp";
 import saleImg from "../../recursos/imagenes/sale.webp";
-import estatuaVansImg from "../../recursos/imagenes/estatua-vans.webp";
+import logoLevis from "../../recursos/logosMarcas/LogoLevis.png";
+import logoEquus from "../../recursos/logosMarcas/equusLogo.jpg";
 
 const categorias = [
   {
@@ -37,32 +36,17 @@ const categorias = [
 
 function Categorias() {
   const navigate = useNavigate();
-  const [mostrarModalSale, setMostrarModalSale] = useState(false);
-
-  const abrirModalSale = () => {
-    setMostrarModalSale(true);
-  };
-
-  const cerrarModalSale = () => {
-    setMostrarModalSale(false);
-  };
+  const { abrirPromocionSale } = useOutletContext();
 
   return (
     <>
-      {mostrarModalSale && (
-        <ModalPromocional
-          imagen={estatuaVansImg}
-          titulo="LLEGARON LAS VANS"
-          subtitulo="APURATE."
-          destacado="10% OFF"
-          descripcion="Comprando online"
-          boton="VER OFERTAS"
-          onClose={cerrarModalSale}
-        />
-      )}
-
       <section className="seccion categorias">
         <Contenedor>
+          <header className="categoria__encabezado">
+            <img src={logoLevis} alt="" aria-hidden="true" />
+            <h1>Levi's y EQUUS en Tandil</h1>
+            <img src={logoEquus} alt="" aria-hidden="true" />
+          </header>
           <div className="categorias__grilla">
             {categorias.map((categoria) => (
               <Card
@@ -71,7 +55,7 @@ function Categorias() {
                 nombre={categoria.nombre}
                 onClick={
                   categoria.nombre === "SALE"
-                    ? abrirModalSale
+                    ? abrirPromocionSale
                     : () => navigate(categoria.ruta)
                 }
               />

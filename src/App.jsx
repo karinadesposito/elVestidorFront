@@ -1,4 +1,3 @@
-
 import { Outlet, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './admin/contexto/AuthContext'
@@ -46,6 +45,16 @@ function App() {
 
         <Route element={<TiendaLayout />}>
           <Route index element={<Inicio />} />
+
+          <Route
+            path="catalogo"
+            element={<Catalogo general />}
+          />
+
+          <Route
+            path="catalogo/producto/:productoId"
+            element={<DetalleProducto />}
+          />
 
           <Route
             path="seasons"
