@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /club/confirmado
+
+Sitemap: https://elvestidortandil.com.ar/sitemap.xml

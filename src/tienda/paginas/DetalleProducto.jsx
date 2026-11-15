@@ -39,6 +39,51 @@ function DetalleProducto() {
   const [agregando, setAgregando] = useState(false)
   const [errorCompra, setErrorCompra] = useState('')
 
+  const nombreSEO = producto?.nombre
+    ? producto.marca &&
+      !producto.nombre.toLowerCase().includes(producto.marca.toLowerCase())
+      ? `${producto.marca} ${producto.nombre}`
+      : producto.nombre
+    : ''
+
+  useEffect(() => {
+    const titulo = nombreSEO
+      ? `${nombreSEO} | El Vestidor Tandil`
+      : 'Producto | El Vestidor Tandil'
+
+    const descripcion = nombreSEO
+      ? `Comprá ${nombreSEO} en El Vestidor Tandil. Consultá colores, talles y disponibilidad, con envíos a todo el país.`
+      : 'Consultá los productos de El Vestidor Tandil.'
+
+    document.title = titulo
+
+    let meta = document.querySelector('meta[name="description"]')
+
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'description'
+      document.head.appendChild(meta)
+    }
+
+    meta.content = descripcion
+
+    let canonical = document.querySelector('link[rel="canonical"]')
+
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.rel = 'canonical'
+      document.head.appendChild(canonical)
+    }
+
+    canonical.href = `${window.location.origin}${window.location.pathname}`
+
+    return () => {
+      document.title = "El Vestidor Tandil | Levi's, EQUUS e indumentaria"
+      meta.content = "Descubrí Levi's, EQUUS, indumentaria y calzado para mujer y hombre en El Vestidor Tandil. Explorá nuestra colección y comprá online."
+      canonical.remove()
+    }
+  }, [nombreSEO])
+
   useEffect(() => {
     let activo = true
 
@@ -120,6 +165,7 @@ function DetalleProducto() {
 
   const porcentajeOferta = precioReferencia?.descuentoPorcentaje
   const precioOferta = precioReferencia?.precioOfertaEstimado
+
   const tieneOferta =
     Number.isInteger(porcentajeOferta) &&
     porcentajeOferta > 0 &&
@@ -223,9 +269,11 @@ function DetalleProducto() {
         >
           <Link to="/">Inicio</Link>
           <span aria-hidden="true">/</span>
+
           <Link to={`/${genero}`}>
             {genero}
           </Link>
+
           <span aria-hidden="true">/</span>
           <span aria-current="page">
             {producto.nombre}
@@ -295,6 +343,12 @@ function DetalleProducto() {
           </section>
 
           <section className="detalle-producto__informacion">
+            {producto.marca && (
+              <span className="texto-etiqueta">
+                {producto.marca}
+              </span>
+            )}
+
             <h1>{producto.nombre}</h1>
 
             {precioReferencia && (
@@ -313,6 +367,7 @@ function DetalleProducto() {
                     >
                       {formatoPrecio.format(precioOferta)}
                     </strong>
+
                     <del
                       style={{
                         display: 'inline-block',
@@ -324,6 +379,7 @@ function DetalleProducto() {
                     >
                       {formatoPrecio.format(precioReferencia.precio)}
                     </del>
+
                     <span
                       style={{
                         display: 'inline-block',
@@ -346,7 +402,6 @@ function DetalleProducto() {
 
             <div className="detalle-producto__campo">
               <h2>Color</h2>
-
               <div className="detalle-producto__opciones">
                 {producto.colores.map(color => {
                   const id = String(color.id ?? 'unico')
@@ -372,7 +427,6 @@ function DetalleProducto() {
 
             <div className="detalle-producto__campo">
               <h2>Talle</h2>
-
               <div className="detalle-producto__opciones">
                 {variantesColor.map(variante => {
                   const id = String(
@@ -407,7 +461,6 @@ function DetalleProducto() {
 
             <div className="detalle-producto__campo">
               <h2>Cantidad</h2>
-
               <div className="detalle-producto__cantidad">
                 <button
                   type="button"

@@ -80,18 +80,18 @@ const OBTENER_CATALOGO = gql`
   }
 `
 
-/*
- * Consulta individual para la ficha de producto.
- *
- * La Shop API devuelve las variantes, sus opciones
- * y los assets asociados a cada variante.
- */
 const OBTENER_DETALLE_PRODUCTO = gql`
   query ObtenerDetalleProducto($id: ID!) {
     product(id: $id) {
       id
       name
       description
+      facetValues {
+        name
+        facet {
+          code
+        }
+      }
       featuredAsset {
         id
         preview
@@ -130,9 +130,6 @@ const OBTENER_DETALLE_PRODUCTO = gql`
   }
 `
 
-// Consultamos ofertas anunciadas por el mismo catalogo de Vendure.
-// El detalle de `product` devuelve el precio base, sin las promociones
-// automaticas que nuestro plugin expone por variante.
 const OBTENER_OFERTAS_DETALLE = gql`
   query ObtenerOfertasDetalle($input: CatalogoTiendaInput!) {
     catalogoTienda(input: $input) {
@@ -155,8 +152,6 @@ async function obtenerOfertasPorVariante(productoId) {
   let desplazamiento = 0
   let hayMas = true
 
-  // La paginacion se realiza sobre tarjetas de catalogo (producto/color).
-  // Puede haber mas de un color para el mismo producto.
   while (hayMas) {
     const { data } = await clienteTienda.query({
       query: OBTENER_OFERTAS_DETALLE,
@@ -179,6 +174,7 @@ async function obtenerOfertasPorVariante(productoId) {
       for (const variante of card.variantes || []) {
         const porcentaje = variante.descuentoPorcentaje
         const importe = variante.precioOfertaEstimado
+
         if (
           Number.isInteger(porcentaje) &&
           porcentaje > 0 &&
@@ -194,7 +190,12 @@ async function obtenerOfertasPorVariante(productoId) {
     }
 
     const siguiente = resultado.siguienteDesplazamiento
-    if (!resultado.hayMas || !Number.isInteger(siguiente) || siguiente <= desplazamiento) {
+
+    if (
+      !resultado.hayMas ||
+      !Number.isInteger(siguiente) ||
+      siguiente <= desplazamiento
+    ) {
       hayMas = false
     } else {
       desplazamiento = siguiente
@@ -240,9 +241,10 @@ function mapearVariante(variante) {
     talle: variante.talle,
     precio: variante.precioConImpuestos / 100,
     descuentoPorcentaje: variante.descuentoPorcentaje ?? null,
-    precioOfertaEstimado: variante.precioOfertaEstimado == null
-      ? null
-      : variante.precioOfertaEstimado / 100,
+    precioOfertaEstimado:
+      variante.precioOfertaEstimado == null
+        ? null
+        : variante.precioOfertaEstimado / 100,
     moneda: variante.moneda,
     estadoStock: variante.estadoStock,
     disponible: variante.disponible,
@@ -269,9 +271,10 @@ function mapearCard(card) {
     precioDesde: card.precioDesde / 100,
     precioHasta: card.precioHasta / 100,
     descuentoPorcentaje: card.descuentoPorcentaje ?? null,
-    precioOfertaDesdeEstimado: card.precioOfertaDesdeEstimado == null
-      ? null
-      : card.precioOfertaDesdeEstimado / 100,
+    precioOfertaDesdeEstimado:
+      card.precioOfertaDesdeEstimado == null
+        ? null
+        : card.precioOfertaDesdeEstimado / 100,
     preciosDiferentes: card.preciosDiferentes,
     disponible: card.disponible,
     variantes: card.variantes.map(mapearVariante),
@@ -349,7 +352,6 @@ function agruparColores(variantes, imagenesProducto) {
     }
 
     const grupo = grupos.get(clave)
-
     grupo.variantes.push(variante)
 
     if (variante.disponible) {
@@ -375,10 +377,6 @@ function agruparColores(variantes, imagenesProducto) {
 
   const colores = [...grupos.values()]
 
-  /*
-   * Si el producto no tiene imágenes asignadas
-   * a sus variantes, usamos las imágenes generales.
-   */
   if (colores.length === 1 && colores[0].imagenes.length === 0) {
     colores[0].imagenes = imagenesProducto
   }
@@ -405,6 +403,9 @@ function mapearDetalleProducto(producto) {
   return {
     id: producto.id,
     nombre: producto.name,
+    marca: producto.facetValues?.find(
+      valor => valor.facet?.code?.toLowerCase() === 'marca'
+    )?.name || '',
     descripcion: producto.description || '',
     imagenes,
     variantes,
@@ -524,13 +525,15 @@ export async function obtenerDetalleProducto(productoId) {
 
   const detalle = mapearDetalleProducto(data.product)
 
-  // La ficha debe seguir funcionando incluso si falla la consulta
-  // complementaria de ofertas; en ese caso exhibimos el precio base.
   let ofertas = new Map()
+
   try {
     ofertas = await obtenerOfertasPorVariante(id)
   } catch (error) {
-    console.warn('No se pudieron recuperar las ofertas del producto.', error)
+    console.warn(
+      'No se pudieron recuperar las ofertas del producto.',
+      error,
+    )
   }
 
   const variantes = detalle.variantes.map(variante => ({
