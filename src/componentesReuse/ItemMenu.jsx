@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 function ItemMenu({
   titulo,
@@ -9,13 +9,14 @@ function ItemMenu({
   alAlternar,
   alCerrar,
   destacado = false,
+  alAbrirSale,
 }) {
-  const navegar = useNavigate()
   const tieneGrupos = grupos.length > 0
 
   function manejarClickTitulo() {
     if (destacado) {
-      navegar('/sale')
+      alAbrirSale?.()
+      return
     }
     alAlternar?.()
   }

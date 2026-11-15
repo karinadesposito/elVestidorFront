@@ -113,10 +113,9 @@ function ProductoCard({
     tienePrecio &&
     typeof alAgregarAlCarrito === 'function'
 
-  const rutaDetalle =
-    genero && producto.productoId
-      ? `/${genero}/producto/${producto.productoId}`
-      : null
+  const rutaDetalle = producto.productoId
+    ? `/${genero || 'catalogo'}/producto/${producto.productoId}`
+    : null
 
   function cambiarImagen(direccion) {
     if (imagenes.length <= 1) return

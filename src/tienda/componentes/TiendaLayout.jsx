@@ -1,10 +1,12 @@
 
 import { useEffect, useRef, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 
 import Barra from './Barra'
 import PiePagina from './PiePagina'
 import CarritoLateral from './CarritoLateral'
+import ModalPromocional from '../../componentesReuse/ModalPromocional'
+import estatuaVansImg from '../../recursos/imagenes/estatua-vans.webp'
 import { recuperarCarritoParaEditar } from '../../servicios/checkoutService'
 
 import {
@@ -15,6 +17,8 @@ import {
 } from '../../servicios/carritoService'
 
 function TiendaLayout() {
+  const navigate = useNavigate()
+  const [mostrarPromocionSale, setMostrarPromocionSale] = useState(false)
   const [carrito, setCarrito] = useState(null)
   const [carritoAbierto, setCarritoAbierto] = useState(false)
   const [cargandoCarrito, setCargandoCarrito] = useState(true)
@@ -57,6 +61,15 @@ function TiendaLayout() {
       activo = false
     }
   }, [])
+
+  function abrirPromocionSale() {
+    setMostrarPromocionSale(true)
+  }
+
+  function cerrarPromocionSale() {
+    setMostrarPromocionSale(false)
+    navigate('/sale')
+  }
 
   async function abrirCarrito() {
     setCarritoAbierto(true)
@@ -247,6 +260,7 @@ function TiendaLayout() {
       <Barra
         alAbrirCarrito={abrirCarrito}
         cantidadCarrito={carrito?.cantidadTotal || 0}
+        alAbrirSale={abrirPromocionSale}
       />
 
       <Outlet
@@ -255,6 +269,7 @@ function TiendaLayout() {
           agregarProductoAlCarrito,
           eliminarProductoDelCarrito,
           cargandoCarrito,
+          abrirPromocionSale,
         }}
       />
 
@@ -273,6 +288,17 @@ function TiendaLayout() {
         alCambiarCantidad={cambiarCantidadProducto}
         alCerrar={cerrarCarrito}
       />
+
+      {mostrarPromocionSale && (
+        <ModalPromocional
+          imagen={estatuaVansImg}
+          titulo="LLEGARON LAS VANS"
+          subtitulo="APURATE."
+          destacado="10% OFF"
+          descripcion="Comprando online"
+          onClose={cerrarPromocionSale}
+        />
+      )}
     </>
   )
 }

@@ -1,3 +1,4 @@
+
 import "../estilosReuse/ModalPromocional.css";
 
 function ModalPromocional({
@@ -8,6 +9,7 @@ function ModalPromocional({
   descripcion,
   boton,
   onClose,
+  onAction,
 }) {
   return (
     <div className="modal-promocional">
@@ -41,9 +43,15 @@ function ModalPromocional({
 
           <p className="modal-promocional__detalle">{descripcion}</p>
 
-          <button className="boton--promocional" type="button">
-            {boton}
-          </button>
+          {boton && (
+            <button
+              className="boton--promocional"
+              type="button"
+              onClick={onAction}
+            >
+              {boton}
+            </button>
+          )}
         </div>
       </section>
     </div>

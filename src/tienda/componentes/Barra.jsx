@@ -30,7 +30,7 @@ const promos = [
 const UMBRAL_COMPACTAR = 100
 const UMBRAL_EXPANDIR = 40
 
-function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
+function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
   const { pathname } = useLocation()
   const esInicio = pathname === '/'
 
@@ -43,7 +43,7 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
 
   useEffect(() => {
     const intervalo = window.setInterval(() => {
-      setPromoActual((actual) => (actual + 1) % promos.length)
+      setPromoActual(actual => (actual + 1) % promos.length)
     }, 5000)
     return () => window.clearInterval(intervalo)
   }, [])
@@ -98,11 +98,11 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
   }, [pathname])
 
   function cambiarPromo(direccion) {
-    setPromoActual((actual) => (actual + direccion + promos.length) % promos.length)
+    setPromoActual(actual => (actual + direccion + promos.length) % promos.length)
   }
 
   function alternarMenu(menu) {
-    setMenuAbierto((actual) => (actual === menu ? null : menu))
+    setMenuAbierto(actual => (actual === menu ? null : menu))
   }
 
   function cerrarMenu() {
@@ -113,6 +113,12 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
     setMenuAbierto(null)
     setMenuMobileAbierto(false)
     alAbrirCarrito?.()
+  }
+
+  function abrirSale() {
+    setMenuAbierto(null)
+    setMenuMobileAbierto(false)
+    alAbrirSale?.()
   }
 
   const claseBarra = esInicio
@@ -180,9 +186,10 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
               <ItemMenu
                 titulo="SALE"
                 grupos={gruposSale}
-                abierto={menuAbierto === 'sale'}
+                abierto={false}
                 alAlternar={() => alternarMenu('sale')}
                 alCerrar={cerrarMenu}
+                alAbrirSale={abrirSale}
                 destacado
               />
             </ul>
@@ -212,6 +219,7 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0 }) {
         categoriasMujer={categoriasMujer}
         categoriasHombre={categoriasHombre}
         gruposSale={gruposSale}
+        alAbrirSale={abrirSale}
       />
     </>
   )

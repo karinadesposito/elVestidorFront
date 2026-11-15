@@ -1,15 +1,15 @@
+
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 import Contenedor from '../../componentesReuse/Contenedor'
 import Boton from '../../componentesReuse/Boton'
 import ProductoCard from '../componentes/ProductoCard'
-import ModalPromocional from '../../componentesReuse/ModalPromocional'
-import estatuaVansImg from '../../recursos/imagenes/estatua-vans.webp'
 import {
   obtenerCatalogo,
   obtenerFiltrosCatalogo,
 } from '../../servicios/catalogoService'
 import '../../estilos/Categoria.css'
+
 const TIPOS_POR_CATEGORIA = {
   jeans: ['jean'],
   camperas: ['campera'],
@@ -41,6 +41,7 @@ const TIPOS_POR_CATEGORIA = {
     'bufanda',
   ],
 }
+
 const TITULOS_CATEGORIA = {
   jeans: 'Jeans',
   camperas: 'Camperas',
@@ -61,6 +62,7 @@ const TITULOS_CATEGORIA = {
   bufandas: 'Bufandas',
   accesorios: 'Accesorios',
 }
+
 function normalizarTexto(texto = '') {
   return texto
     .trim()
@@ -68,12 +70,14 @@ function normalizarTexto(texto = '') {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
 }
+
 function formatearTitulo(texto = '') {
   return texto
     .split('-')
     .map(parte => parte.charAt(0).toUpperCase() + parte.slice(1))
     .join(' ')
 }
+
 function obtenerTitulo(genero, categoria, generoSale) {
   if (genero === 'sale' || generoSale) {
     const tituloGenero = generoSale ? formatearTitulo(generoSale) : ''
@@ -82,11 +86,14 @@ function obtenerTitulo(genero, categoria, generoSale) {
       : ''
     return ['Sale', tituloGenero, tituloCategoria].filter(Boolean).join(' ')
   }
+
   if (categoria) {
     return TITULOS_CATEGORIA[categoria] || formatearTitulo(categoria)
   }
+
   return formatearTitulo(genero)
 }
+
 function coincideValor(valor, nombres) {
   return nombres.some(
     nombre =>
@@ -94,44 +101,56 @@ function coincideValor(valor, nombres) {
       normalizarTexto(valor.nombre) === normalizarTexto(nombre),
   )
 }
+
 function ContenidoCatalogo({
   genero,
   categoria,
   generoSale,
   soloTemporada,
+  general,
   alAgregarAlCarrito,
   cargandoCarrito,
 }) {
   const esSale = genero === 'sale' || Boolean(generoSale)
-  const titulo = soloTemporada
-    ? 'Seasons'
-    : obtenerTitulo(genero, categoria, generoSale)
+  const titulo = general
+    ? 'Todos los productos'
+    : soloTemporada
+      ? 'Seasons'
+      : obtenerTitulo(genero, categoria, generoSale)
 
   useEffect(() => {
     const tituloSeo = `${titulo}${categoria && !esSale ? ` de ${genero === 'mujer' ? 'Mujer' : 'Hombre'}` : ''} en Tandil | El Vestidor`
     const descripcion = `Explorá ${titulo.toLowerCase()} en El Vestidor Tandil. Encontrá indumentaria y calzado para mujer y hombre, y comprá online con envíos a todo el país.`
+
     document.title = tituloSeo
+
     let meta = document.querySelector('meta[name="description"]')
+
     if (!meta) {
       meta = document.createElement('meta')
       meta.name = 'description'
       document.head.appendChild(meta)
     }
+
     meta.content = descripcion
+
     let canonical = document.querySelector('link[rel="canonical"]')
+
     if (!canonical) {
       canonical = document.createElement('link')
       canonical.rel = 'canonical'
       document.head.appendChild(canonical)
     }
+
     canonical.href = `${window.location.origin}${window.location.pathname}`
+
     return () => {
       document.title = "El Vestidor Tandil | Levi's, EQUUS e indumentaria"
       meta.content = "Descubrí Levi's, EQUUS, indumentaria y calzado para mujer y hombre en El Vestidor Tandil. Explorá nuestra colección y comprá online."
       canonical.remove()
     }
   }, [titulo, categoria, genero, esSale])
-  const [mostrarModalPromocional, setMostrarModalPromocional] = useState(soloTemporada)
+
   const [configuracion, setConfiguracion] = useState(null)
   const [marcas, setMarcas] = useState([])
   const [tiposProducto, setTiposProducto] = useState([])
@@ -145,32 +164,41 @@ function ContenidoCatalogo({
   const [cargando, setCargando] = useState(true)
   const [cargandoMas, setCargandoMas] = useState(false)
   const [error, setError] = useState('')
+
   const versionConsulta = useRef(0)
   const solicitudMas = useRef(false)
+
   useEffect(() => {
     let activo = true
+
     async function prepararCatalogo() {
       try {
         const filtrosGenerales = await obtenerFiltrosCatalogo()
+
         if (!activo) {
           return
         }
+
         // SALE general y Seasons no filtran por género.
-        if (soloTemporada || (esSale && !generoSale)) {
+        if (general || soloTemporada || (esSale && !generoSale)) {
           const nombresTipo = categoria
             ? TIPOS_POR_CATEGORIA[categoria] || []
             : []
+
           const tiposCategoria = categoria
             ? filtrosGenerales.tiposProducto.filter(valor =>
                 coincideValor(valor, nombresTipo),
               )
             : filtrosGenerales.tiposProducto
+
           if (categoria && tiposCategoria.length === 0) {
             setCargando(false)
             return
           }
+
           setMarcas(filtrosGenerales.marcas)
           setTiposProducto(tiposCategoria)
+
           setConfiguracion({
             generoId: null,
             tiposProductoIds: categoria
@@ -179,46 +207,58 @@ function ContenidoCatalogo({
           })
           return
         }
+
         const generoBuscado = esSale ? generoSale : genero
         const generoEncontrado = filtrosGenerales.generos.find(
           valor => coincideValor(valor, [generoBuscado]),
         )
+
         if (!generoEncontrado) {
           setCargando(false)
           return
         }
+
         const filtrosGenero = await obtenerFiltrosCatalogo({
           generoId: generoEncontrado.id,
         })
+
         if (!activo) {
           return
         }
+
         const nombresTipo = categoria
           ? TIPOS_POR_CATEGORIA[categoria] || []
           : []
+
         const tiposCategoria = categoria
           ? filtrosGenero.tiposProducto.filter(valor =>
               coincideValor(valor, nombresTipo),
             )
           : filtrosGenero.tiposProducto
+
         if (categoria && tiposCategoria.length === 0) {
           setCargando(false)
           return
         }
+
         const tiposProductoIds = categoria
           ? tiposCategoria.map(valor => valor.id)
           : []
+
         const filtrosPagina = categoria
           ? await obtenerFiltrosCatalogo({
               generoId: generoEncontrado.id,
               tiposProductoIds,
             })
           : filtrosGenero
+
         if (!activo) {
           return
         }
+
         setMarcas(filtrosPagina.marcas)
         setTiposProducto(tiposCategoria)
+
         setConfiguracion({
           generoId: generoEncontrado.id,
           tiposProductoIds,
@@ -232,16 +272,21 @@ function ContenidoCatalogo({
         }
       }
     }
+
     prepararCatalogo()
+
     return () => {
       activo = false
     }
-  }, [genero, categoria, generoSale, esSale, soloTemporada])
+  }, [genero, categoria, generoSale, esSale, soloTemporada, general])
+
   useEffect(() => {
     if (!configuracion) {
       return
     }
+
     let activo = true
+
     versionConsulta.current += 1
     solicitudMas.current = false
     setCargando(true)
@@ -251,6 +296,7 @@ function ContenidoCatalogo({
     setTotal(0)
     setDesplazamiento(0)
     setHayMas(false)
+
     async function cargarPrimeraPagina() {
       try {
         const resultado = await obtenerCatalogo({
@@ -266,9 +312,11 @@ function ContenidoCatalogo({
           soloOfertas: esSale,
           soloTemporada,
         })
+
         if (!activo) {
           return
         }
+
         setProductos(resultado.productos)
         setTotal(resultado.total)
         setDesplazamiento(resultado.siguienteDesplazamiento)
@@ -285,7 +333,9 @@ function ContenidoCatalogo({
         }
       }
     }
+
     cargarPrimeraPagina()
+
     return () => {
       activo = false
       versionConsulta.current += 1
@@ -298,6 +348,7 @@ function ContenidoCatalogo({
     esSale,
     soloTemporada,
   ])
+
   async function mostrarMas() {
     if (
       !configuracion ||
@@ -307,10 +358,13 @@ function ContenidoCatalogo({
     ) {
       return
     }
+
     const versionActual = versionConsulta.current
+
     solicitudMas.current = true
     setCargandoMas(true)
     setError('')
+
     try {
       const resultado = await obtenerCatalogo({
         generoId: configuracion.generoId,
@@ -325,18 +379,23 @@ function ContenidoCatalogo({
         soloOfertas: esSale,
         soloTemporada,
       })
+
       if (versionActual !== versionConsulta.current) {
         return
       }
+
       setProductos(anteriores => {
         const idsExistentes = new Set(
           anteriores.map(producto => producto.id),
         )
+
         const nuevos = resultado.productos.filter(
           producto => !idsExistentes.has(producto.id),
         )
+
         return [...anteriores, ...nuevos]
       })
+
       setTotal(resultado.total)
       setDesplazamiento(resultado.siguienteDesplazamiento)
       setHayMas(resultado.hayMas)
@@ -353,28 +412,20 @@ function ContenidoCatalogo({
       }
     }
   }
+
   function limpiarFiltros() {
     setMarcaSeleccionada('')
     setTipoSeleccionado('')
   }
+
   return (
     <>
-      {soloTemporada && mostrarModalPromocional && (
-        <ModalPromocional
-          imagen={estatuaVansImg}
-          titulo="LLEGARON LAS VANS"
-          subtitulo="APURATE."
-          destacado="10% OFF"
-          descripcion="Comprando online"
-          boton="VER OFERTAS"
-          onClose={() => setMostrarModalPromocional(false)}
-        />
-      )}
       <main className="categoria seccion">
         <Contenedor>
           <header className="categoria__encabezado">
             <h1>{titulo}</h1>
           </header>
+
           {configuracion && (
             <div className="tienda-catalogo__herramientas">
               <div className="estructura__campo">
@@ -396,6 +447,7 @@ function ContenidoCatalogo({
                   ))}
                 </select>
               </div>
+
               <div className="estructura__campo">
                 <label htmlFor="tienda-catalogo-tipo">
                   Tipo de producto
@@ -415,6 +467,7 @@ function ContenidoCatalogo({
                   ))}
                 </select>
               </div>
+
               <div className="estructura__campo">
                 <label htmlFor="tienda-catalogo-orden">
                   Ordenar por precio
@@ -434,6 +487,7 @@ function ContenidoCatalogo({
                   </option>
                 </select>
               </div>
+
               {(marcaSeleccionada || tipoSeleccionado) && (
                 <Boton
                   variante="secundario"
@@ -444,7 +498,9 @@ function ContenidoCatalogo({
               )}
             </div>
           )}
+
           {error && <p role="alert">{error}</p>}
+
           {cargando ? (
             <p role="status">Cargando productos...</p>
           ) : productos.length > 0 ? (
@@ -477,6 +533,7 @@ function ContenidoCatalogo({
               </p>
             </section>
           ) : null}
+
           {!cargando && configuracion && (
             <div className="tienda-catalogo__paginacion">
               <p role="status" aria-live="polite">
@@ -499,24 +556,30 @@ function ContenidoCatalogo({
     </>
   )
 }
-function Catalogo({ soloTemporada = false }) {
+
+function Catalogo({ soloTemporada = false, general = false }) {
   const { genero, categoria, generoSale } = useParams()
   const {
     agregarProductoAlCarrito,
     cargandoCarrito,
   } = useOutletContext()
+
   return (
     <ContenidoCatalogo
-      key={soloTemporada
-        ? 'seasons'
-        : `${genero}/${generoSale || ''}/${categoria || ''}`}
+      key={general
+        ? 'catalogo-general'
+        : soloTemporada
+          ? 'seasons'
+          : `${genero}/${generoSale || ''}/${categoria || ''}`}
       genero={genero}
       categoria={categoria}
       generoSale={generoSale}
       soloTemporada={soloTemporada}
+      general={general}
       alAgregarAlCarrito={agregarProductoAlCarrito}
       cargandoCarrito={cargandoCarrito}
     />
   )
 }
+
 export default Catalogo

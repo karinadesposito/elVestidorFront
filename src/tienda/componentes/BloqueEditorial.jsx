@@ -1,4 +1,6 @@
+
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
@@ -30,6 +32,7 @@ const slides = [
 const tiempoSlide = 5000;
 
 function BloqueEditorial() {
+  const navigate = useNavigate();
   const [slideActivo, setSlideActivo] = useState(0);
   const [altura, setAltura] = useState(null);
 
@@ -148,6 +151,7 @@ function BloqueEditorial() {
                     <Boton
                       className="bloque-editorial__accion"
                       tipo="promocional"
+                      onClick={() => navigate('/catalogo')}
                     >
                       {slide.accion} →
                     </Boton>
