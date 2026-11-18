@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { FiX } from "react-icons/fi";
 import Contenedor from "../../componentesReuse/Contenedor";
 import Boton from "../../componentesReuse/Boton";
 import { suscribirseClub } from "../../servicios/clubService";
@@ -15,6 +16,14 @@ function Beneficios() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
   const [emailEnviado, setEmailEnviado] = useState("");
+
+  const botonAbrirRef = useRef(null);
+
+  function cerrarFormulario() {
+    setFormAbierto(false);
+    setError(null);
+    window.requestAnimationFrame(() => botonAbrirRef.current?.focus());
+  }
 
   function manejarCampo(e) {
     const { name, value } = e.target;
@@ -52,7 +61,26 @@ function Beneficios() {
           />
         </div>
 
-        <div className="beneficios__tarjeta">
+        <div className="beneficios__tarjeta" style={{ position: "relative" }}>
+          {formAbierto && !emailEnviado && (
+            <Boton
+              variante="icono"
+              type="button"
+              aria-label="Cerrar formulario"
+              onClick={cerrarFormulario}
+              disabled={enviando}
+              style={{
+                position: "absolute",
+                insetBlockStart: "var(--espacio-1)",
+                insetInlineEnd: "var(--espacio-1)",
+                width: "2.75rem",
+                height: "2.75rem",
+              }}
+            >
+              <FiX size={20} aria-hidden="true" />
+            </Boton>
+          )}
+
           <p className="beneficios__etiqueta">
             El Vestidor Club
           </p>
@@ -151,11 +179,11 @@ function Beneficios() {
                   <p className="beneficios__aclaracion">
                     Te vamos a pedir que confirmes tu correo.
                     Podés darte de baja cuando quieras.
-                  </p>
-                </form>
+                  </p>                </form>
               ) : (
                 <Boton
                   variante="promocional"
+                  ref={botonAbrirRef}
                   onClick={() => setFormAbierto(true)}
                 >
                   Unirme ahora →

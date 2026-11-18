@@ -15,7 +15,7 @@ const slides = [
     imagenMobile: "/imagenes/carrusel/el-vestidor-christmas-mobile.webp",
     descripcion:
       "Campaña de Navidad de El Vestidor. This Christmas, Be You.",
-    navidad: true,
+    imagenCompleta: true,
   },
   {
     id: "online",
@@ -25,13 +25,22 @@ const slides = [
     imagen: ventana,
     descripcion: "",
     accion: "Explorar",
-    navidad: false,
+  },
+  {
+    id: "club",
+    titulo: "El Vestidor Club",
+    imagen: "/imagenes/carrusel/club-el-vestidor-escritorio.webp",
+    imagenMobile: "/imagenes/carrusel/club-el-vestidor-celular.webp",
+    descripcion:
+      "El Vestidor Club. Descuentos en compras, entradas a eventos, descuentos en bares y descuentos en Grimoldi.",
+    imagenCompleta: true,
+    accion: "Unirme al Club",
   },
 ];
 
 const tiempoSlide = 5000;
 
-function BloqueEditorial() {
+function BloqueEditorial({ onAbrirClub }) {
   const navigate = useNavigate();
   const [slideActivo, setSlideActivo] = useState(0);
   const [altura, setAltura] = useState(null);
@@ -100,7 +109,7 @@ function BloqueEditorial() {
                   slidesRef.current[indice] = elemento;
                 }}
                 className={`bloque-editorial__slide ${
-                  slide.navidad
+                  slide.imagenCompleta
                     ? "bloque-editorial__slide--navidad"
                     : ""
                 }`}
@@ -136,7 +145,7 @@ function BloqueEditorial() {
                   </picture>
                 </div>
 
-                {!slide.navidad && (
+                {!slide.imagenCompleta && (
                   <div className="bloque-editorial__texto">
                     <p className="texto-etiqueta bloque-editorial__etiqueta">
                       {slide.etiqueta}
@@ -152,6 +161,19 @@ function BloqueEditorial() {
                       className="bloque-editorial__accion"
                       tipo="promocional"
                       onClick={() => navigate('/catalogo')}
+                    >
+                      {slide.accion} →
+                    </Boton>
+                  </div>
+                )}
+
+                {slide.id === "club" && onAbrirClub && (
+                  <div className="bloque-editorial__texto">
+                    <Boton
+                      className="bloque-editorial__accion"
+                      variante="promocional"
+                      onClick={onAbrirClub}
+                      style={{ justifySelf: "center" }}
                     >
                       {slide.accion} →
                     </Boton>

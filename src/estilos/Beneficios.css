@@ -1,35 +1,39 @@
 .beneficios {
+  padding-block: var(--espacio-4);
   background: var(--color-fondo-alternativo);
 }
 
-.beneficios__contenedor {
+.contenedor.beneficios__contenedor {
   display: grid;
+  max-width: 80rem;
   grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: 0;
+  align-items: stretch;
 }
 
 .beneficios__imagenes {
   min-width: 0;
-  aspect-ratio: 3.64 / 1;
+  aspect-ratio: 2 / 1;
   overflow: hidden;
 }
 
 .beneficios__imagenes img {
   display: block;
-  width: 108.5%;
-  max-width: none;
-  height: auto;
-  transform: translate(-3.9%, -16.8%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.45);
 }
 
 .beneficios__tarjeta {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: var(--espacio-1);
+  gap: var(--espacio-2);
   min-width: 0;
-  padding: var(--espacio-2);
+  scroll-margin-top: calc(var(--alto-barra) + var(--espacio-4));
+  padding: var(--espacio-4) var(--espacio-3);
+  background: var(--color-fondo-suave);
   text-align: center;
 }
 
@@ -62,9 +66,10 @@
 .beneficios__formulario {
   display: grid;
   justify-items: center;
-  gap: var(--espacio-2);
+  gap: var(--espacio-3);
   width: 100%;
-  max-width: 20rem;
+  max-width: 24rem;
+  margin-top: var(--espacio-2);
 }
 
 .beneficios__campo {
@@ -72,7 +77,7 @@
   gap: var(--espacio-1);
   width: 100%;
   color: var(--color-texto-secundario);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   text-align: left;
 }
 
@@ -85,7 +90,7 @@
   background: var(--color-fondo-principal);
   color: var(--color-texto-principal);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .beneficios__campo input:focus-visible {
@@ -111,7 +116,7 @@
   max-width: 18rem;
   margin: 0;
   color: var(--color-texto-secundario);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -130,7 +135,29 @@
 }
 
 @media (min-width: 48rem) {
-  .beneficios__contenedor {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  .beneficios__imagenes {
+    aspect-ratio: 3 / 1;
+  }
+
+  .beneficios__tarjeta {
+    padding: var(--espacio-5) var(--espacio-4);
+  }
+}
+
+@media (min-width: 64rem) {
+  .contenedor.beneficios__contenedor {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .beneficios__imagenes {
+    position: relative;
+    aspect-ratio: auto;
+    min-height: 17rem;
+  }
+
+  .beneficios__imagenes img {
+    position: absolute;
+    inset: 0;
+    transform: scale(1.52);
   }
 }
