@@ -64,7 +64,6 @@ const MOVIMIENTOS_MANUALES = {
   },
 };
 const FORM_BAJA_INICIAL = {
-  barcode: "",
   cantidad: "1",
   motivo: "Venta mostrador",
 };
@@ -213,6 +212,10 @@ function Stock() {
       })
       .slice(0, 12);
   }, [productos, busquedaIngreso]);
+  const movimientoManual = MOVIMIENTOS_MANUALES[modalAbierto];
+  const varianteMovimiento = movimientoManual && productoSeleccionado?.variantes.find(
+    (variante) => String(variante.id) === varianteDestacadaId,
+  );
   const stockFiltrado = filtrarStock(stock, {
     busqueda,
     marcaId: filtroMarca,
@@ -272,7 +275,9 @@ function Stock() {
     const codigo = busquedaIngreso.trim();
     if (!codigo || buscandoBarcode) return;
     const varianteLocal = stock.find(
-      (item) => normalizarBusqueda(item.barcode) === normalizarBusqueda(codigo),
+      (item) => movimientoManual
+        ? item.barcode === codigo
+        : normalizarBusqueda(item.barcode) === normalizarBusqueda(codigo),
     );
     if (varianteLocal) {
       const producto = productos.find((grupo) =>
@@ -305,6 +310,10 @@ function Stock() {
       const producto = productos.find((grupo) =>
         grupo.variantes.some((item) => String(item.id) === String(variante.id)),
       );
+      if (!producto && movimientoManual) {
+        seleccionarProducto(agruparProductos([variante])[0], variante.id);
+        return;
+      }
       if (!producto) {
         setError("La variante existe, pero no está en el listado cargado. Actualizá la página.");
         return;
@@ -584,10 +593,14 @@ function Stock() {
       ...FORM_BAJA_INICIAL,
       motivo: MOVIMIENTOS_MANUALES[tipo].motivoInicial,
     });
+    setBusquedaIngreso("");
+    setProductoSeleccionado(null);
+    setVarianteDestacadaId(null);
+    setBarcodeNoEncontrado(false);
     setModalAbierto(tipo);
   }
   function cerrarModalBaja() {
-    if (guardandoBaja) return;
+    if (guardandoBaja || buscandoBarcode) return;
     setModalAbierto(null);
     setError(null);
   }
@@ -601,19 +614,21 @@ function Stock() {
   }
   async function manejarRegistrarBaja(e) {
     e.preventDefault();
-    const movimiento = MOVIMIENTOS_MANUALES[modalAbierto];
-    if (guardandoBaja || !movimiento) return;
+    if (guardandoBaja || buscandoBarcode || !movimientoManual || !varianteMovimiento?.barcode?.trim()) return;
     setGuardandoBaja(true);
     setError(null);
     setMensajeExito("");
     try {
-      const registro = await movimiento.registrar(formBaja);
-      await recargarStock();
+      const registro = await movimientoManual.registrar({
+        ...formBaja,
+        barcode: varianteMovimiento.barcode,
+      });
       setModalAbierto(null);
       setFormBaja(FORM_BAJA_INICIAL);
       setMensajeExito(
-        `${movimiento.exito}: ${registro.barcode} pasó de ${registro.stockAnterior} a ${registro.stockResultante} unidades.`,
+        `${movimientoManual.exito}: ${registro.barcode} pasó de ${registro.stockAnterior} a ${registro.stockResultante} unidades.`,
       );
+      await recargarStock();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -627,6 +642,106 @@ function Stock() {
       "noopener,noreferrer",
     );
   }
+  const buscadorStock = (
+    <div className="estructura__campo">
+      <label htmlFor="stock-buscar-producto">
+        Buscar producto o escanear barcode
+      </label>
+      <div className="admin-productos__buscador-control">
+        <FiSearch aria-hidden="true" />
+        <input
+          id="stock-buscar-producto"
+          ref={buscadorIngresoRef}
+          type="text"
+          value={busquedaIngreso}
+          onChange={(e) => {
+            setBusquedaIngreso(e.target.value);
+            if (movimientoManual) {
+              setProductoSeleccionado(null);
+              setVarianteDestacadaId(null);
+            }
+            setBarcodeNoEncontrado(false);
+            setError(null);
+          }}
+          onKeyDown={manejarTeclaBusquedaIngreso}
+          placeholder="Nombre, marca, SKU o barcode"
+          autoComplete="off"
+          disabled={movimientoManual && (buscandoBarcode || guardandoBaja)}
+          autoFocus
+        />
+        {busquedaIngreso && (
+          <button
+            type="button"
+            onClick={() => {
+              setBusquedaIngreso("");
+              buscadorIngresoRef.current?.focus();
+            }}
+            aria-label="Limpiar búsqueda"
+          >
+            <FiX aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      <div className="estructura__panel-acciones">
+        <Boton
+          variante="admin"
+          type="button"
+          onClick={buscarPorBarcode}
+          disabled={
+            buscandoBarcode ||
+            !busquedaIngreso.trim()
+          }
+        >
+          {buscandoBarcode
+            ? "Buscando..."
+            : "Buscar"}
+        </Boton>
+      </div>
+      {barcodeNoEncontrado && !movimientoManual && (
+        <div className="estructura__panel-acciones">
+          <Boton
+            variante="admin"
+            type="button"
+            onClick={abrirProductos}
+          >
+            Crear en Productos
+          </Boton>
+        </div>
+      )}
+      {busquedaIngreso.trim() &&
+        productosEncontrados.length === 0 && (
+          <p>
+            No se encontraron productos en el listado.
+          </p>
+        )}
+      {productosEncontrados.length > 0 && (
+        <div className="estructura__tabla">
+          {productosEncontrados.map((producto) => (
+            <div
+              className="estructura__lista-item"
+              key={producto.clave}
+            >
+              <strong>{producto.nombre}</strong>
+              <span>
+                {producto.marca || "Sin marca"}
+                {" · "}
+                {producto.variantes.length} variantes
+              </span>
+              <Boton
+                variante="admin"
+                type="button"
+                onClick={() =>
+                  seleccionarProducto(producto)
+                }
+              >
+                Ver variantes
+              </Boton>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
   return (
     <main className="estructura">
       <Contenedor>
@@ -893,99 +1008,7 @@ function Stock() {
             )}
             <section className="estructura__panel">
               <h3>1. Seleccionar mercadería</h3>
-              <div className="estructura__campo">
-                <label htmlFor="stock-buscar-producto">
-                  Buscar producto o escanear barcode
-                </label>
-                <div className="admin-productos__buscador-control">
-                  <FiSearch aria-hidden="true" />
-                  <input
-                    id="stock-buscar-producto"
-                    ref={buscadorIngresoRef}
-                    type="text"
-                    value={busquedaIngreso}
-                    onChange={(e) => {
-                      setBusquedaIngreso(e.target.value);
-                      setBarcodeNoEncontrado(false);
-                      setError(null);
-                    }}
-                    onKeyDown={manejarTeclaBusquedaIngreso}
-                    placeholder="Nombre, marca, SKU o barcode"
-                    autoComplete="off"
-                    autoFocus
-                  />
-                  {busquedaIngreso && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBusquedaIngreso("");
-                        buscadorIngresoRef.current?.focus();
-                      }}
-                      aria-label="Limpiar búsqueda"
-                    >
-                      <FiX aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-                <div className="estructura__panel-acciones">
-                  <Boton
-                    variante="admin"
-                    type="button"
-                    onClick={buscarPorBarcode}
-                    disabled={
-                      buscandoBarcode ||
-                      !busquedaIngreso.trim()
-                    }
-                  >
-                    {buscandoBarcode
-                      ? "Buscando..."
-                      : "Buscar"}
-                  </Boton>
-                </div>
-                {barcodeNoEncontrado && (
-                  <div className="estructura__panel-acciones">
-                    <Boton
-                      variante="admin"
-                      type="button"
-                      onClick={abrirProductos}
-                    >
-                      Crear en Productos
-                    </Boton>
-                  </div>
-                )}
-                {busquedaIngreso.trim() &&
-                  productosEncontrados.length === 0 && (
-                    <p>
-                      No se encontraron productos en el listado.
-                    </p>
-                  )}
-                {productosEncontrados.length > 0 && (
-                  <div className="estructura__tabla">
-                    {productosEncontrados.map((producto) => (
-                      <div
-                        className="estructura__lista-item"
-                        key={producto.clave}
-                      >
-                        <strong>{producto.nombre}</strong>
-                        <span>
-                          {producto.marca || "Sin marca"}
-                          {" · "}
-                          {producto.variantes.length} variantes
-                        </span>
-                        <Boton
-                          variante="admin"
-                          type="button"
-                          onClick={() =>
-                            seleccionarProducto(producto)
-                          }
-                        >
-                          Ver variantes
-                        </Boton>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {buscadorStock}
               {productoSeleccionado && (
                 <div className="estructura__tarjeta">
                   <h3>{productoSeleccionado.nombre}</h3>
@@ -1300,44 +1323,62 @@ function Stock() {
           </form>
         </ModalAdmin>
       )}
-      {MOVIMIENTOS_MANUALES[modalAbierto] && puedeDarDeBaja && (
+      {movimientoManual && puedeDarDeBaja && (
         <ModalAdmin
-          titulo={MOVIMIENTOS_MANUALES[modalAbierto].titulo}
+          titulo={movimientoManual.titulo}
           onClose={cerrarModalBaja}
           formId="formulario-baja-stock"
-          botonConfirmar={MOVIMIENTOS_MANUALES[modalAbierto].boton}
-          botonConfirmarDeshabilitado={guardandoBaja}
+          botonConfirmar={movimientoManual.boton}
+          botonConfirmarDeshabilitado={
+            guardandoBaja || buscandoBarcode || !varianteMovimiento?.barcode?.trim()
+          }
         >
           <form
             id="formulario-baja-stock"
             className="estructura__formulario"
             onSubmit={manejarRegistrarBaja}
           >
-            {MOVIMIENTOS_MANUALES[modalAbierto].ayuda && (
-              <p>{MOVIMIENTOS_MANUALES[modalAbierto].ayuda}</p>
+            {movimientoManual.ayuda && (
+              <p>{movimientoManual.ayuda}</p>
             )}
             {error && (
               <p className="login-admin__error">
                 {error}
               </p>
             )}
-            <div className="estructura__campo">
-              <label htmlFor="baja-barcode">
-                Barcode
-              </label>
-              <input
-                id="baja-barcode"
-                name="barcode"
-                type="text"
-                value={formBaja.barcode}
-                onChange={manejarCampoBaja}
-                maxLength="100"
-                placeholder="Escanear o ingresar barcode"
-                autoComplete="off"
-                required
-                autoFocus
-              />
-            </div>
+            {buscadorStock}
+            {productoSeleccionado && (
+              <div className="estructura__campo">
+                <strong>{productoSeleccionado.nombre}</strong>
+                <label htmlFor="stock-variante-movimiento">Color y talle</label>
+                <select
+                  id="stock-variante-movimiento"
+                  value={varianteDestacadaId ?? ""}
+                  disabled={guardandoBaja}
+                  onChange={(e) => {
+                    setVarianteDestacadaId(e.target.value || null);
+                    setError(null);
+                  }}
+                >
+                  <option value="">Seleccioná una variante</option>
+                  {productoSeleccionado.variantes.map((variante) => (
+                    <option
+                      key={variante.id}
+                      value={String(variante.id)}
+                      disabled={!variante.barcode?.trim()}
+                    >
+                      {variante.variante} · {variante.barcode || "Sin SKU cargado"}
+                    </option>
+                  ))}
+                </select>
+                {varianteMovimiento && (
+                  <div className="estructura__tarjeta" role="status">
+                    <strong>Stock actual: {varianteMovimiento.stock} unidades</strong>
+                    <span>Disponible: {varianteMovimiento.disponible}</span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="estructura__campo">
               <label htmlFor="baja-cantidad">
                 Cantidad
@@ -1365,7 +1406,7 @@ function Stock() {
                 value={formBaja.motivo}
                 onChange={manejarCampoBaja}
                 maxLength="100"
-                required={MOVIMIENTOS_MANUALES[modalAbierto].motivoObligatorio}
+                required={movimientoManual.motivoObligatorio}
               />
             </div>
             {guardandoBaja && (
