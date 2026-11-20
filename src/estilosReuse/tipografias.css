@@ -1,7 +1,6 @@
 @font-face {
   font-family: 'EV Inter';
-  src: url('../recursos/fuentes/Inter/Inter_28pt-Regular.ttf')
-    format('truetype');
+  src: url('../recursos/fuentes/Inter/Inter_28pt-Regular.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -9,8 +8,7 @@
 
 @font-face {
   font-family: 'EV Inter';
-  src: url('../recursos/fuentes/Inter/Inter_28pt-Medium.ttf')
-    format('truetype');
+  src: url('../recursos/fuentes/Inter/Inter_28pt-Medium.ttf') format('truetype');
   font-style: normal;
   font-weight: 500;
   font-display: swap;
@@ -18,8 +16,7 @@
 
 @font-face {
   font-family: 'EV Inter';
-  src: url('../recursos/fuentes/Inter/Inter_28pt-SemiBold.ttf')
-    format('truetype');
+  src: url('../recursos/fuentes/Inter/Inter_28pt-SemiBold.ttf') format('truetype');
   font-style: normal;
   font-weight: 600;
   font-display: swap;
@@ -32,10 +29,10 @@
   font-weight: 700;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'EV Bebas';
-  src: url('../recursos/fuentes/BebasNeue/BebasNeue-Regular.ttf')
-    format('truetype');
+  src: url('../recursos/fuentes/Inter/BebasNeue-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
