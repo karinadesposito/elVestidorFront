@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react'
-import { useOutletContext, useParams } from 'react-router-dom'
+import { useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import Contenedor from '../../componentesReuse/Contenedor'
 import Boton from '../../componentesReuse/Boton'
 import ProductoCard from '../componentes/ProductoCard'
@@ -108,12 +108,13 @@ function ContenidoCatalogo({
   generoSale,
   soloTemporada,
   general,
+  busqueda,
   alAgregarAlCarrito,
   cargandoCarrito,
 }) {
   const esSale = genero === 'sale' || Boolean(generoSale)
   const titulo = general
-    ? 'Todos los productos'
+    ? busqueda ? `Resultados para «${busqueda}»` : 'Todos los productos'
     : soloTemporada
       ? 'Seasons'
       : obtenerTitulo(genero, categoria, generoSale)
@@ -156,6 +157,7 @@ function ContenidoCatalogo({
   const [tiposProducto, setTiposProducto] = useState([])
   const [marcaSeleccionada, setMarcaSeleccionada] = useState('')
   const [tipoSeleccionado, setTipoSeleccionado] = useState('')
+  const [busquedaPorFaceta, setBusquedaPorFaceta] = useState(false)
   const [orden, setOrden] = useState('precio-asc')
   const [productos, setProductos] = useState([])
   const [total, setTotal] = useState(0)
@@ -194,6 +196,26 @@ function ContenidoCatalogo({
           if (categoria && tiposCategoria.length === 0) {
             setCargando(false)
             return
+          }
+
+          if (general && busqueda) {
+            const termino = normalizarTexto(busqueda)
+            const categoriaBuscada = Object.keys(TIPOS_POR_CATEGORIA).find(
+              nombre => normalizarTexto(nombre.replaceAll('-', ' ')) === termino,
+            )
+            const nombresBuscados = categoriaBuscada
+              ? TIPOS_POR_CATEGORIA[categoriaBuscada]
+              : [busqueda]
+            const tipoEncontrado = tiposCategoria.find(valor =>
+              coincideValor(valor, nombresBuscados),
+            )
+            const marcaEncontrada = filtrosGenerales.marcas.find(valor =>
+              coincideValor(valor, [busqueda]),
+            )
+
+            setTipoSeleccionado(tipoEncontrado?.id || '')
+            setMarcaSeleccionada(marcaEncontrada?.id || '')
+            setBusquedaPorFaceta(Boolean(tipoEncontrado || marcaEncontrada))
           }
 
           setMarcas(filtrosGenerales.marcas)
@@ -308,6 +330,7 @@ function ContenidoCatalogo({
             ? [marcaSeleccionada]
             : [],
           orden,
+          busqueda: busquedaPorFaceta ? '' : busqueda,
           desplazamiento: 0,
           soloOfertas: esSale,
           soloTemporada,
@@ -345,6 +368,8 @@ function ContenidoCatalogo({
     marcaSeleccionada,
     tipoSeleccionado,
     orden,
+    busqueda,
+    busquedaPorFaceta,
     esSale,
     soloTemporada,
   ])
@@ -375,6 +400,7 @@ function ContenidoCatalogo({
           ? [marcaSeleccionada]
           : [],
         orden,
+        busqueda: busquedaPorFaceta ? '' : busqueda,
         desplazamiento,
         soloOfertas: esSale,
         soloTemporada,
@@ -529,7 +555,9 @@ function ContenidoCatalogo({
                   ? 'Todavía no hay ofertas publicadas en esta sección.'
                   : marcaSeleccionada || tipoSeleccionado
                     ? 'No encontramos productos con estos filtros.'
-                    : 'Todavía no hay productos publicados en esta categoría.'}
+                    : busqueda
+                      ? 'No encontramos productos para esta búsqueda.'
+                      : 'Todavía no hay productos publicados en esta categoría.'}
               </p>
             </section>
           ) : null}
@@ -559,6 +587,8 @@ function ContenidoCatalogo({
 
 function Catalogo({ soloTemporada = false, general = false }) {
   const { genero, categoria, generoSale } = useParams()
+  const [parametros] = useSearchParams()
+  const busqueda = general ? (parametros.get('q') || '').trim() : ''
   const {
     agregarProductoAlCarrito,
     cargandoCarrito,
@@ -567,7 +597,7 @@ function Catalogo({ soloTemporada = false, general = false }) {
   return (
     <ContenidoCatalogo
       key={general
-        ? 'catalogo-general'
+        ? `catalogo-general-${busqueda}`
         : soloTemporada
           ? 'seasons'
           : `${genero}/${generoSale || ''}/${categoria || ''}`}
@@ -576,6 +606,7 @@ function Catalogo({ soloTemporada = false, general = false }) {
       generoSale={generoSale}
       soloTemporada={soloTemporada}
       general={general}
+      busqueda={busqueda}
       alAgregarAlCarrito={agregarProductoAlCarrito}
       cargandoCarrito={cargandoCarrito}
     />

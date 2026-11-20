@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FiChevronDown, FiX } from 'react-icons/fi'
+import { FiChevronDown, FiSearch, FiX } from 'react-icons/fi'
 
 import logoSimbolo from '../recursos/logos/logo-simbolo.svg'
 import logoMarca from '../recursos/logos/logo-marca.svg'
@@ -13,6 +13,9 @@ function MenuMobile({
   categoriasHombre = [],
   gruposSale = [],
   alAbrirSale,
+  busqueda = '',
+  alCambiarBusqueda,
+  alBuscar,
 }) {
   const [seccionAbierta, setSeccionAbierta] = useState(null)
 
@@ -98,6 +101,21 @@ function MenuMobile({
             <FiX />
           </button>
         </div>
+
+        <form role="search" onSubmit={evento => {
+          evento.preventDefault()
+          alBuscar?.(busqueda)
+        }}>
+          <FiSearch aria-hidden="true" />
+          <input
+            aria-label="Buscar productos"
+            maxLength={100}
+            onChange={evento => alCambiarBusqueda?.(evento.target.value)}
+            placeholder="Buscá tu producto aquí"
+            type="search"
+            value={busqueda}
+          />
+        </form>
 
         <nav
           className="menu-mobile__nav"

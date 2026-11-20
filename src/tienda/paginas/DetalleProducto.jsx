@@ -496,7 +496,7 @@ function DetalleProducto() {
             >
               {agregando
                 ? 'Agregando...'
-                : 'Agregar al carrito'}
+                : 'Seleccioná color y talle para agregar al carrito'}
             </Boton>
 
             {errorCompra && (
