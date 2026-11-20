@@ -460,6 +460,7 @@ export async function obtenerCatalogo({
   generoId = null,
   tiposProductoIds = [],
   marcaIds = [],
+  busqueda = '',
   orden = 'nombre-asc',
   desplazamiento = 0,
   soloOfertas = false,
@@ -483,6 +484,7 @@ export async function obtenerCatalogo({
         marcaIds: [
           ...new Set(marcaIds.map(String)),
         ],
+        busqueda: busqueda.trim(),
         orden:
           ORDENAMIENTOS[orden] ||
           ORDENAMIENTOS['nombre-asc'],

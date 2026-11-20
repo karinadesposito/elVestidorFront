@@ -222,6 +222,69 @@
   pointer-events: none;
 }
 
+/* Búsqueda de productos */
+
+.barra__acciones > .barra__buscador {
+  display: none;
+}
+
+.barra__buscador .menu-mobile__panel {
+  box-sizing: border-box;
+  width: min(86vw, 365px);
+  padding: var(--espacio-3);
+  background: #fff;
+}
+
+.barra__buscador .menu-mobile__encabezado {
+  justify-content: flex-end;
+  padding-block-end: var(--espacio-5);
+  border: 0;
+}
+
+.barra__buscador .menu-mobile__panel form {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding-bottom: var(--espacio-1);
+  border-bottom: 1px solid var(--color-borde-suave);
+}
+
+.barra__buscador .menu-mobile__panel form svg {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+}
+
+.barra__buscador input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.barra__buscador input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.barra__buscador .menu-mobile__nav {
+  gap: var(--espacio-3);
+  padding-block-start: 5rem;
+}
+
+.barra__buscador .menu-mobile__grupo-titulo {
+  margin-bottom: var(--espacio-2);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.barra__buscador .menu-mobile__principal {
+  padding-block: var(--espacio-1);
+  border: 0;
+  font-weight: var(--peso-medium);
+  text-transform: none;
+}
+
 /* Barra compacta mobile */
 
 .barra--compacta .barra__beneficio {
@@ -268,6 +331,10 @@
 /* Tablet */
 
 @media (min-width: 48rem) {
+  .menu-mobile.barra__buscador {
+    display: block;
+  }
+
   .barra:not(.barra--catalogo) {
     min-height: calc(40px + 9rem);
   }
@@ -383,6 +450,31 @@
 /* Desktop */
 
 @media (min-width: 64rem) {
+  .menu-mobile.barra__buscador {
+    display: none;
+  }
+
+  .barra__acciones > .barra__buscador {
+    display: flex;
+    align-items: center;
+    width: 12.5rem;
+    gap: var(--espacio-2);
+    border-bottom: 1px solid var(--color-borde-suave);
+    padding-bottom: var(--espacio-1);
+  }
+
+  .barra__acciones > .barra__buscador input {
+    flex: 1;
+    font-size: 0.75rem;
+  }
+
+  .barra__acciones > .barra__buscador button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
   .barra__simbolo {
     height: 44px;
   }

@@ -1,9 +1,10 @@
 
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   FiMenu,
   FiSearch,
+  FiX,
   FiShoppingCart,
   FiChevronLeft,
   FiChevronRight,
@@ -32,12 +33,15 @@ const UMBRAL_EXPANDIR = 40
 
 function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
   const { pathname } = useLocation()
+  const navegar = useNavigate()
   const esInicio = pathname === '/'
 
   const [compacta, setCompacta] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(null)
   const [menuMobileAbierto, setMenuMobileAbierto] = useState(false)
   const [promoActual, setPromoActual] = useState(0)
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false)
+  const [busqueda, setBusqueda] = useState('')
 
   const compactaRef = useRef(false)
 
@@ -95,7 +99,22 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
   useEffect(() => {
     setMenuAbierto(null)
     setMenuMobileAbierto(false)
+    setBuscadorAbierto(false)
   }, [pathname])
+
+  function buscar(evento) {
+    evento.preventDefault()
+    buscarTexto(busqueda)
+  }
+
+  function buscarTexto(valor) {
+    const texto = valor.trim()
+    if (!texto) return
+    setBusqueda(texto)
+    setBuscadorAbierto(false)
+    setMenuMobileAbierto(false)
+    navegar(`/catalogo?q=${encodeURIComponent(texto)}`)
+  }
 
   function cambiarPromo(direccion) {
     setPromoActual(actual => (actual + direccion + promos.length) % promos.length)
@@ -196,9 +215,28 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
           </nav>
 
           <div className="barra__acciones">
-            <Boton aria-label="Buscar" className="barra__accion" variante="icono">
+            <Boton aria-label="Buscar" aria-expanded={buscadorAbierto || menuMobileAbierto} className="barra__accion" variante="icono" onClick={() => {
+              if (window.matchMedia('(max-width: 47.99rem)').matches) {
+                setMenuMobileAbierto(true)
+              } else {
+                setBuscadorAbierto(actual => !actual)
+              }
+            }}>
               <FiSearch />
             </Boton>
+            {buscadorAbierto && (
+            <form className="barra__buscador" role="search" onSubmit={buscar}>
+              <input
+                aria-label="Buscar productos"
+                maxLength={100}
+                onChange={evento => setBusqueda(evento.target.value)}
+                placeholder="Ingrese su búsqueda"
+                type="search"
+                value={busqueda}
+              />
+             
+            </form>
+            )}
             <Boton
               aria-label={etiquetaCarrito}
               aria-haspopup="dialog"
@@ -213,6 +251,37 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
         </Contenedor>
       </header>
 
+      {buscadorAbierto && (
+        <div className="menu-mobile barra__buscador">
+          <button type="button" className="menu-mobile__fondo" onClick={() => setBuscadorAbierto(false)} aria-label="Cerrar búsqueda" />
+          <aside className="menu-mobile__panel" aria-label="Buscar productos">
+            <div className="menu-mobile__encabezado">
+              <button type="button" className="menu-mobile__cerrar" onClick={() => setBuscadorAbierto(false)} aria-label="Cerrar búsqueda"><FiX /></button>
+            </div>
+            <form role="search" onSubmit={buscar} onKeyDown={evento => {
+              if (evento.key === 'Escape') setBuscadorAbierto(false)
+            }}>
+              <FiSearch aria-hidden="true" />
+              <input
+                aria-label="Buscar productos"
+                autoFocus
+                maxLength={100}
+                onChange={evento => setBusqueda(evento.target.value)}
+                placeholder="Buscá tu producto aquí"
+                type="search"
+                value={busqueda}
+              />
+            </form>
+            <nav className="menu-mobile__nav" aria-label="Términos sugeridos">
+              <h2 className="menu-mobile__grupo-titulo">TÉRMINOS MÁS BUSCADOS</h2>
+              {['Jeans', 'Remeras', 'Camperas', 'Pantalones'].map(termino => (
+                <button key={termino} type="button" className="menu-mobile__principal" onClick={() => buscarTexto(termino)}>{termino}</button>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
+
       <MenuMobile
         abierto={menuMobileAbierto}
         alCerrar={() => setMenuMobileAbierto(false)}
@@ -220,6 +289,9 @@ function Barra({ alAbrirCarrito, cantidadCarrito = 0, alAbrirSale }) {
         categoriasHombre={categoriasHombre}
         gruposSale={gruposSale}
         alAbrirSale={abrirSale}
+        busqueda={busqueda}
+        alCambiarBusqueda={setBusqueda}
+        alBuscar={buscarTexto}
       />
     </>
   )

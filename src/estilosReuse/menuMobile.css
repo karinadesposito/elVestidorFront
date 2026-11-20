@@ -57,6 +57,30 @@
   font-size: 1.75rem;
 }
 
+.menu-mobile__panel form[role="search"] {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  margin-block-start: var(--espacio-3);
+  padding-block-end: var(--espacio-2);
+  border-block-end: thin solid var(--color-borde-suave);
+}
+
+.menu-mobile__panel form[role="search"] svg {
+  flex-shrink: 0;
+  font-size: 1.3rem;
+}
+
+.menu-mobile__panel form[role="search"] input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
 .menu-mobile__nav {
   display: grid;
   padding-block-start: var(--espacio-3);
