@@ -1,3 +1,5 @@
+import FormularioEnvioZona from '../componentes/FormularioEnvioZona'
+import { seleccionarEnvioPorZona, envioZonaConfirmado, validarDireccionEnvioZona } from '../../servicios/envioZonaService'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
@@ -7,6 +9,7 @@ import Boton from '../../componentesReuse/Boton'
 import {
   obtenerPedidoCheckout,
   guardarCompradorCheckout,
+  guardarDatosCheckout,
   recuperarCarritoParaEditar,
   obtenerMetodosPago,
   iniciarPagoMercadoPago,
@@ -117,7 +120,7 @@ function FinalizarCompra() {
   const [comprador, setComprador] = useState(COMPRADOR_INICIAL)
   const [direccion, setDireccion] = useState(DIRECCION_INICIAL)
   const [envioCorreo, setEnvioCorreo] = useState(null)
-  const [modalidadEntrega, setModalidadEntrega] = useState('correo')
+  const [modalidadEntrega, setModalidadEntrega] = useState('zonas')
   const [ahora, setAhora] = useState(Date.now())
   const [destinoCorreo, setDestinoCorreo] = useState({ ...DESTINO_CORREO_INICIAL })
   const [entregaSeleccionada, setEntregaSeleccionada] = useState('')
@@ -142,7 +145,8 @@ function FinalizarCompra() {
   const tieneProductos = Boolean(pedido?.totalQuantity > 0)
   const tarifaCorreo = tarifaConfirmadaCorreo(envioCorreo, pedido, ahora)
   const retiroConfirmado = retiroLocalConfirmado(pedido, envioCorreo)
-  const entregaConfirmada = modalidadEntrega === 'local' ? retiroConfirmado : Boolean(tarifaCorreo)
+  const entregaConfirmada = modalidadEntrega === 'local' ? retiroConfirmado
+    : modalidadEntrega === 'zonas' ? envioZonaConfirmado(pedido) : Boolean(tarifaCorreo)
 
   useEffect(() => {
     setAhora(Date.now())
@@ -280,8 +284,8 @@ function FinalizarCompra() {
         setEnvioCorreo(envio)
         if (resultado?.state === 'AddingItems') {
           setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
-          setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio))))
-          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : 'correo')
+          setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio) || envioZonaConfirmado(resultado))))
+          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : envioZonaConfirmado(resultado) ? 'zonas' : envio ? 'correo' : 'zonas')
           setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
           const opciones = await consultarOpciones(resultado)
           if (activo) setMetodoPago(opciones.pago)
@@ -361,13 +365,20 @@ function FinalizarCompra() {
     try {
       // Validar sólo el destino que corresponde a la entrega elegida.
       if (modalidadEntrega === 'correo') construirDestinoCorreo(destinoCorreo, envioCorreo?.revision ?? 0)
-      const compradorGuardado = await guardarCompradorCheckout(comprador)
-      if (String(compradorGuardado.id) !== String(pedido.id)) {
-        throw new Error('El carrito cambió. Actualizá el resumen antes de continuar.')
+      let envio = null
+      if (modalidadEntrega === 'zonas') {
+        await validarDireccionEnvioZona(direccion)
+        await guardarDatosCheckout({ comprador, direccion })
+        await seleccionarEnvioPorZona()
+      } else {
+        const compradorGuardado = await guardarCompradorCheckout(comprador)
+        if (String(compradorGuardado.id) !== String(pedido.id)) {
+          throw new Error('El carrito cambió. Actualizá el resumen antes de continuar.')
+        }
+        const retiro = modalidadEntrega === 'local'
+        if (retiro) await seleccionarRetiroLocal()
+        envio = retiro ? null : await guardarDestinoCorreo(destinoCorreo, envioCorreo, pedido.id)
       }
-      const retiro = modalidadEntrega === 'local'
-      if (retiro) await seleccionarRetiroLocal()
-      const envio = retiro ? null : await guardarDestinoCorreo(destinoCorreo, envioCorreo, pedido.id)
       const resultado = await obtenerPedidoCheckout()
       if (!resultado || String(resultado.id) !== String(pedido.id)) {
         throw new Error('El carrito cambió. Actualizá el resumen para consultar el destino guardado.')
@@ -413,8 +424,8 @@ function FinalizarCompra() {
       setEnvioCorreo(envio)
       if (resultado?.state === 'AddingItems') {
         setDestinoCorreo(formularioDesdeEnvioCorreo(envio))
-        setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio))))
-          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : 'correo')
+        setDatosGuardados(Boolean(resultado.customer && (envio || retiroLocalConfirmado(resultado, envio) || envioZonaConfirmado(resultado))))
+          setModalidadEntrega(retiroLocalConfirmado(resultado, envio) ? 'local' : envioZonaConfirmado(resultado) ? 'zonas' : envio ? 'correo' : 'zonas')
         setEntregaSeleccionada(String(resultado.shippingLines?.[0]?.shippingMethod?.id || ''))
         const opciones = await consultarOpciones(resultado)
         setMetodoPago(opciones.pago)
@@ -706,12 +717,18 @@ function FinalizarCompra() {
                         setModalidadEntrega(evento.target.value)
                         invalidarDatosGuardados()
                       }}>
-                        <option value="correo">Envío por Correo Argentino</option>
+                        <option value="zonas">Envío a domicilio</option>
+                        {modalidadEntrega === 'correo' && <option value="correo" disabled>Correo Argentino — pendiente de habilitación</option>}
                         <option value="local">Retiro en el local — sin cargo</option>
                       </select>
                     </div>
                     {modalidadEntrega === 'local' && <p>Retirá en Pinto 680, Tandil, Buenos Aires. Sin costo de entrega.</p>}
                   </fieldset>
+
+                  {modalidadEntrega === 'zonas' && <FormularioEnvioZona
+                    valor={direccion} deshabilitado={ocupado}
+                    onCambiar={valor => { setDireccion(valor); invalidarDatosGuardados() }}
+                  />}
 
                   {modalidadEntrega === 'correo' && <FormularioEnvioCorreo
                     valor={destinoCorreo}
@@ -781,6 +798,14 @@ function FinalizarCompra() {
                   <p>El servicio elegido y su precio se confirman antes de pagar.</p>
                 </section>
               )}
+              {editable && modalidadEntrega === 'zonas' && datosGuardados && envioZonaConfirmado(pedido) && (
+                <section className="finalizar-compra__panel" aria-live="polite">
+                  <h2>Envío a domicilio</h2>
+                  <p>{pedido.shippingLines[0].shippingMethod.name}</p>
+                  <p>Costo de envío: {mostrarPrecio(pedido.shippingWithTax)}.</p>
+                  <p>Productos y envío se cobran juntos al confirmar la compra.</p>
+                </section>
+              )}
               {editable && modalidadEntrega === 'local' && datosGuardados && retiroConfirmado && (
                 <section className="finalizar-compra__panel"><h2>Retiro en el local</h2>
                   <p>Pinto 680, Tandil, Buenos Aires. Entrega sin cargo.</p>
@@ -846,7 +871,7 @@ function FinalizarCompra() {
                 <div>
                   <dt>Entrega</dt>
                   <dd>
-                    {editable ? (datosGuardados && entregaConfirmada ? mostrarPrecio(pedido.shippingWithTax) : modalidadEntrega === 'local' ? 'A confirmar' : 'Pendiente de cotización') :
+                    {editable ? (datosGuardados && entregaConfirmada ? mostrarPrecio(pedido.shippingWithTax) : modalidadEntrega !== 'correo' ? 'A confirmar' : 'Pendiente de cotización') :
                       esRetornoPago || entregaSeleccionada
                         ? mostrarPrecio(pedido.shippingWithTax) : 'A seleccionar'}
                   </dd>
@@ -919,7 +944,7 @@ function FinalizarCompra() {
                     {procesando
                       ? 'Procesando...'
                       : editable && !entregaConfirmada
-                        ? modalidadEntrega === 'local' ? 'Confirmá el retiro en el local' : 'Envío pendiente de cotización'
+                        ? modalidadEntrega === 'local' ? 'Confirmá el retiro en el local' : modalidadEntrega === 'zonas' ? 'Guardá la dirección de entrega' : 'Envío pendiente de cotización'
                         : pagoPendiente
                           ? 'Continuar pago en Mercado Pago'
                           : 'Pagar con Mercado Pago'}

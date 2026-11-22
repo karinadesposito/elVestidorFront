@@ -1,3 +1,4 @@
+import Envios from './admin/paginas/Envios'
 import { Outlet, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './admin/contexto/AuthContext'
@@ -40,6 +41,7 @@ function App() {
             <Route path="productos" element={<Productos />} />
             <Route path="stock" element={<Stock />} />
             <Route path="promociones" element={<Promociones />} />
+            <Route path="envios" element={<Envios />} />
           </Route>
         </Route>
 

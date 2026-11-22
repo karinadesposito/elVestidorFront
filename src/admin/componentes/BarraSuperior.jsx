@@ -21,6 +21,7 @@ import CambiarClave from './CambiarClave'
 import '../../estilos/admin-barra-superior.css'
 
 const enlaces = [
+  { texto: 'Envíos', ruta: '/admin/envios', icono: FiPackage, permiso: 'GestionarEnvios' },
   {
     texto: 'Pedidos',
     ruta: '/admin/pedidos',
