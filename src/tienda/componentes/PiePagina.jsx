@@ -5,6 +5,8 @@ import { comercio } from '../../datos/comercio'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
 import logoJuarezdevs from '../../recursos/logos/logo.Juarezdevs.webp'
+import qrDataFiscal from '../../recursos/imagenes/qr-data-fiscal.jpg'
+
 
 function PiePagina() {
   return (
