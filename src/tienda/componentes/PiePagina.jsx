@@ -4,8 +4,7 @@ import Contenedor from '../../componentesReuse/Contenedor'
 import { comercio } from '../../datos/comercio'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
-import logoJuarezdevs from '../../recursos/logos/logo.Juarezdevs.png'
-import qrDataFiscal from '../../recursos/imagenes/qr-data-fiscal.jpg'
+import logoJuarezdevs from '../../recursos/logos/logo.Juarezdevs.webp'
 
 function PiePagina() {
   return (
