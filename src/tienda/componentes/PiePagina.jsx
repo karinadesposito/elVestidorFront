@@ -2,7 +2,7 @@ import { FaInstagram } from 'react-icons/fa'
 import Contenedor from '../../componentesReuse/Contenedor'
 import logoMarca from '../../recursos/logos/logo-marca.svg'
 import logoSimbolo from '../../recursos/logos/logo-simbolo.svg'
-import logoJuarezdevs from '../../recursos/logos/logo.Juarezdevs.png'
+import logoJuarezdevs from '../../recursos/logos/logo.Juarezdevs.webp'
 
 function PiePagina() {
   return (
