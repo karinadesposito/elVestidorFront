@@ -1,3 +1,4 @@
+import Envios from './admin/paginas/Envios'
 import { Outlet, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './admin/contexto/AuthContext'
@@ -17,6 +18,8 @@ import Catalogo from './tienda/paginas/Catalogo'
 import DetalleProducto from './tienda/paginas/DetalleProducto'
 import FinalizarCompra from './tienda/paginas/FinalizarCompra'
 import ClubConfirmado from './tienda/paginas/ClubConfirmado'
+import PaginaLegal from './tienda/paginas/PaginaLegal'
+import Arrepentimiento from './tienda/paginas/Arrepentimiento'
 
 function App() {
   return (
@@ -40,6 +43,7 @@ function App() {
             <Route path="productos" element={<Productos />} />
             <Route path="stock" element={<Stock />} />
             <Route path="promociones" element={<Promociones />} />
+            <Route path="envios" element={<Envios />} />
           </Route>
         </Route>
 
@@ -70,6 +74,13 @@ function App() {
             path="club/confirmado"
             element={<ClubConfirmado />}
           />
+
+          <Route path="terminos" element={<PaginaLegal pagina="terminos" />} />
+          <Route path="envios" element={<PaginaLegal pagina="envios" />} />
+          <Route path="cambios" element={<PaginaLegal pagina="cambios" />} />
+          <Route path="privacidad" element={<PaginaLegal pagina="privacidad" />} />
+          <Route path="contacto" element={<PaginaLegal pagina="contacto" />} />
+          <Route path="arrepentimiento" element={<Arrepentimiento />} />
 
           <Route
             path="sale/producto/:productoId"

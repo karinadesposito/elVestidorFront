@@ -478,7 +478,7 @@ function DetallePedido() {
                 direccion={pedido.shippingAddress}
               />
 
-              {!esPedidoRetiroLocal(pedido) && <EnvioCorreoPedido pedidoId={pedido.id} />}
+              {pedido.shippingLines?.some(linea => linea.shippingMethod?.code === 'correo-argentino-micorreo') && <EnvioCorreoPedido pedidoId={pedido.id} />}
 
               <section className="estructura__panel admin-detalle-pedido__totales">
                 <div className="estructura__panel-encabezado">
