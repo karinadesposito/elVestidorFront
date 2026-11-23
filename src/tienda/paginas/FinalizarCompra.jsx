@@ -950,6 +950,14 @@ function FinalizarCompra() {
                           : 'Pagar con Mercado Pago'}
                   </Boton>
 
+                  <p className="finalizar-compra__legal">
+                    Al pagar aceptás los{' '}
+                    <Link to="/terminos" target="_blank">Términos y condiciones</Link> y la{' '}
+                    <Link to="/privacidad" target="_blank">Política de privacidad</Link>. Conocé también nuestras
+                    políticas de <Link to="/envios" target="_blank">envíos</Link> y{' '}
+                    <Link to="/cambios" target="_blank">cambios y devoluciones</Link>.
+                  </p>
+
                   <Boton
                     variante="secundario"
                     onClick={actualizarResumen}

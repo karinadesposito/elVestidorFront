@@ -187,6 +187,20 @@
   overflow-wrap: anywhere;
 }
 
+.finalizar-compra__resumen > p.finalizar-compra__legal {
+  color: var(--color-texto-secundario);
+  font-size: 0.75rem;
+}
+
+.finalizar-compra__legal a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.finalizar-compra__legal a:hover {
+  color: var(--color-acento-hover);
+}
+
 .finalizar-compra__productos {
   display: grid;
   gap: var(--espacio-2);
